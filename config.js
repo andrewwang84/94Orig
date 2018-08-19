@@ -5,7 +5,7 @@ var config = {
     url: 'http://127.0.0.1:3000/api/telegram'
   },
   production: {
-    port: 8080,
+    port: 3000,
     url: 'https://origin94origin.herokuapp.com/api/telegram'
   }
 }
