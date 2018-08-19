@@ -1,8 +1,8 @@
-var express = require('express');
-var multer = require('multer');
-var crawler = require('../crawler.js')
-var router = express.Router();
-var upload = multer();
+const express = require('express');
+const multer = require('multer');
+const crawler = require('../crawler.js')
+const router = express.Router();
+const upload = multer();
 
 router.post('/telegram', upload.array(), async function (req, res) {
   let result = await telegram(req.body.url);
