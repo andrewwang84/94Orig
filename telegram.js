@@ -1,9 +1,10 @@
 const TelegramBot = require('node-telegram-bot-api');
 const request = require('request');
+var app = require('./app');
 const config = require('./config.js');
 const token = config.telegramToken;
 const bot = new TelegramBot(token, { polling: true });
-const apiUrl = config.Url;
+const apiUrl = 'http://127.0.0.1:3000/api/telegram'
 
 bot.onText(/https:\/\/*/, async (msg, match) => {
   const chatId = msg.chat.id;
