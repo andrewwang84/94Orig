@@ -3,7 +3,7 @@ const request = require('request');
 const config = require('./config.js');
 const token = config.telegramToken;
 const bot = new TelegramBot(token, { polling: true });
-const apiUrl = 'http://127.0.0.1:8080/api/telegram';
+const apiUrl = config.Url;
 
 bot.onText(/https:\/\/*/, async (msg, match) => {
   const chatId = msg.chat.id;
