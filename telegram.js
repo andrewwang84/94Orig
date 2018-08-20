@@ -18,6 +18,9 @@ bot.onText(/https:\/\/*/, async (msg, match) => {
 });
 
 async function callApi(urls) {
+  request('https://origin94origin.herokuapp.com', function (error, response, body) {
+    
+  });
   return new Promise(function (resolve, reject) {
     request.post(apiUrl, { form: { url: urls } }, function (error, response, body) {
       if (error) reject(error);
