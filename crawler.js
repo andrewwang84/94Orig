@@ -25,7 +25,7 @@ async function prepareData(urls) {
     if (urls[i].search(/https:\/\/twitter.com/) !== -1) {
       try{
         let url = await twitterUrl(urls[i]);
-        imageUrls.push(url);
+        imageUrls.push(`${url}:orig`);
       } catch (error) {
         return next(error);
       }
@@ -72,15 +72,20 @@ function twitterUrl(url) {
       if (error) reject(error);
 
       var $ = cheerio.load(body);
-      target = $(`body > script`)[0].children[0].data;
+      target = $(`.AdaptiveMedia-photoContainer > img`)[0]['attribs']['src'];
 
-      while (target.indexOf(`"display_url"`) !== -1) {
-        var chopFront = target.substring(target.indexOf(`"display_url"`) + 15, target.length);
-        var currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
-        target = chopFront.substring(currentResult.length, chopFront.length);
-        result.push(currentResult);
-      }
+      // while (target.indexOf(`"display_url"`) !== -1) {
+      //   var chopFront = target.substring(target.indexOf(`"display_url"`) + 15, target.length);
+      //   var currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
+      //   target = chopFront.substring(currentResult.length, chopFront.length);
 
+      //   result.push(currentResult);
+      // }
+
+      // if (result.length > 1) {
+      //   result.shift();
+      // }
+      result.push(target);
       resolve(result);
     });
   });
