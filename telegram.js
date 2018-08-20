@@ -11,16 +11,18 @@ bot.onText(/https:\/\/*/, async (msg, match) => {
   let target = match.input;
   target = target.split(",");
 
-  const resp = await callApi(target);
-  for (var i = 0; i < resp.length; i++) {
-    bot.sendMessage(chatId, resp[i]);
+  try{
+    const resp = await callApi(target);
+    for (var i = 0; i < resp.length; i++) {
+      bot.sendMessage(chatId, resp[i]);
+    }
+  } catch (error) {
+    bot.sendMessage(chatId, `出錯了: ${error}}`);
   }
 });
 
 async function callApi(urls) {
-  request('https://origin94origin.herokuapp.com', function (error, response, body) {
-    
-  });
+  request('https://origin94origin.herokuapp.com', function (error, response, body) { });
   return new Promise(function (resolve, reject) {
     request.post(apiUrl, { form: { url: urls } }, function (error, response, body) {
       if (error) reject(error);

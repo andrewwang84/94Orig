@@ -3,20 +3,32 @@ var request = require('request').defaults({ jar: true });
 var cheerio = require('cheerio');
 
 let getImage = async (urls) => {
-  const data = await prepareData(urls);
-  return data;
+  try{
+    const data = await prepareData(urls);
+    return data;
+  } catch (error) {
+    return next(error);
+  }
 }
 
 async function prepareData(urls) {
   var imageUrls = [];
   for (var i = 0; i < urls.length; i++) {
     if (urls[i].search(/https:\/\/www.instagram.com/) !== -1) {
-      let url = await igUrl(urls[i]);
-      imageUrls.push(url);
+      try{
+        let url = await igUrl(urls[i]);
+        imageUrls.push(url);
+      } catch (error) {
+        return next(error);
+      }
     }
     if (urls[i].search(/https:\/\/twitter.com/) !== -1) {
-      let url = await twitterUrl(urls[i]);
-      imageUrls.push(url);
+      try{
+        let url = await twitterUrl(urls[i]);
+        imageUrls.push(url);
+      } catch (error) {
+        return next(error);
+      }
     }
   }
 

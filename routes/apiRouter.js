@@ -5,13 +5,21 @@ const router = express.Router();
 const upload = multer();
 
 router.post('/telegram', upload.array(), async function (req, res) {
-  let result = await telegram(req.body.url);
-  res.status(200).json({ url: `${result}` });
+  try{
+    let result = await telegram(req.body.url);
+    res.status(200).json({ url: `${result}` });
+  } catch (error) {
+    res.status(500).json({ message: `${error}` });
+  }
 });
 
 router.post('/web', upload.array(), async function (req, res) {
-  let result = await web(req.body.url);
-  res.status(200).json({ url: `${result}` });
+  try{
+    let result = await web(req.body.url);
+    res.status(200).json({ url: `${result}` });
+  } catch (error) {
+    res.status(500).json({ message: `${error}` });
+  }
 });
 
 function telegram(urls) {
@@ -19,7 +27,7 @@ function telegram(urls) {
 }
 
 function web(url) {
-
+  return crawler.getImage(urls);
 }
 
 module.exports = router;
