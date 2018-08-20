@@ -51,7 +51,12 @@ function igUrl(url) {
         var chopFront = target.substring(target.indexOf(`"display_url"`) + 15, target.length);
         var currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
         target = chopFront.substring(currentResult.length, chopFront.length);
+
         result.push(currentResult);
+      }
+
+      if (result.length > 1) {
+        result.shift();
       }
 
       resolve(result);

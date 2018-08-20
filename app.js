@@ -6,7 +6,6 @@ var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
 var apiRouter = require('./routes/apiRouter');
-var Telegram = require('./telegram');
 
 var app = express();
 
@@ -40,3 +39,5 @@ app.use(function(err, req, res, next) {
 });
 
 module.exports = app;
+
+var Telegram = require('./telegram');

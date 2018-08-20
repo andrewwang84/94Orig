@@ -4,15 +4,19 @@ var app = require('./app');
 const config = require('./config.js');
 const token = config.telegramToken;
 const bot = new TelegramBot(token, { polling: true });
-const apiUrl = 'https://origin94origin.herokuapp.com/api/telegram';// 'http://127.0.0.1:3000/api/telegram';
+const apiUrl = require('./config.js')[app.get('env')].url;
 
 bot.onText(/https:\/\/*/, async (msg, match) => {
   const chatId = msg.chat.id;
   let target = match.input;
-  target = target.split(",");
+  target = target.split("\n");
 
   try{
-    const resp = await callApi(target);
+    let resp = await callApi(target);
+    if (resp == '') {
+      resp[0] = '沒圖片啦 !!';
+    }
+
     for (var i = 0; i < resp.length; i++) {
       bot.sendMessage(chatId, resp[i]);
     }
@@ -22,7 +26,9 @@ bot.onText(/https:\/\/*/, async (msg, match) => {
 });
 
 async function callApi(urls) {
-  request('https://origin94origin.herokuapp.com', function (error, response, body) { });
+  request('https://origin94origin.herokuapp.com', function (error, response, body) {
+    console.log(`wake up !!`)
+  });
   return new Promise(function (resolve, reject) {
     request.post(apiUrl, { form: { url: urls } }, function (error, response, body) {
       if (error) reject(error);
