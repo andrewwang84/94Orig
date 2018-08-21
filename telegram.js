@@ -27,6 +27,12 @@ bot.onText(/https:\/\//, async (msg, match) => {
   }
 });
 
+bot.on('message', (msg) => {
+  const chatId = msg.chat.id;
+
+  bot.sendMessage(chatId, '笨馬麻你給窩閉嘴 !!!');
+});
+
 async function callApi(urls) {
   // Used to active heroku, but it's not working QQ
   request('https://origin94origin.herokuapp.com/', function (error, response, body) {
