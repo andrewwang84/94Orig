@@ -34,7 +34,7 @@ bot.on(/圓仔/, (msg) => {
 
 bot.onText(/\/ping/, (msg) => {
   const opts = {
-    reply_to_message_id: msg.message_id,
+    parse_mode: "Markdown",
     reply_markup: JSON.stringify({
       keyboard: [
         ['https://origin94origin.herokuapp.com/']
