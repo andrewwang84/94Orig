@@ -57,8 +57,8 @@ function igUrl(url) {
 
       target = $(`body > script`)[0].children[0].data
       while (target.indexOf(`"video_url"`) !== -1) {
-        var chopFront = target.substring(target.indexOf(`"video_url"`) + 13, target.length);
-        var currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
+        chopFront = target.substring(target.indexOf(`"video_url"`) + 13, target.length);
+        currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
         target = chopFront.substring(currentResult.length, chopFront.length);
 
         result.push(currentResult);
