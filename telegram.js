@@ -32,16 +32,8 @@ bot.on(/圓仔/, (msg) => {
   bot.sendMessage(chatId, '笨馬麻你給窩閉嘴 !!!');
 });
 
-bot.onText(/\/ping/, (msg) => {
-  const opts = {
-    parse_mode: "Markdown",
-    reply_markup: JSON.stringify({
-      keyboard: [
-        ['https://origin94origin.herokuapp.com/']
-      ]
-    })
-  };
-  bot.sendMessage(msg.chat.id, 'Activate me ?', opts);
+bot.on("message", (msg) => {
+  bot.sendMessage(chatId, '要是我沒反應，請點我 => https://origin94origin.herokuapp.com/');
 });
 
 async function callApi(urls) {
