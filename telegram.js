@@ -27,17 +27,27 @@ bot.onText(/https:\/\//, async (msg, match) => {
   }
 });
 
-bot.on('message', (msg) => {
+bot.on(/圓仔/, (msg) => {
   const chatId = msg.chat.id;
-
   bot.sendMessage(chatId, '笨馬麻你給窩閉嘴 !!!');
+});
+
+bot.onText(/\/ping/, (msg) => {
+  const opts = {
+    markup: JSON.stringify({
+      keyboard: [
+        ['https://origin94origin.herokuapp.com/']
+      ]
+    })
+  };
+  bot.sendMessage(msg.chat.id, 'Activate me ?', opts);
 });
 
 async function callApi(urls) {
   // Used to active heroku, but it's not working QQ
-  request('https://origin94origin.herokuapp.com/', function (error, response, body) {
-    console.log(`wake up !!`)
-  });
+  // request('https://origin94origin.herokuapp.com/', function (error, response, body) {
+  //   console.log(`wake up !!`)
+  // });
   return new Promise(function (resolve, reject) {
     request.post(apiUrl, { form: { url: urls } }, function (error, response, body) {
       if (error) reject(error);
