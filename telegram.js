@@ -29,9 +29,9 @@ bot.onText(/https:\/\//, async (msg, match) => {
 
 async function callApi(urls) {
   // Used to active heroku, but it's not working QQ
-  // request('https://origin94origin.herokuapp.com', function (error, response, body) {
-  //   console.log(`wake up !!`)
-  // });
+  request('https://origin94origin.herokuapp.com/', function (error, response, body) {
+    console.log(`wake up !!`)
+  });
   return new Promise(function (resolve, reject) {
     request.post(apiUrl, { form: { url: urls } }, function (error, response, body) {
       if (error) reject(error);
