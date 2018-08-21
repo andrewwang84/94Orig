@@ -10,6 +10,8 @@ bot.onText(/https:\/\//, async (msg, match) => {
   const chatId = msg.chat.id;
   let target = match.input;
 
+  bot.sendMessage(chatId, '要是我沒反應，請點我 => https://origin94origin.herokuapp.com/');
+
   target = target.substring(target.indexOf(`https:`), target.length);
   target = target.split("\n");
 
@@ -27,14 +29,19 @@ bot.onText(/https:\/\//, async (msg, match) => {
   }
 });
 
-bot.on(/圓仔/, (msg) => {
+bot.onText(/圓仔/, (msg) => {
   const chatId = msg.chat.id;
   bot.sendMessage(chatId, '笨馬麻你給窩閉嘴 !!!');
 });
 
-bot.on("message", (msg) => {
+bot.onText(/\/help/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, '要是我沒反應，請點我 => https://origin94origin.herokuapp.com/');
+  bot.sendMessage(chatId, '請輸入instagram 或 twitter 連結\n多個連結請以"換行"隔開\n要是沒反應，請點選以下連結\n https://origin94origin.herokuapp.com/');
+});
+
+bot.onText(/王彥儒/, (msg) => {
+  const chatId = msg.chat.id;
+  bot.sendMessage(chatId, '好帥 <3');
 });
 
 async function callApi(urls) {

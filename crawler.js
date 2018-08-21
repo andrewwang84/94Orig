@@ -25,7 +25,7 @@ async function prepareData(urls) {
     if (urls[i].search(/https:\/\/twitter.com/) !== -1) {
       try{
         let url = await twitterUrl(urls[i]);
-        imageUrls.push(`${url}:orig`);
+        imageUrls.push(url);
       } catch (error) {
         return next(error);
       }
@@ -60,7 +60,6 @@ function igUrl(url) {
         chopFront = target.substring(target.indexOf(`"video_url"`) + 13, target.length);
         currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
         target = chopFront.substring(currentResult.length, chopFront.length);
-        console.log(currentResult);
         result.push(currentResult);
       }
 
@@ -80,21 +79,11 @@ function twitterUrl(url) {
     request(url, function (error, response, body) {
       if (error) reject(error);
 
-      var $ = cheerio.load(body);
-      target = $(`.AdaptiveMedia-photoContainer > img`)[0]['attribs']['src'];
+      const $ = cheerio.load(body);
+      $(`.AdaptiveMedia-photoContainer > img`).each((index, element) => {
+        result.push(`${element['attribs']['src']}:orig`);
+      })
 
-      // while (target.indexOf(`"display_url"`) !== -1) {
-      //   var chopFront = target.substring(target.indexOf(`"display_url"`) + 15, target.length);
-      //   var currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
-      //   target = chopFront.substring(currentResult.length, chopFront.length);
-
-      //   result.push(currentResult);
-      // }
-
-      // if (result.length > 1) {
-      //   result.shift();
-      // }
-      result.push(target);
       resolve(result);
     });
   });
