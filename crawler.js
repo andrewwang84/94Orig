@@ -55,6 +55,15 @@ function igUrl(url) {
         result.push(currentResult);
       }
 
+      target = $(`body > script`)[0].children[0].data
+      while (target.indexOf(`"video_url"`) !== -1) {
+        chopFront = target.substring(target.indexOf(`"video_url"`) + 13, target.length);
+        currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
+        target = chopFront.substring(currentResult.length, chopFront.length);
+
+        result.push(currentResult);
+      }
+
       if (result.length > 1) {
         result.shift();
       }
