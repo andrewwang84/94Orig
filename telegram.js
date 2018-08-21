@@ -33,6 +33,7 @@ bot.on(/圓仔/, (msg) => {
 });
 
 bot.on("message", (msg) => {
+  const chatId = msg.chat.id;
   bot.sendMessage(chatId, '要是我沒反應，請點我 => https://origin94origin.herokuapp.com/');
 });
 
