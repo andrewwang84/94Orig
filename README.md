@@ -12,8 +12,8 @@
 
 - [X] Single IG url input, get all image
 - [X] Multi IG urls input, get all image
-- [ ] Single Twitter url input, get all image
-- [ ] Multi Twitter urls input, get all image
+- [X] Single Twitter url input, get all image
+- [X] Multi Twitter urls input, get all image
 - [ ] IG & Twitter urls input, get all videos
 - [ ] Single IG_Stories url input, get all image & video
 - [X] Error handling
