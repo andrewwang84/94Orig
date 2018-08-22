@@ -39,6 +39,11 @@ bot.onText(/\/help/, (msg) => {
   bot.sendMessage(chatId, '請輸入instagram 或 twitter 連結\n多個連結請以"換行"隔開\n要是沒反應，請點選以下連結\n https://origin94origin.herokuapp.com/');
 });
 
+bot.onText(/\/ping/, (msg) => {
+  const chatId = msg.chat.id;
+  bot.sendMessage(chatId, 'https://origin94origin.herokuapp.com/');
+});
+
 bot.onText(/王彥儒/, (msg) => {
   const chatId = msg.chat.id;
   bot.sendMessage(chatId, '好帥 <3');
