@@ -10,8 +10,6 @@ bot.onText(/https:\/\//, async (msg, match) => {
   const chatId = msg.chat.id;
   let target = match.input;
 
-  bot.sendMessage(chatId, '要是我沒反應，請點我 => https://origin94origin.herokuapp.com/');
-
   target = target.substring(target.indexOf(`https:`), target.length);
   target = target.split("\n");
 
@@ -24,6 +22,8 @@ bot.onText(/https:\/\//, async (msg, match) => {
     for (var i = 0; i < resp.length; i++) {
       bot.sendMessage(chatId, resp[i]);
     }
+
+    bot.sendMessage(chatId, '要是我沒反應，請點我 => https://origin94origin.herokuapp.com/');
   } catch (error) {
     bot.sendMessage(chatId, `出錯了: ${error}}`);
   }
@@ -50,10 +50,6 @@ bot.onText(/王彥儒/, (msg) => {
 });
 
 async function callApi(urls) {
-  // Used to active heroku, but it's not working QQ
-  // request('https://origin94origin.herokuapp.com/', function (error, response, body) {
-  //   console.log(`wake up !!`)
-  // });
   return new Promise(function (resolve, reject) {
     request.post(apiUrl, { form: { url: urls } }, function (error, response, body) {
       if (error) reject(error);
