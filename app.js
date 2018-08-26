@@ -41,3 +41,4 @@ app.use(function(err, req, res, next) {
 module.exports = app;
 
 var Telegram = require('./telegram');
+var Line = require('./line');
