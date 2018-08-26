@@ -8,7 +8,7 @@ const config = {
 
 const client = new line.Client(config);
 
-app.post('/', line.middleware(lineConfig), function (req, res) {
+app.post('/', line.middleware(config), function (req, res) {
   Promise
     .all(req.body.events.map(handleEvent))
     .then(function (result) {
