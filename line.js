@@ -20,5 +20,3 @@ function handleEvent(event) {
   // use reply API
   return client.replyMessage(event.replyToken, echo);
 }
-
-module.exports = line;
