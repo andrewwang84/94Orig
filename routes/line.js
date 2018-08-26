@@ -12,8 +12,7 @@ const config = {
 const client = new line.Client(config);
 
 router.post('/callback', line.middleware(config), (req, res) => {
-  console.log('hi\n')
-  console.log(res)
+  console.log(req.body)
   // Promise
   //   .all(req.body.events.map(handleEvent))
   //   .then((result) => res.json(result))
