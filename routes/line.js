@@ -1,11 +1,26 @@
 const line = require('@line/bot-sdk');
+const express = require('express');
+const line = require('@line/bot-sdk');
+const multer = require('multer');
+const crawler = require('../crawler.js');
+const router = express.Router();
+const upload = multer();
 
 const config = {
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
   channelSecret: process.env.CHANNEL_SECRET,
 };
-
 const client = new line.Client(config);
+
+router.post('/', line.middleware(config), (req, res) => {
+  Promise
+    .all(req.body.events.map(handleEvent))
+    .then((result) => res.json(result))
+    .catch((err) => {
+      console.error(err);
+      res.status(500).res.json(err);
+    });
+});
 
 function handleEvent(event) {
   if (event.type !== 'message' || event.message.type !== 'text') {
@@ -19,3 +34,5 @@ function handleEvent(event) {
   // use reply API
   return client.replyMessage(event.replyToken, echo);
 }
+
+module.exports = router;

@@ -6,6 +6,7 @@ var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
 var apiRouter = require('./routes/apiRouter');
+var line = require('./routes/line');
 
 var app = express();
 
@@ -21,6 +22,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/api', apiRouter);
+app.use('/line', line);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -41,4 +43,4 @@ app.use(function(err, req, res, next) {
 module.exports = app;
 
 var Telegram = require('./telegram');
-var line = require('./line');
+var line = require('./routes/line');
