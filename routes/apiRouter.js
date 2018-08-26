@@ -30,13 +30,13 @@ router.post('/web', upload.array(), async function (req, res) {
   }
 });
 
-router.post('/callback', line.middleware(config), (req, res) => {
+router.post('/line', line.middleware(config), (req, res) => {
   Promise
     .all(req.body.events.map(handleEvent))
     .then((result) => res.json(result))
     .catch((err) => {
       console.error(err);
-      res.status(500).end();
+      res.status(500).res.json(err);
     });
 });
 
