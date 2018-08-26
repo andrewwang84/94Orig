@@ -23,9 +23,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/api', apiRouter);
 
-app.post('/line', line.middleware(config), (req, res) => {
+app.post('/line', line.middleware(line.config), (req, res) => {
   Promise
-    .all(req.body.events.map(handleEvent))
+    .all(req.body.events.map(line.handleEvent))
     .then((result) => res.json(result))
     .catch((err) => {
       console.error(err);
