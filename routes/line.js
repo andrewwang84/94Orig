@@ -11,6 +11,8 @@ const config = {
 };
 const client = new line.Client(config);
 
+console.log(process.env.CHANNEL_ACCESS_TOKEN);
+
 router.post('/', line.middleware(config), (req, res) => {
   Promise
     .all(req.body.events.map(handleEvent))
