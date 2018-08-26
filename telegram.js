@@ -23,7 +23,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
       bot.sendMessage(chatId, resp[i]);
     }
 
-    bot.sendMessage(chatId, '要是我沒反應，請點我 => https://origin94origin.herokuapp.com/');
+    setTimeout(() => { bot.sendMessage(chatId, '要是我沒反應，請點我 => https://origin94origin.herokuapp.com/'); }, 1500);
   } catch (error) {
     bot.sendMessage(chatId, `出錯了: ${error}}`);
   }
