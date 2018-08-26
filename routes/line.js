@@ -1,6 +1,5 @@
 const line = require('@line/bot-sdk');
 const express = require('express');
-const line = require('@line/bot-sdk');
 const multer = require('multer');
 const crawler = require('../crawler.js');
 const router = express.Router();
