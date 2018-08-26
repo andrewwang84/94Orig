@@ -13,6 +13,7 @@ const client = new line.Client(config);
 
 router.post('/callback', line.middleware(config), (req, res) => {
   console.log(req)
+  console.log(res)
   // Promise
   //   .all(req.body.events.map(handleEvent))
   //   .then((result) => res.json(result))
@@ -20,7 +21,7 @@ router.post('/callback', line.middleware(config), (req, res) => {
   //     console.error(err);
   //     res.status(500).res.json(err);
   //   });
-  res.status(200).res.json(res);
+  res.status(200).json(res);
 });
 
 function handleEvent(event) {
