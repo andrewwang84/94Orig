@@ -14,14 +14,14 @@ router.post('/telegram', upload.array(), async function (req, res) {
   }
 });
 
-router.post('/line', upload.array(), async function (req, res) {
-  try {
-    console.log(res);
-    res.status(200).json({ msg: `line` });
-  } catch (error) {
-    res.status(500).json({ message: `${error}` });
-    return error;
-  }
+router.post('/line', line.middleware(config), (req, res) => {
+  Promise
+    .all(req.body.events.map(handleEvent))
+    .then((result) => res.json(result))
+    .catch((err) => {
+      console.error(err);
+      res.status(500).end();
+    });
 });
 
 router.post('/web', upload.array(), async function (req, res) {
