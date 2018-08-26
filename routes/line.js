@@ -11,9 +11,8 @@ const config = {
 };
 const client = new line.Client(config);
 
-console.log(process.env.CHANNEL_ACCESS_TOKEN);
-
-router.post('/', line.middleware(config), (req, res) => {
+router.post('/callback', line.middleware(config), (req, res) => {
+  console.log(req)
   Promise
     .all(req.body.events.map(handleEvent))
     .then((result) => res.json(result))
