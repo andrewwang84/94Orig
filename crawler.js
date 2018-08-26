@@ -19,15 +19,23 @@ async function prepareData(urls) {
         let url = await igUrl(urls[i]);
         imageUrls.push(url);
       } catch (error) {
-        return next(error);
+        return error;
       }
     }
     if (urls[i].search(/https:\/\/twitter.com/) !== -1) {
-      try{
+      try {
         let url = await twitterUrl(urls[i]);
         imageUrls.push(url);
       } catch (error) {
-        return next(error);
+        return error;
+      }
+    }
+    if (urls[i].search(/https:\/\/mobile.twitter.com/) !== -1) {
+      try {
+        let url = await twitterUrl(urls[i]);
+        imageUrls.push(url);
+      } catch (error) {
+        return error;
       }
     }
   }
@@ -74,12 +82,26 @@ function igUrl(url) {
 
 function twitterUrl(url) {
   var result = [];
-  var target = '';
+  let mobileUrl = url;
+  let webUrl = url;
+
+  // if (url.search(/https:\/\/twitter.com/) !== -1) {
+  //   mobileUrl = url.substring(url.indexOf(`https:\/\/`) + 8, url.length);
+  //   mobileUrl = `https://mobile.${mobileUrl}/video/1`;
+  // }
+  if (url.search(/https:\/\/mobile.twitter.com/) !== -1) {
+    webUrl = url.substring(url.indexOf(`https:\/\/mobile.`) + 15, url.length);
+    webUrl = `https://${webUrl}`;
+  }
+
   return new Promise(function (resolve, reject) {
-    request(url, function (error, response, body) {
+    // deal with img
+    request(webUrl, function (error, response, body) {
       if (error) reject(error);
 
       const $ = cheerio.load(body);
+
+      // Web version Twitter
       $(`.AdaptiveMedia-photoContainer > img`).each((index, element) => {
         result.push(`${element['attribs']['src']}:orig`);
       })

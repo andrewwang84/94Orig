@@ -51,11 +51,19 @@ bot.onText(/王彥儒/, (msg) => {
 
 async function callApi(urls) {
   return new Promise(function (resolve, reject) {
-    request.post(apiUrl, { form: { url: urls } }, function (error, response, body) {
-      if (error) reject(error);
-      let data = JSON.parse(body);
-      data = data.url;
-      resolve(data.split(","));
-    });
+    try {
+      request.post(apiUrl, { form: { url: urls } }, function (error, response, body) {
+        if (error) reject(error);
+        if (response.statusCode !== 200) {
+          reject(body);
+        } else {
+          let data = JSON.parse(body);
+          data = data.url;
+          resolve(data.split(","));
+        }
+      });
+    } catch (error) {
+      reject(error);
+    }
   });
 }

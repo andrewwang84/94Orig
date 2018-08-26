@@ -10,7 +10,7 @@ router.post('/telegram', upload.array(), async function (req, res) {
     res.status(200).json({ url: `${result}` });
   } catch (error) {
     res.status(500).json({ message: `${error}` });
-    return next(error);
+    return error;
   }
 });
 
@@ -20,7 +20,7 @@ router.post('/web', upload.array(), async function (req, res) {
     res.status(200).json({ url: `${result}` });
   } catch (error) {
     res.status(500).json({ message: `${error}` });
-    return next(error);
+    return error;
   }
 });
 
