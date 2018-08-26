@@ -14,6 +14,16 @@ router.post('/telegram', upload.array(), async function (req, res) {
   }
 });
 
+router.post('/line', upload.array(), async function (req, res) {
+  try {
+    console.log(res);
+    res.status(200).json({ msg: `line` });
+  } catch (error) {
+    res.status(500).json({ message: `${error}` });
+    return error;
+  }
+});
+
 router.post('/web', upload.array(), async function (req, res) {
   try{
     let result = await web(req.body.url);
