@@ -20,12 +20,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// app.use('/', indexRouter);
+app.use('/', indexRouter);
 app.use('/api', apiRouter);
 
-app.get('/', function (req, res, next) {
-  res.render('index', { title: 'Express' });
-});
+// app.get('/', function (req, res, next) {
+//   res.render('index', { title: 'Express' });
+// });
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

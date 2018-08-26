@@ -1,5 +1,4 @@
 const line = require('@line/bot-sdk');
-const app = require('./app');
 
 const config = {
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
@@ -7,14 +6,6 @@ const config = {
 };
 
 const client = new line.Client(config);
-
-app.post('/', line.middleware(config), function (req, res) {
-  Promise
-    .all(req.body.events.map(handleEvent))
-    .then(function (result) {
-      res.json(result);
-    });
-});
 
 function handleEvent(event) {
   switch (event.type) {
