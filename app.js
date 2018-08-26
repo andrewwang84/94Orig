@@ -4,7 +4,6 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
-var line = require('./line');
 var indexRouter = require('./routes/index');
 var apiRouter = require('./routes/apiRouter');
 
@@ -22,16 +21,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/api', apiRouter);
-
-app.post('/line', line.middleware(line.config), (req, res) => {
-  Promise
-    .all(req.body.events.map(line.handleEvent))
-    .then((result) => res.json(result))
-    .catch((err) => {
-      console.error(err);
-      res.status(500).end();
-    });
-});
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -52,3 +41,4 @@ app.use(function(err, req, res, next) {
 module.exports = app;
 
 var Telegram = require('./telegram');
+var line = require('./line');
