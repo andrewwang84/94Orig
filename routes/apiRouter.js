@@ -6,7 +6,8 @@ const router = express.Router();
 const upload = multer();
 
 router.post('/telegram', upload.array(), async function (req, res) {
-  try{
+  try {
+    console.log(req.body.url)
     let result = await telegram(req.body.url);
     res.status(200).json({ url: `${result}` });
   } catch (error) {
