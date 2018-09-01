@@ -12,7 +12,7 @@ const config = {
 const client = new line.Client(config);
 
 router.post('/callback', line.middleware(config), (req, res) => {
-  console.log(req.body)
+  console.log(req)
   Promise
     .all(req.body.events.map(handleEvent))
     .then(function (result) {
