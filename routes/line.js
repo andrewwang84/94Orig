@@ -5,11 +5,11 @@ const crawler = require('../crawler.js');
 const router = express.Router();
 const upload = multer();
 
-const bot = line{
+const bot = line({
   channelId: process.env.CHANNEL_ID,
   channelAccessToken: process.env.CHANNEL_ACCESS_TOKEN,
   channelSecret: process.env.CHANNEL_SECRET,
-};
+});
 const linebotParser = bot.parser();
 
 router.post('/test', linebotParser);
