@@ -15,10 +15,8 @@ router.post('/callback', line.middleware(config), (req, res) => {
   console.log(req.body)
   Promise
     .all(req.body.events.map(handleEvent))
-    .then((res) => res.json(res))
-    .catch((err) => {
-      console.error(err);
-      res.status(500).res.json(err);
+    .then(function (result) {
+      res.json(result);
     });
   res.status(200).json(res);
 });
