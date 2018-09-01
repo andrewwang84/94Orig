@@ -11,7 +11,7 @@ const config = {
 };
 const client = new line.Client(config);
 
-router.post('/test', (req, res) => {
+router.post('/test', line.middleware(config), (req, res) => {
   console.log(req.body)
   res.status(200).json(res);
 });
