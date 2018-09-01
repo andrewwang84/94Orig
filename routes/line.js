@@ -11,6 +11,11 @@ const config = {
 };
 const client = new line.Client(config);
 
+router.post('/test', (req, res) => {
+  console.log(req.body)
+  res.status(200).json(res);
+});
+
 router.post('/callback', line.middleware(config), (req, res) => {
   console.log(req.body.events)
   Promise
