@@ -3,7 +3,6 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-var util = require('./util');
 
 var indexRouter = require('./routes/index');
 var apiRouter = require('./routes/apiRouter');
@@ -16,7 +15,6 @@ app.set('view engine', 'ejs');
 
 app.use(logger('dev'));
 app.use(express.json());
-app.use(util.overrideContentType());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -34,6 +32,10 @@ app.use(function(err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+  if (req.get('x-amz-sns-message-type')) {
+    req.headers = 'application/json';
+  }
 
   // render the error page
   res.status(err.status || 500);
