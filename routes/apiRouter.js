@@ -8,10 +8,10 @@ var request = require('request');
 var request = require('request').defaults({ jar: true });
 
 router.use(function (req, res, next) {
-  if (req.get('x-amz-sns-message-type')) {
-    req.headers = 'application/json';
+  if (req.headers['x-amz-sns-message-type']) {
+      req.headers['content-type'] = 'application/json;charset=UTF-8';
   }
-  console.log(`${req}middleware test`)
+  console.log(`${req.headers}middleware test`)
   next();
 });
 
