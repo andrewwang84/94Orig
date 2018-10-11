@@ -30,8 +30,9 @@ router.post('/web', upload.array(), async function (req, res) {
 
 router.post('/aws-test', upload.array(), async function (req, res) {
   try {
-    console.log(JSON.parse(req.body))
-    request(JSON.parse(req.body.SubscribeURL), function (error, response, body) {
+    body = JSON.parse(req.body);
+    console.log(body)
+    request(body.SubscribeURL, function (error, response, body) {
       console.log(body)
     });
     res.status(200).json({ url: `hi` });
