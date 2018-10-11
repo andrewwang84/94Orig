@@ -35,10 +35,10 @@ router.post('/web', upload.array(), async function (req, res) {
   }
 });
 
-router.post('/aws-test', upload.array(), function (req, res) {
+router.post('/aws-test', function (req, res) {
   try {
     let msgBody = req.body
-    let msgHeader = req.header
+    let msgHeader = req.headers
     console.log(msgBody)
     console.log(msgHeader)
     // request(body.SubscribeURL, function (error, response, body) {
