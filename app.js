@@ -42,6 +42,19 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
+app.post('/aws-test', function (req, res) {
+  try {
+    let msgBody = req.body
+    console.log(msgBody)
+    // request(body.SubscribeURL, function (error, response, body) {
+    //   console.log(body)
+    // });
+    res.status(200).json({ url: `hi` });
+  } catch (error) {
+    res.status(500).json({ message: `${error}` });
+  }
+});
+
 module.exports = app;
 
 var Telegram = require('./telegram');
