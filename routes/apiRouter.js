@@ -7,6 +7,14 @@ const upload = multer();
 var request = require('request');
 var request = require('request').defaults({ jar: true });
 
+router.use(function (req, res, next) {
+  if (req.get('x-amz-sns-message-type')) {
+    req.headers = 'application/json';
+  }
+  console.log(`${req}middleware test`)
+  next();
+});
+
 router.post('/telegram', upload.array(), async function (req, res) {
   try {
     console.log(req.body.url)
