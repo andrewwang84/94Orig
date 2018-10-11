@@ -11,7 +11,6 @@ router.use(function (req, res, next) {
   if (req.headers['x-amz-sns-message-type']) {
       req.headers['content-type'] = 'application/json;charset=UTF-8';
   }
-  console.log(`${req.headers}middleware test`)
   next();
 });
 
@@ -36,9 +35,9 @@ router.post('/web', upload.array(), async function (req, res) {
   }
 });
 
-router.post('/aws-test', upload.array(), function (req, res) {
+router.post('/aws-test', function (req, res) {
   try {
-    let msgBody = req.body
+    let msgBody = req
     console.log(msgBody)
     // request(body.SubscribeURL, function (error, response, body) {
     //   console.log(body)
