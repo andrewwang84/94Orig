@@ -27,6 +27,7 @@ app.use(bodyParser.urlencoded({
 
 app.use('/', indexRouter);
 app.use('/api', apiRouter);
+app.use('/aws', awsRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
