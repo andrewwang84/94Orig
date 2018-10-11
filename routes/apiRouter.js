@@ -30,7 +30,7 @@ router.post('/web', upload.array(), async function (req, res) {
 
 router.post('/aws-test', upload.array(), function (req, res) {
   try {
-    let msgBody = JSON.parse(req.body)
+    let msgBody = req.body
     console.log(msgBody)
     // request(body.SubscribeURL, function (error, response, body) {
     //   console.log(body)
