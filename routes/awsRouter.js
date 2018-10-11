@@ -17,9 +17,9 @@ router.post('/aws-test', function (req, res) {
     let msgHeader = req.headers
     console.log(msgBody)
     console.log(msgHeader)
-    // request(body.SubscribeURL, function (error, response, body) {
-    //   console.log(body)
-    // });
+    request(msgBody.SubscribeURL, function (error, response, body) {
+      console.log(body)
+    });
     res.status(200).json({ url: `hi` });
   } catch (error) {
     res.status(500).json({ message: `${error}` });
