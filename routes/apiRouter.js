@@ -28,7 +28,7 @@ router.post('/web', upload.array(), async function (req, res) {
   }
 });
 
-router.post('/aws-test', function (req, res) {
+router.post('/aws-test', upload.array(), function (req, res) {
   try {
     let msgBody = req.body
     console.log(msgBody)
