@@ -28,6 +28,20 @@ router.post('/web', upload.array(), async function (req, res) {
   }
 });
 
+router.post('/aws-test', upload.array(), function (req, res) {
+  try {
+    let msgBody = req.body
+    console.log(msgBody)
+    // request(body.SubscribeURL, function (error, response, body) {
+    //   console.log(body)
+    // });
+    res.status(200).json({ url: `hi` });
+  } catch (error) {
+    res.status(500).json({ message: `${error}` });
+    return error;
+  }
+});
+
 function telegram(urls) {
   return crawler.getImage(urls);
 }
