@@ -1,10 +1,12 @@
+var cred = require('./cred.js');
 var config = {
-  telegramToken: '578132627:AAHx7v1sNnq0IkLQycgakTHaNp28Y6SK3yc',
   development: {
+    telegramToken: cred.telegramToken,
     port: 3000,
     url: 'http://127.0.0.1:3000/api/telegram'
   },
   production: {
+    telegramToken: process.env.telegramToken,
     port: process.env.PORT,
     url: 'https://origin94origin.herokuapp.com/api/telegram'
   }
