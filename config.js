@@ -1,6 +1,6 @@
 var config = {
   development: {
-    telegramToken: require('./cred.js').telegramToken,
+    // telegramToken: require('./cred.js').telegramToken,
     port: 3000,
     url: 'http://127.0.0.1:3000/api/telegram'
   },
