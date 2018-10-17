@@ -1,8 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 const request = require('request');
 var app = require('./app');
-const config = require('./config.js');
-const token = config.telegramToken;
+const token = require('./config.js')[app.get('env')].telegramToken;
 const bot = new TelegramBot(token, { polling: true });
 const apiUrl = require('./config.js')[app.get('env')].url;
 
