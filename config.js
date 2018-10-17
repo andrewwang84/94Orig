@@ -11,7 +11,7 @@ var config = {
   }
 }
 
-if (app.get('env') == 'development') {
+if (process.env.NODE_ENV != 'production') {
   config.development['telegramToken'] = require('./cred.js').telegramToken
 }
 module.exports = config;
