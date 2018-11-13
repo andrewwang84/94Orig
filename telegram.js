@@ -13,6 +13,11 @@ bot.onText(/https:\/\//, async (msg, match) => {
   target = target.substring(target.indexOf(`https:`), target.length);
   target = target.split("\n");
 
+  if (target[0].search(/https:\/\/www.instagram.com\/p\//) === -1 && target[0].search(/https:\/\/instagram.com\//) !== -1) {
+    target = target[0].substring(22, target[0].length);
+    target = [`https:/\/www.instagram.com/stories/${target}`];
+  }
+
   try{
     let resp = await callApi(target);
     if (resp == '') {
