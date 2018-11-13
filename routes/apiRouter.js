@@ -10,7 +10,7 @@ var request = require('request').defaults({ jar: true });
 router.post('/telegram', upload.array(), async function (req, res) {
   try {
     console.log(req.body.url)
-    let result = await telegram(req.body.url);
+    let result = await getImage(req.body.url);
     res.status(200).json({ url: `${result}` });
   } catch (error) {
     res.status(500).json({ message: `${error}` });
@@ -20,7 +20,7 @@ router.post('/telegram', upload.array(), async function (req, res) {
 
 router.post('/web', upload.array(), async function (req, res) {
   try{
-    let result = await web(req.body.url);
+    let result = await getImage(req.body.url);
     res.status(200).json({ url: `${result}` });
   } catch (error) {
     res.status(500).json({ message: `${error}` });
@@ -28,11 +28,7 @@ router.post('/web', upload.array(), async function (req, res) {
   }
 });
 
-function telegram(urls) {
-  return crawler.getImage(urls);
-}
-
-function web(url) {
+function getImage(urls) {
   return crawler.getImage(urls);
 }
 
