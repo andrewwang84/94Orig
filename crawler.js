@@ -1,11 +1,7 @@
 var request = require('request');
 var request = require('request').defaults({ jar: true });
 var cheerio = require('cheerio');
-<<<<<<< HEAD
-const puppeteer = require('puppeteer');
-=======
 const puppeteer = require('./puppeteer.js')
->>>>>>> dev
 
 let getImage = async (urls) => {
   try{
