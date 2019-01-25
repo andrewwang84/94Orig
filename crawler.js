@@ -23,15 +23,15 @@ async function prepareData(urls) {
         return error;
       }
     }
-    if (urls[i].search(/https:\/\/instagram.com\/stories/) !== -1) {
-      console.log('hi');
-      try{
-        let url = await puppeteer.getStories(urls[i]);
-        imageUrls.push(url);
-      } catch (error) {
-        return error;
-      }
-    }
+    // if (urls[i].search(/https:\/\/instagram.com\/stories/) !== -1) {
+    //   console.log('hi');
+    //   try{
+    //     let url = await puppeteer.getStories(urls[i]);
+    //     imageUrls.push(url);
+    //   } catch (error) {
+    //     return error;
+    //   }
+    // }
     if (urls[i].search(/https:\/\/twitter.com/) !== -1) {
       try {
         let url = await twitterUrl(urls[i]);
@@ -112,8 +112,13 @@ function twitterUrl(url) {
       const $ = cheerio.load(body);
 
       // Web version Twitter
-      $(`.AdaptiveMedia-photoContainer > img`).each((index, element) => {
-        result.push(`${element['attribs']['src']}:orig`);
+      // $(`.AdaptiveMedia-photoContainer > img`).each((index, element) => {
+      //   result.push(`${element['attribs']['src']}:orig`);
+      // })
+      $(`.permalink-tweet-container img`).each((index, element) => {
+        if (element['attribs']['src'].indexOf('/media/') !== -1) {
+          result.push(`${element['attribs']['src']}:orig`);
+        }
       })
 
       resolve(result);

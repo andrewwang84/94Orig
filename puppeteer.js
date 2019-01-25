@@ -54,4 +54,4 @@ async function run(url) {
   await page.goto(url);
 }
 
-run(url);
+//run(url);
