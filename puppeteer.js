@@ -44,8 +44,13 @@
 // //   getStories: getStories
 // // };
 // getStories('https://instagram.com/twicetagram');
+
+
 const puppeteer = require('puppeteer');
-const url = 'https://instagram.com/twicetagram';
+// const url = 'https://instagram.com/twicetagram';
+const url = 'https://www.instagram.com/';
+const insEmail = require('./config.js')['development'].insEmail;
+const insPass = require('./config.js')['development'].insPass;
 
 async function run(url) {
   const browser = await puppeteer.launch({ headless: false});
