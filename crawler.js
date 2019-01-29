@@ -23,15 +23,14 @@ async function prepareData(urls) {
         return error;
       }
     }
-    // if (urls[i].search(/https:\/\/instagram.com\//) !== -1) {
-    //   try{
-    //     let url = urls[i].slice(0, urls[i].indexOf('?'));
-    //     url = await puppeteer.getStories(url);
-    //     imageUrls.push(url);
-    //   } catch (error) {
-    //     return error;
-    //   }
-    // }
+    if (urls[i].search(/https:\/\/www.instagram.com\//) !== -1) {
+      try{
+        let url = urls[i].slice(0, urls[i].indexOf('?'));
+        urls = await puppeteer.getStories(url);
+      } catch (error) {
+        return error;
+      }
+    }
     if (urls[i].search(/https:\/\/twitter.com/) !== -1 || urls[i].search(/https:\/\/mobile.twitter.com/) !== -1) {
       try {
         let url = await twitterUrl(urls[i]);
