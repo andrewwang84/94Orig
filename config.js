@@ -19,4 +19,5 @@ if (process.env.NODE_ENV != 'production') {
   config.development['telegramToken'] = require('./cred.js').telegramToken;
   config.development['insPass'] = require('./cred.js').insPass;
 }
+
 module.exports = config;

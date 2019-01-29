@@ -1,62 +1,47 @@
-// const puppeteer = require('puppeteer');
-
-// let getStories = async (urls) => {
-//   try{
-//     const data = await prepareData(urls);
-//     return data;
-//   } catch (error) {
-//     return next(error);
-//   }
-// }
-
-// async function prepareData(urls) {
-//   var imageUrls = [];
-//   for (var i = 0; i < urls.length; i++) {
-//     if (urls[i].search(/https:\/\/instagram.com\/stories/) !== -1) {
-//       try{
-//         let url = await igStoriesUrl(urls[i]);
-//         imageUrls.push(url);
-//       } catch (error) {
-//         return error;
-//       }
-//     }
-//   }
-
-//   return new Promise(function (resolve, reject) {
-//     resolve(imageUrls);
-//   });
-// }
-
-// async function igStoriesUrl(url) {
-//   console.log(url);
-//   var result = [url];
-//   var target = '';
-//   const browser = await puppeteer.launch({ headless: false });
-//   const page = await browser.newPage();
-
-//   await page.goto(url);
-//   return new Promise(function (resolve, reject) {
-//     resolve(result);
-//   });
-// }
-
-// // module.exports = {
-// //   getStories: getStories
-// // };
-// getStories('https://instagram.com/twicetagram');
-
-
 const puppeteer = require('puppeteer');
-// const url = 'https://instagram.com/twicetagram';
-const url = 'https://www.instagram.com/';
+let url = 'https://instagram.com/0212_lonce';
 const insEmail = require('./config.js')['development'].insEmail;
 const insPass = require('./config.js')['development'].insPass;
+const usernameSelector = 'input[name="username"]';
+const passwordSelector = 'input[name="password"]';
+const loginBtn = 'button[type="submit"]';
+const avatarSelector = 'span[role="link"]';
 
 async function run(url) {
-  const browser = await puppeteer.launch({ headless: false});
-  const page = await browser.newPage();
+  try {
+    if(url.indexOf('/login/') === -1) {
+      let username = url.slice(url.lastIndexOf('/')+1);
+      url = `https://www.instagram.com/accounts/login/?next=%2F${username}%2F`;
+    }
+    const browser = await puppeteer.launch({ headless: false});
+    const page = await browser.newPage();
 
-  await page.goto(url);
+    await page.goto(url, { waitUntil: 'networkidle0' });
+
+    await page.click(usernameSelector);
+    await page.keyboard.type(insEmail);
+    await page.click(passwordSelector);
+    await page.keyboard.type(insPass);
+    await page.click(loginBtn).catch(e => e);
+
+    await page.waitForNavigation({ waitUntil: 'networkidle0' });
+    await page.click(avatarSelector);
+
+    await page.setRequestInterception(true);
+    page.on('request', interceptedRequest => {
+      if (interceptedRequest.url().indexOf('.mp4?') !== -1 || interceptedRequest.url().indexOf('.jpg?') !== -1) {
+        console.log(interceptedRequest.url());
+      }
+      interceptedRequest.continue();
+    });
+    // await browser.close();
+  } catch (error) {
+    console.log(error);
+  }
 }
 
-//run(url);
+// module.exports = {
+//   getStories: getStories
+// };
+
+run(url);

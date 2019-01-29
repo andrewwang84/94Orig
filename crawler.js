@@ -23,24 +23,16 @@ async function prepareData(urls) {
         return error;
       }
     }
-    // if (urls[i].search(/https:\/\/instagram.com\/stories/) !== -1) {
-    //   console.log('hi');
+    // if (urls[i].search(/https:\/\/instagram.com\//) !== -1) {
     //   try{
-    //     let url = await puppeteer.getStories(urls[i]);
+    //     let url = urls[i].slice(0, urls[i].indexOf('?'));
+    //     url = await puppeteer.getStories(url);
     //     imageUrls.push(url);
     //   } catch (error) {
     //     return error;
     //   }
     // }
-    if (urls[i].search(/https:\/\/twitter.com/) !== -1) {
-      try {
-        let url = await twitterUrl(urls[i]);
-        imageUrls.push(url);
-      } catch (error) {
-        return error;
-      }
-    }
-    if (urls[i].search(/https:\/\/mobile.twitter.com/) !== -1) {
+    if (urls[i].search(/https:\/\/twitter.com/) !== -1 || urls[i].search(/https:\/\/mobile.twitter.com/) !== -1) {
       try {
         let url = await twitterUrl(urls[i]);
         imageUrls.push(url);
@@ -73,7 +65,7 @@ function igUrl(url) {
         result.push(currentResult);
       }
 
-      target = $(`body > script`)[0].children[0].data
+      target = $(`body > script`)[0].children[0].data;
       while (target.indexOf(`"video_url"`) !== -1) {
         chopFront = target.substring(target.indexOf(`"video_url"`) + 13, target.length);
         currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
