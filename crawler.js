@@ -13,6 +13,7 @@ let getImage = async (urls) => {
 }
 
 async function prepareData(urls) {
+
   var imageUrls = [];
   for (var i = 0; i < urls.length; i++) {
     if (urls[i].search(/https:\/\/www.instagram.com\/p/) !== -1) {
@@ -23,10 +24,13 @@ async function prepareData(urls) {
         return error;
       }
     }
-    if (urls[i].search(/https:\/\/www.instagram.com\//) !== -1) {
+    if (urls[i].search(/https:\/\/instagram.com\//) !== -1 || (urls[i].search(/https:\/\/www.instagram.com\//) !== -1 && urls[i].search(/https:\/\/www.instagram.com\/p/) === -1)) {
       try{
-        let url = urls[i].slice(0, urls[i].indexOf('?'));
-        urls = await puppeteer.getStories(url);
+        let url = urls[i];
+        if (urls[i].indexOf('?') !== -1) {
+          url = urls[i].slice(0, urls[i].indexOf('?'));
+        }
+        imageUrls.push(await puppeteer.getStories(url));
       } catch (error) {
         return error;
       }

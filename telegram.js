@@ -8,14 +8,21 @@ const apiUrl = require('./config.js')[app.get('env')].url;
 bot.onText(/https:\/\//, async (msg, match) => {
   const chatId = msg.chat.id;
   let target = match.input;
+  let isStory = false;
+  if (target.search(/https:\/\/instagram.com\//) !== -1) {
+    isStory = true;
+  }
 
   target = target.substring(target.indexOf(`https:`), target.length);
   target = target.split("\n");
 
   try{
+    if (isStory === true) {
+      bot.sendMessage(chatId, '限時動態請稍候 10~15 秒');
+    }
     let resp = await callApi(target);
     if (resp == '') {
-      resp[0] = '沒圖片啦 !!';
+      resp[0] = '沒東西啦 !!';
     }
 
     for (var i = 0; i < resp.length; i++) {
