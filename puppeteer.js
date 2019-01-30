@@ -22,10 +22,12 @@ async function getStories(url) {
     const browser = await puppeteer.launch({
       headless: true,
       // headless: false,
-      // args: [
-      //   '--proxy-server="direct://"',
-      //   '--proxy-bypass-list=*'
-      // ]
+      args: [
+        // '--proxy-server="direct://"',
+        // '--proxy-bypass-list=*',
+        '--no-sandbox',
+        '--disable-setuid-sandbox'
+      ]
     });
     const page = await browser.newPage();
 
