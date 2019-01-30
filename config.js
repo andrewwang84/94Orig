@@ -8,7 +8,7 @@ var config = {
   },
   production: {
     telegramToken: process.env.telegramToken,
-    insEmail: 'sanaingress@gmail.com',
+    insEmail: 'leofddt@gmail.com',
     insPass: process.env.insPass,
     port: process.env.PORT,
     url: 'https://origin94origin.herokuapp.com/api/telegram'
