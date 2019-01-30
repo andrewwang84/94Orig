@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer');
-var app = require('./app');
+var app = require('express')();
 const insEmail = require('./config.js')[app.get('env')].insEmail;
 const insPass = require('./config.js')[app.get('env')].insPass;
 const usernameSelector = 'input[name="username"]';
