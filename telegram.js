@@ -20,7 +20,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
     if (isStory === true) {
       bot.sendMessage(chatId, '限時動態請稍候 10~15 秒');
     }
-    let resp = await callApi(target);
+    let resp = await callApi(target, 'api/telegram');
     if (resp == '') {
       resp[0] = '沒東西啦 !!';
     }
@@ -45,9 +45,14 @@ bot.onText(/\/help/, (msg) => {
   bot.sendMessage(chatId, '請輸入instagram 或 twitter 連結\n多個連結請以"換行"隔開\n要是沒反應，請點選以下連結\n https://origin94origin.herokuapp.com/');
 });
 
-bot.onText(/\/ping/, (msg) => {
+bot.onText(/\/ping/, async (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, 'https://origin94origin.herokuapp.com/');
+  let resp = await yamCheck('yam');
+  let data = '';
+  for (let value of resp) {
+    data = `${data}\n${value}`;
+  }
+  bot.sendMessage(chatId, data);
 });
 
 bot.onText(/王彥儒/, (msg) => {
@@ -55,10 +60,10 @@ bot.onText(/王彥儒/, (msg) => {
   bot.sendMessage(chatId, '好帥 <3');
 });
 
-async function callApi(urls) {
+async function callApi(urls, route) {
   return new Promise(function (resolve, reject) {
     try {
-      request.post(apiUrl, { form: { url: urls } }, function (error, response, body) {
+      request.post(`${apiUrl}${route}`, { form: { url: urls } }, function (error, response, body) {
         if (error) reject(error);
         if (response.statusCode !== 200) {
           reject(body);
@@ -66,6 +71,24 @@ async function callApi(urls) {
           let data = JSON.parse(body);
           data = data.url;
           resolve(data.split(","));
+        }
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+async function yamCheck(route) {
+  return new Promise(function (resolve, reject) {
+    try {
+      request.get(`${apiUrl}${route}`, function (error, response, body) {
+        if (error) reject(error);
+        if (response.statusCode !== 200) {
+          reject(body);
+        } else {
+          let data = JSON.parse(body);
+          resolve(data.data);
         }
       });
     } catch (error) {
