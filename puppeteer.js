@@ -14,15 +14,16 @@ async function getStories(url) {
     let baseUrl = 'https://www.instagram.com/';
     let targetHomeUrl = '';
     let imgUrls = [];
+    let username = '';
     if(url.indexOf('/login/') === -1) {
-      let username = url.slice(url.lastIndexOf('.com/')+5);
+      username = url.slice(url.lastIndexOf('.com/')+5);
       url = `https://www.instagram.com/accounts/login/?next=%2F${username}%2F`;
       storiesUrl = `https://www.instagram.com/stories/${username}`;
       targetHomeUrl = `https://www.instagram.com/${username}/`;
     }
     const browser = await puppeteer.launch({
-      //headless: true,
-       headless: false,
+      headless: true,
+      // headless: false,
       args: [
         // '--proxy-server="direct://"',
         // '--proxy-bypass-list=*',
@@ -47,7 +48,7 @@ async function getStories(url) {
     if (await page.url() === targetHomeUrl) {
       await browser.close();
       return new Promise(function (resolve, reject) {
-        imgUrls.push('這是私人帳號喔QQ');
+        imgUrls.push(`${username} 是私人帳號喔QQ`);
         resolve(imgUrls);
       });
     }
