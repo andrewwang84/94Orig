@@ -32,7 +32,7 @@ server.on('listening', onListening);
 
 // heroku self piing
 setInterval(function () {
-  http.get("https://origin94origin.herokuapp.com/");
+  http.get("http://origin94origin.herokuapp.com/");
 }, 1500000);
 
 /**
