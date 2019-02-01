@@ -30,6 +30,11 @@ server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
 
+// heroku self piing
+setInterval(function () {
+  http.get("https://origin94origin.herokuapp.com/");
+}, 1500000);
+
 /**
  * Normalize a port into a number, string, or false.
  */
