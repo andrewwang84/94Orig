@@ -5,19 +5,30 @@
 - 2018/8/19 Andrew Wang
 - This is a telegram bot for downloading instagram and twitter's original photo
 - contains API for Web and for Bot
-- Backend API is built with Express & Cheerio
+- Backend API is built with Express & Cheerio & puppeteer
 - Telegam Bot is built with node-telegram-bot-api
 
-## Todo
+## Feature
 
-- [X] Single IG url input, get all image
-- [X] Multi IG urls input, get all image
-- [X] Single Twitter url input, get all image
-- [X] Multi Twitter urls input, get all image
-- [ ] IG & Twitter urls input, get all videos
-- [ ] Single IG_Stories url input, get all image & video
+- [X] IG image
+- [X] IG video
+- [X] IG Story image
+- [X] IG Story video
+- [X] Twitter image
+- [ ] Twitter video
+- [ ] Twitter video as Gif
 - [X] Error handling
-- [ ] Web App
-- [ ] Bot return as Files instead of Urls
-- [ ] Auto download file to local
-- [ ] Line or Facebook messenger support (maybe not)
+- [ ] Web
+- [ ] Line
+- [ ] Facebook messenger
+
+## Input
+
+- Instagram
+  - https://www.instagram.com/p/[postId]/
+  - https://instagram.com/[userName] //stories
+  - https://www.instagram.com/[userName] //stories
+- Twitter
+  - https://twitter.com/[userName]/status/[postId]
+- Seperate multi urls with new line
+
