@@ -24,7 +24,7 @@ async function getStories(url) {
     }
     const browser = await puppeteer.launch({
       headless: true,
-      // headless: false,
+      //headless: false,
       args: [
         // '--proxy-server="direct://"',
         // '--proxy-bypass-list=*',
@@ -46,6 +46,16 @@ async function getStories(url) {
 
     // get image urls
     await page.waitForNavigation();
+
+    currentPage = await page.url();
+    if (currentPage.search(/\/challenge\//) !== -1) {
+      await browser.close();
+      return new Promise(function (resolve, reject) {
+        imgUrls.push(`請重新驗證帳號喔QQ`);
+        resolve(imgUrls);
+      });
+    }
+
     await page.goto(storiesUrl, { waitUntil: 'load' });
     if (await page.url() === targetHomeUrl) {
       await browser.close();
@@ -54,6 +64,7 @@ async function getStories(url) {
         resolve(imgUrls);
       });
     }
+
     await page.waitForSelector('img[decoding="sync"]');
     let countClass = await page.$eval(storiesCountClassSelector, e => e.getAttribute('class'));
     let count = await page.$$eval(`.${countClass}`, e => e.length);
