@@ -9,7 +9,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
   const chatId = msg.chat.id;
   let target = match.input;
   let isStory = false;
-  if (target.search(/https:\/\/instagram.com\//) !== -1) {
+  if (target.search(/\/p\//) === -1 && target.search(/instagram/) !== -1) {
     isStory = true;
   }
 
