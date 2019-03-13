@@ -7,6 +7,7 @@ const passwordSelector = 'input[name="password"]';
 const loginBtn = 'button[type="submit"]';
 const storiesCountClassSelector = '#react-root > section > div > div > section > div > div:nth-child(1)';
 const nextStorySelector = '.coreSpriteRightChevron';
+const userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3239.108 Safari/537.36';
 
 async function getStories(url) {
   try {
@@ -32,6 +33,7 @@ async function getStories(url) {
       ]
     });
     const page = await browser.newPage();
+    await page.setUserAgent(userAgent);
 
     await page.goto(url, { waitUntil: 'networkidle0' });
 
