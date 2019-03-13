@@ -16,7 +16,7 @@ async function prepareData(urls) {
 
   var imageUrls = [];
   for (var i = 0; i < urls.length; i++) {
-    if (urls[i].search(/\/p\//) !== -1) {
+    if (urls[i].search(/\/p\//) !== -1) {console.log('post');
       try{
         let url = await igUrl(urls[i]);
         imageUrls.push(url);
@@ -25,6 +25,7 @@ async function prepareData(urls) {
       }
     }
     if (urls[i].search(/instagram/) !== -1 || (urls[i].search(/\/p\//) === -1)) {
+      console.log('story');
       try{
         let url = urls[i];
         if (urls[i].indexOf('?') !== -1) {
