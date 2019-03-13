@@ -29,7 +29,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
       bot.sendMessage(chatId, resp[i]);
     }
 
-    setTimeout(() => { bot.sendMessage(chatId, '要是我沒反應，請點我 => https://origin94origin.herokuapp.com/'); }, 1500);
+    //setTimeout(() => { bot.sendMessage(chatId, '要是我沒反應，請點我 => https://origin94origin.herokuapp.com/'); }, 1500);
   } catch (error) {
     bot.sendMessage(chatId, `出錯了: ${error}}`);
   }
@@ -42,7 +42,7 @@ bot.onText(/圓仔/, (msg) => {
 
 bot.onText(/\/help/, (msg) => {
   const chatId = msg.chat.id;
-  bot.sendMessage(chatId, '請輸入Instagram 或 Twitter 連結\n多個連結請以"換行"隔開\n要是沒反應，請點選以下連結\n https://origin94origin.herokuapp.com/');
+  bot.sendMessage(chatId, '請輸入Instagram 或 Twitter 連結\n多個連結請以"換行"隔開');
 });
 
 bot.onText(/\/ping/, async (msg) => {
@@ -53,7 +53,7 @@ bot.onText(/\/ping/, async (msg) => {
     data = `${data}\n${value}`;
   }
   bot.sendMessage(chatId, data);
-  setTimeout(() => { bot.sendMessage(chatId, '要是我沒反應，請點我 => https://origin94origin.herokuapp.com/'); }, 1000);
+  //setTimeout(() => { bot.sendMessage(chatId, '要是我沒反應，請點我 => https://origin94origin.herokuapp.com/'); }, 1000);
 });
 
 bot.onText(/王彥儒/, (msg) => {
