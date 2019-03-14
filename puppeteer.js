@@ -8,6 +8,7 @@ const loginBtn = 'button[type="submit"]';
 const storiesCountClassSelector = '#react-root > section > div > div > section > div > div:nth-child(1)';
 const nextStorySelector = '.coreSpriteRightChevron';
 const userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3239.108 Safari/537.36';
+let browserWSEndpoint = null;
 
 async function getStories(url) {
   try {
@@ -22,38 +23,56 @@ async function getStories(url) {
       storiesUrl = `https://www.instagram.com/stories/${username}`;
       targetHomeUrl = `https://www.instagram.com/${username}/`;
     }
-    const browser = await puppeteer.launch({
-      headless: true,
-      //headless: false,
-      args: [
-        // '--proxy-server="direct://"',
-        // '--proxy-bypass-list=*',
-        '--no-sandbox',
-        '--disable-setuid-sandbox'
-      ]
-    });
+
+    if (!browserWSEndpoint) {
+      const browser = await puppeteer.launch({
+        headless: true,
+        // headless: false,
+        args: [
+          // '--proxy-server="direct://"',
+          // '--proxy-bypass-list=*',
+          '--no-sandbox',
+          '--disable-setuid-sandbox'
+        ]
+      });
+      browserWSEndpoint = await browser.wsEndpoint();
+    }
+    const browser = await puppeteer.connect({ browserWSEndpoint });
+    // const browser = await puppeteer.launch({
+    //   //headless: true,
+    //   headless: false,
+    //   args: [
+    //     // '--proxy-server="direct://"',
+    //     // '--proxy-bypass-list=*',
+    //     '--no-sandbox',
+    //     '--disable-setuid-sandbox'
+    //   ]
+    // });
+
     const page = await browser.newPage();
     await page.setUserAgent(userAgent);
 
     await page.goto(url, { waitUntil: 'networkidle0' });
 
-    // login
-    await page.click(usernameSelector);
-    await page.keyboard.type(insEmail);
-    await page.click(passwordSelector);
-    await page.keyboard.type(insPass);
-    await page.click(loginBtn).catch(e => e);
+    if (await page.$(usernameSelector)){
+      // login
+      await page.click(usernameSelector);
+      await page.keyboard.type(insEmail);
+      await page.click(passwordSelector);
+      await page.keyboard.type(insPass);
+      await page.click(loginBtn).catch(e => e);
 
-    // get image urls
-    await page.waitForNavigation();
+      // // get image urls
+      await page.waitForNavigation();
 
-    currentPage = await page.url();
-    if (currentPage.search(/\/challenge\//) !== -1) {
-      await browser.close();
-      return new Promise(function (resolve, reject) {
-        imgUrls.push(`請重新驗證帳號喔QQ`);
-        resolve(imgUrls);
-      });
+      currentPage = await page.url();
+      if (currentPage.search(/\/challenge\//) !== -1) {
+        await browser.close();
+        return new Promise(function (resolve, reject) {
+          imgUrls.push(`請重新驗證帳號喔QQ`);
+          resolve(imgUrls);
+        });
+      }
     }
 
     await page.goto(storiesUrl, { waitUntil: 'load' });
@@ -85,7 +104,8 @@ async function getStories(url) {
       await page.waitForSelector('img[decoding="sync"]');
     }
 
-    await browser.close();
+    //await browser.close();
+    await page.close();
 
     return new Promise(function (resolve, reject) {
       resolve(imgUrls);
