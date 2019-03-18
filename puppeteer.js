@@ -26,8 +26,8 @@ async function getStories(url) {
 
     if (!browserWSEndpoint) {
       const browser = await puppeteer.launch({
-        headless: true,
-        // headless: false,
+        // headless: true,
+        headless: false,
         args: [
           // '--proxy-server="direct://"',
           // '--proxy-bypass-list=*',

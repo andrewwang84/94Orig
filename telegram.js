@@ -28,8 +28,6 @@ bot.onText(/https:\/\//, async (msg, match) => {
     for (var i = 0; i < resp.length; i++) {
       bot.sendMessage(chatId, resp[i]);
     }
-
-    //setTimeout(() => { bot.sendMessage(chatId, '要是我沒反應，請點我 => https://origin94origin.herokuapp.com/'); }, 1500);
   } catch (error) {
     bot.sendMessage(chatId, `出錯了: ${error}}`);
   }
@@ -53,12 +51,22 @@ bot.onText(/\/ping/, async (msg) => {
     data = `${data}\n${value}`;
   }
   bot.sendMessage(chatId, data);
-  //setTimeout(() => { bot.sendMessage(chatId, '要是我沒反應，請點我 => https://origin94origin.herokuapp.com/'); }, 1000);
 });
 
 bot.onText(/王彥儒/, (msg) => {
   const chatId = msg.chat.id;
   bot.sendMessage(chatId, '好帥 <3');
+});
+
+bot.onText(/\/twice/, async (msg, match) => {
+  const chatId = msg.chat.id;
+  const input = match.input;
+  let counts = input.split(" ");
+  let resp = (counts['0'] * 5) + (counts['1'] * 10) + (counts['2'] * 25);
+  let until = 50000 - resp;
+  let data = `目前分數: ${resp}
+  還差 ${until} 分可兌換新卡`;
+  bot.sendMessage(chatId, data);
 });
 
 async function callApi(urls, route) {
