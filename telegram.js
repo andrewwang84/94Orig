@@ -58,7 +58,7 @@ bot.onText(/王彥儒/, (msg) => {
   bot.sendMessage(chatId, '好帥 <3');
 });
 
-bot.onText(/\/t/, (msg, match) => {
+bot.onText(/\/twicegogo/, (msg, match) => {
   const chatId = msg.chat.id;
   const input = match.input;
   let counts = input.split(" ");
