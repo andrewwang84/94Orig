@@ -58,14 +58,16 @@ bot.onText(/王彥儒/, (msg) => {
   bot.sendMessage(chatId, '好帥 <3');
 });
 
-bot.onText(/\/twice/, (msg, match) => {
+bot.onText(/\/t/, (msg, match) => {
   const chatId = msg.chat.id;
   const input = match.input;
   let counts = input.split(" ");
   let resp = (counts['1'] * 5) + (counts['2'] * 10) + (counts['3'] * 25);
   let until = 50000 - resp;
-  let heart = until/25;
-  let data = `目前分數: ${resp}\n還差 ${until} 分可兌換新卡\n約等於 ${heart} 個❤`;
+  let heart = Math.round(until/25);
+  let keyRound = Math.round(until/(20*10+40*25));
+  let key = keyRound*5;
+  let data = `目前分數: ${resp}\n還差 ${until} 分可兌換新卡\n約等於 ${heart} 個❤\n${keyRound}關鑰匙關，${key}把鑰匙`;
   bot.sendMessage(chatId, data);
 });
 
