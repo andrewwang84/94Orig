@@ -65,7 +65,7 @@ bot.onText(/\/t/, (msg, match) => {
   let resp = (counts['1'] * 5) + (counts['2'] * 10) + (counts['3'] * 25);
   let until = 50000 - resp;
   let heart = Math.round(until/25);
-  let keyRound = Math.round(until/(20*10+40*25));
+  let keyRound = Math.round(until/(27*10+72*25));
   let key = keyRound*5;
   let data = `目前分數: ${resp}\n還差 ${until} 分可兌換新卡\n約等於 ${heart} 個❤\n${keyRound}關鑰匙關，${key}把鑰匙`;
   bot.sendMessage(chatId, data);
