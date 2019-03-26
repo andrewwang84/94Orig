@@ -2,6 +2,7 @@ const puppeteer = require('puppeteer');
 var app = require('express')();
 const insEmail = require('./config.js')[app.get('env')].insEmail;
 const insPass = require('./config.js')[app.get('env')].insPass;
+const insCookies = require('./config.js')[app.get('env')].insCookies;
 const usernameSelector = 'input[name="username"]';
 const passwordSelector = 'input[name="password"]';
 const loginBtn = 'button[type="submit"]';
@@ -26,7 +27,7 @@ async function getStories(url) {
 
     if (!browserWSEndpoint) {
       const browser = await puppeteer.launch({
-        // headless: false,
+        headless: false,
         args: [
           // '--proxy-server="direct://"',
           // '--proxy-bypass-list=*',
@@ -48,7 +49,15 @@ async function getStories(url) {
     //   ]
     // });
 
+    const cookie = {
+      name: "sessionid",
+      value: insCookies,
+      path: "/",
+      domain: ".instagram.com",
+    };
+
     const page = await browser.newPage();
+    await page.setCookie(cookie);
     await page.setUserAgent(userAgent);
 
     await page.goto(url, { waitUntil: 'networkidle0' });
