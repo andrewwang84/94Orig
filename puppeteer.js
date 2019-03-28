@@ -75,7 +75,7 @@ async function getStories(url) {
 
       currentPage = await page.url();
       if (currentPage.search(/\/challenge\//) !== -1) {
-        await browser.close();
+        await page.close();
         return new Promise(function (resolve, reject) {
           imgUrls.push(`請重新驗證帳號喔QQ`);
           resolve(imgUrls);
@@ -85,7 +85,7 @@ async function getStories(url) {
 
     await page.goto(storiesUrl, { waitUntil: 'load' });
     if (await page.url() === targetHomeUrl) {
-      await browser.close();
+      await page.close();
       return new Promise(function (resolve, reject) {
         imgUrls.push(`${username} 是私人帳號喔QQ`);
         resolve(imgUrls);
