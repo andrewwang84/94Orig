@@ -4,7 +4,7 @@ const crawler = require('../crawler.js');
 const router = express.Router();
 const upload = multer();
 
-router.post('/api', upload.array(), async function (req, res) {
+router.post('/', upload.array(), async function (req, res) {
   try {
     console.log(req.body.url)
     let result = await crawler.getImage(req.body.url);
