@@ -20,7 +20,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
     if (isStory === true) {
       bot.sendMessage(chatId, '限時動態請稍候 10~15 秒');
     }
-    let resp = await callApi(target, 'api/telegram');
+    let resp = await callApi(target, 'api/');
     if (resp == '') {
       resp[0] = '沒東西啦 !!';
     }
