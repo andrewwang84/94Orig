@@ -41,7 +41,8 @@
 - insCookies: [instagram login cookie]
 - insPass: [instagram account password]
 - insEmail: [instagram account email]
-- NODE_ENV: Prod
+- NODE_ENV: production
 - telegramToken: [telegram bot token, you can recieve it from bot father]
+- url: [your heroku project url]
 
 cause the region difference, I highly recommend not to use your own instagram account in this bot
