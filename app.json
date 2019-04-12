@@ -1,0 +1,15 @@
+{
+  "name": "94Orig",
+  "description": "A telegram bot to fetch instagram stories and image",
+  "repository": "https://github.com/andrewwang84/94Orig",
+  "logo": "https://node-js-sample.herokuapp.com/node.png",
+  "keywords": ["node", "telegram", "instagram", "puppeteer", "cheerio"]
+  "buildpacks": [
+    {
+      "url": "https://github.com/jontewks/puppeteer-heroku-buildpack.git"
+    },
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}
