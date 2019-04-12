@@ -43,3 +43,5 @@
 - insEmail: [instagram account email]
 - NODE_ENV: Prod
 - telegramToken: [telegram bot token, you can recieve it from bot father]
+
+cause the region difference, I highly recommend not to use your own instagram account in this bot

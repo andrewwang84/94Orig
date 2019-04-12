@@ -11,5 +11,27 @@
     {
       "url": "heroku/nodejs"
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": {
+      "description": "Node Env",
+      "value": "production"
+    },
+    "insEmail": {
+      "description": "instagram login email for stories",
+      "value": "[your instagram mail]"
+    },
+    "insPass": {
+      "description": "instagram password",
+      "value": "[your password]"
+    },
+    "insCookies": {
+      "description": "instagram already logged in cookie",
+      "value": "[your cookie]"
+    },
+    "telegramToken": {
+      "description": "telegram bot token",
+      "value": "[your token]"
+    }
+  }
 }
