@@ -39,7 +39,7 @@
 #### in order to let the bot work, set up the following vars in heroku setting
 
 - insCookies: [instagram login cookie]
-- insPass: [instagram account password] // and also change the account in config.js
-- name: [heroku app url]
+- insPass: [instagram account password]
+- insEmail: [instagram account email]
 - NODE_ENV: Prod
 - telegramToken: [telegram bot token, you can recieve it from bot father]
