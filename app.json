@@ -32,6 +32,10 @@
     "telegramToken": {
       "description": "telegram bot token",
       "value": "[your token]"
+    },
+    "url": {
+      "description": "your projecy url",
+      "value": "[your url]"
     }
   }
 }

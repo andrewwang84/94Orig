@@ -14,7 +14,7 @@ var config = {
     insPass: process.env.insPass,
     port: process.env.PORT,
     insCookies: process.env.insCookies,
-    url: 'https://origin94origin.herokuapp.com/'
+    url: process.env.url
   }
 }
 
