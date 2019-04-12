@@ -19,23 +19,23 @@
     },
     "insEmail": {
       "description": "instagram login email for stories",
-      "value": "[your instagram mail]"
+      "value": ""
     },
     "insPass": {
       "description": "instagram password",
-      "value": "[your password]"
+      "value": ""
     },
     "insCookies": {
       "description": "instagram already logged in cookie",
-      "value": "[your cookie]"
+      "value": ""
     },
     "telegramToken": {
       "description": "telegram bot token",
-      "value": "[your token]"
+      "value": ""
     },
     "url": {
       "description": "your projecy url",
-      "value": "[your url]"
+      "value": ""
     }
   }
 }
