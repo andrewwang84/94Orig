@@ -1,7 +1,6 @@
 var config = {
   development: {
     telegramToken: null,
-    //insEmail: 'leofddt@gmail.com',
     insEmail: null,
     insPass: null,
     port: 3000,
