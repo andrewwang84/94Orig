@@ -48,7 +48,7 @@ bot.onText(/王彥儒/, (msg) => {
   bot.sendMessage(chatId, '好帥 <3');
 });
 
-bot.onText(/\/ig/, (msg) => {
+bot.onText(/\/commandig/, (msg) => {
   const chatId = msg.chat.id;
   bot.sendMessage(chatId, `https://instagram.com/bbosong_nanan_bomb
 https://instagram.com/yangheeeeeee_
