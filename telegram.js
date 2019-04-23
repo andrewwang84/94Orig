@@ -48,6 +48,17 @@ bot.onText(/王彥儒/, (msg) => {
   bot.sendMessage(chatId, '好帥 <3');
 });
 
+bot.onText(/IG/, (msg) => {
+  const chatId = msg.chat.id;
+  bot.sendMessage(chatId, `https://instagram.com/bbosong_nanan_bomb
+https://instagram.com/yangheeeeeee_
+https://instagram.com/gil__0508
+https://instagram.com/ysmt.itk75
+https://instagram.com/uneasy_xx
+https://instagram.com/yoong_xxo
+https://instagram.com/banghana`);
+});
+
 async function callApi(urls, route) {
   return new Promise(function (resolve, reject) {
     try {
