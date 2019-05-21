@@ -8,7 +8,8 @@ const passwordSelector = 'input[name="password"]';
 const loginBtn = 'button[type="submit"]';
 const storiesCountClassSelector = '#react-root > section > div > div > section > div > div:nth-child(1)';
 const nextStorySelector = '.coreSpriteRightChevron';
-const userAgent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3239.108 Safari/537.36';
+const userAgent = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36';
+const WTFStorySelector = '#react-root > section > div > div > section > div.GHEPc > div.Igw0E.IwRSH.eGOV_._4EzTm.NUiEW > div > div > div.Igw0E.IwRSH.YBx95._4EzTm.O1flK.D8xaz.fm1AK.TxciK.yiMZG > div > div > button';
 let browserWSEndpoint = null;
 
 async function getStories(url) {
@@ -91,6 +92,9 @@ async function getStories(url) {
         resolve(imgUrls);
       });
     }
+
+    await page.waitForSelector(WTFStorySelector);
+    await page.click(WTFStorySelector);
 
     await page.waitForSelector('img[decoding="sync"]');
     let countClass = await page.$eval(storiesCountClassSelector, e => e.getAttribute('class'));
