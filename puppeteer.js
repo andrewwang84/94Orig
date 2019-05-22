@@ -23,7 +23,7 @@ async function getStories(url) {
       username = url.slice(url.lastIndexOf('.com/')+5);
       url = `https://www.instagram.com/accounts/login/?next=%2F${username}%2F`;
       storiesUrl = `https://www.instagram.com/stories/${username}`;
-      targetHomeUrl = `https://www.instagram.com/${username}/`;
+      targetHomeUrl = `https://www.instagram.com/${username}`;
     }
 
     if (!browserWSEndpoint) {
@@ -84,7 +84,7 @@ async function getStories(url) {
       }
     }
 
-    await page.goto(storiesUrl, { waitUntil: 'load' });
+    await page.goto(storiesUrl, { waitUntil: 'networkidle0' });
     if (await page.url() === targetHomeUrl) {
       await page.close();
       return new Promise(function (resolve, reject) {
@@ -93,8 +93,10 @@ async function getStories(url) {
       });
     }
 
-    await page.waitForSelector(WTFStorySelector);
-    await page.click(WTFStorySelector);
+    if (await page.$(WTFStorySelector)) {
+      await page.waitForSelector(WTFStorySelector);
+      await page.click(WTFStorySelector);
+    }
 
     await page.waitForSelector('img[decoding="sync"]');
     let countClass = await page.$eval(storiesCountClassSelector, e => e.getAttribute('class'));
