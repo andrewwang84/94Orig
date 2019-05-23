@@ -1,6 +1,6 @@
 "user strict";
 
-$(document).ready(function () {
+$(document).ready(() => {
     $('#submitBtn').on('click', (e) => {
         e.preventDefault();
 
@@ -16,7 +16,7 @@ $(document).ready(function () {
             data: {
                 'url': datas
             },
-            success: function (res) {
+            success: (res) => {
                 $('#loadinImg').hide();
                 results = res.url.split(',');
                 if (results === "") {
@@ -39,5 +39,10 @@ $(document).ready(function () {
                 }
             }
         });
+    });
+
+    $('#clearBtn').on('click', (e) => {
+        $('.resultCard').remove();
+        $('#targetUrls').val('');
     });
 });

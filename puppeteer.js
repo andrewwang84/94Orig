@@ -8,8 +8,9 @@ const passwordSelector = 'input[name="password"]';
 const loginBtn = 'button[type="submit"]';
 const storiesCountClassSelector = '#react-root > section > div > div > section > div > div:nth-child(1)';
 const nextStorySelector = '.coreSpriteRightChevron';
-const userAgent = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36';
+const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36';
 const WTFStorySelector = '#react-root > section > div > div > section > div.GHEPc > div.Igw0E.IwRSH.eGOV_._4EzTm.NUiEW > div > div > div.Igw0E.IwRSH.YBx95._4EzTm.O1flK.D8xaz.fm1AK.TxciK.yiMZG > div > div > button';
+const storyBtnSelector = '#react-root > section > main > div > header > div > div > span > img';
 let browserWSEndpoint = null;
 
 async function getStories(url) {
@@ -28,7 +29,7 @@ async function getStories(url) {
 
     if (!browserWSEndpoint) {
       const browser = await puppeteer.launch({
-        //headless: false,
+        headless: false,
         args: [
           // '--proxy-server="direct://"',
           // '--proxy-bypass-list=*',
@@ -69,10 +70,9 @@ async function getStories(url) {
       await page.keyboard.type(insEmail);
       await page.click(passwordSelector);
       await page.keyboard.type(insPass);
-      await page.click(loginBtn).catch(e => e);
+      await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({waitUntil: 'networkidle0'}));
 
-      // // get image urls
-      await page.waitForNavigation();
+      //await page.waitForNavigation({waitUntil: 'networkidle0'});
 
       currentPage = await page.url();
       if (currentPage.search(/\/challenge\//) !== -1) {
@@ -92,6 +92,8 @@ async function getStories(url) {
         resolve(imgUrls);
       });
     }
+
+    //await page.click(storyBtnSelector);
 
     if (await page.$(WTFStorySelector)) {
       await page.waitForSelector(WTFStorySelector);
