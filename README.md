@@ -18,7 +18,7 @@
 - [ ] Twitter video
 - [ ] Twitter video as Gif
 - [X] Error handling
-- [ ] Web
+- [X] Web
 - [ ] Line
 - [ ] Facebook messenger
 
