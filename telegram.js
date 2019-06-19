@@ -26,6 +26,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
     }
 
     for (var i = 0; i < resp.length; i++) {
+      // bot.sendMessage(chatId, `<a href='${resp[i]}'>Click me</a>`, {parse_mode : "HTML"});
       bot.sendMessage(chatId, resp[i]);
     }
   } catch (error) {
