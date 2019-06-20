@@ -4,34 +4,14 @@ let app = require('./app');
 const token = require('./config.js')[app.get('env')].telegramToken;
 const bot = new TelegramBot(token, { polling: true });
 const apiUrl = require('./config.js')[app.get('env')].url;
-const channel = `@twiceDev`;
-const listenLists = [
-  [
-    'source': 'instagram',
-    'url': '',
-    'name': ''
-  ],
-  [
-    'source': 'instagram',
-    'url': '',
-    'name': ''
-  ],
-  [
-    'source': 'instagram-story',
-    'url': '',
-    'name': ''
-  ],
-  [
-    'source': 'Twitter',
-    'url': '',
-    'name': ''
-  ],
-  [
-    'source': 'Twitter',
-    'url': '',
-    'name': ''
-  ],
-];
+const channel = require('./config.js')[app.get('env')].channel;
+const snsLists = {
+  {
+    'source': 'twitter',
+    'url': 'https://twitter.com/yrwang84',
+    'name': 'AndrewWang'
+  },
+};
 
 function sendMsg(url, name, snsUrl, imgUrls = '') {
   let html = `<b>From <a href="${url}">@${name}</a>:</b>
@@ -44,7 +24,9 @@ ${imgUrls}
 };
 
 async function checkUpdate() {
+  for(sns of snsLists){
 
+  }
 };
 
 setIntervel(checkUpdate, 180000);

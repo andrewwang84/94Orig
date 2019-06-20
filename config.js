@@ -5,6 +5,7 @@ var config = {
     insPass: null,
     port: 3000,
     insCookies: null,
+    channel: `@twiceDev`,
     url: 'http://127.0.0.1:3000/'
   },
   production: {
@@ -13,6 +14,7 @@ var config = {
     insPass: process.env.insPass,
     port: process.env.PORT,
     insCookies: process.env.insCookies,
+    channel: `@twiceDev`,
     url: process.env.url
   }
 }
