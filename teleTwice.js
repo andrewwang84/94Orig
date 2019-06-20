@@ -1,16 +1,29 @@
 const TelegramBot = require('node-telegram-bot-api');
 const request = require('request');
 let app = require('./app');
-const token = require('./config.js')[app.get('env')].telegramToken;
-const bot = new TelegramBot(token, { polling: true });
 const apiUrl = require('./config.js')[app.get('env')].url;
 const channel = require('./config.js')[app.get('env')].channel;
-const snsLists = {
-  {
-    'source': 'twitter',
-    'url': 'https://twitter.com/yrwang84',
-    'name': 'AndrewWang'
+let snsLists = {
+  test: {
+    source: 'twitter',
+    url: 'https://twitter.com/yrwang84',
   },
+  twicetagram: {
+    source: 'instagram',
+    url: 'https://www.instagram.com/twicetagram/',
+  },
+  jypetwice_japan: {
+    source: 'instagram',
+    url: 'https://www.instagram.com/jypetwice_japan/',
+  },
+  JYPETWICE: {
+    source: 'twitter',
+    url: 'https://twitter.com/JYPETWICE',
+  },
+  JYPETWICE_JAPAN: {
+    source: 'twitter',
+    url: 'https://twitter.com/JYPETWICE_JAPAN',
+  }
 };
 
 function sendMsg(url, name, snsUrl, imgUrls = '') {
@@ -24,9 +37,10 @@ ${imgUrls}
 };
 
 async function checkUpdate() {
-  for(sns of snsLists){
-
+  for(let name in snsLists){
+    console.log(snsLists[name]);
   }
 };
 
-setIntervel(checkUpdate, 180000);
+//setIntervel(checkUpdate(), 180000);
+checkUpdate();
