@@ -121,6 +121,54 @@ function twitterUrl(url) {
   });
 }
 
+let getApk = async () => {
+    try {
+        const data = await prepareApk();
+        return data;
+    } catch (error) {
+        return next(error);
+    }
+}
+
+async function prepareApk() {
+    const jypnationUrl = 'https://apkpure.com/superstar-jypnation/com.dalcomsoft.ss.jyp';
+    const twicegogofightinUrl = 'https://apkpure.com/twice-go-go-fightin%E2%80%99/jp.co.tenantz.twicegogofightin';
+    let urlObj = {
+        'JYPNATION': jypnationUrl,
+        'TWICEgogoFightin': twicegogofightinUrl
+    };
+    let result = {};
+
+    for (const key in urlObj) {
+        let url = urlObj[key];
+
+        result[key] = await apkpure(url);
+        result[key]['downloadLink'] = `https://apkpure.com${result[key]['downloadLink']}`
+    }
+
+
+    return new Promise(function (resolve, reject) {
+        resolve(result);
+    });
+}
+
+function apkpure(url) {
+    let result = {};
+
+    return new Promise(function (resolve, reject) {
+        request(url, function (error, response, body) {
+            const $ = cheerio.load(body);
+
+            result['version'] = $(`.details-sdk > span`).text();
+            result['date'] = $(`div.additional > ul > li:nth-child(3) > p:nth-child(2)`).text();
+            result['downloadLink'] = $(`.ny-down > a.da`).attr('href');
+
+            resolve(result);
+        });
+    });
+}
+
 module.exports = {
-  getImage: getImage
+    getImage: getImage,
+    getApk: getApk
 };
