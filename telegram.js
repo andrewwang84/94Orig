@@ -38,7 +38,7 @@ bot.onText(/\/help/, (msg) => {
   bot.sendMessage(chatId, '請輸入Instagram 或 Twitter 連結\n多個連結請以"換行"隔開');
 });
 
-bot.onText(/\/APK/, async (msg) => {
+bot.onText(/\/apk/, async (msg) => {
   const chatId = msg.chat.id;
 
   try {
