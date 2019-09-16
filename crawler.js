@@ -74,7 +74,7 @@ function igUrl(url) {
         chopFront = target.substring(target.indexOf(`"video_url"`) + 13, target.length);
         currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
         target = chopFront.substring(currentResult.length, chopFront.length);
-        currentResult = currentResult.slice(0, currentResult.lastIndexOf(`\\`));
+        currentResult = currentResult.replace(/\\u0026/gi, '&');
 
         result.push(currentResult);
       }
