@@ -64,7 +64,8 @@ function igUrl(url) {
         var chopFront = target.substring(target.indexOf(`"display_url"`) + 15, target.length);
         var currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
         target = chopFront.substring(currentResult.length, chopFront.length);
-        currentResult = currentResult.slice(0, currentResult.lastIndexOf(`\\`));
+
+        currentResult = currentResult.replace(/\\u0026/g, "&");
 
         result.push(currentResult);
       }
