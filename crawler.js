@@ -175,9 +175,9 @@ function apkcombo(url) {
         request(url, function (error, response, body) {
             const $ = cheerio.load(body);
 
-            result['version'] = $(`body > section > div > div > div.column.is-9 > table:nth-child(18) > tbody > tr:nth-child(2) > td:nth-child(2)`).text();
-            result['date'] = $(`body > section > div > div > div.column.is-9 > table:nth-child(18) > tbody > tr:nth-child(3) > td:nth-child(2)`).text();
-            result['downloadLink'] = $(`body > section > div > div > div.column.is-9 > div.abuttons > a`).attr('href');
+            result['version'] = $(`body > section > div > div > div.column.is-8 > table:nth-child(21) > tbody > tr:nth-child(2) > td:nth-child(2)`).text();
+            result['date'] = $(`body > section > div > div > div.column.is-8 > table:nth-child(21) > tbody > tr:nth-child(3) > td:nth-child(2)`).text();
+            result['downloadLink'] = $(`body > section > div > div > div.column.is-8 > div.abuttons > a`).attr('href');
 
             resolve(result);
         });
