@@ -130,7 +130,7 @@ let getApk = async () => {
 async function prepareApk() {
     const jypnationUrl = 'https://apkpure.com/superstar-jypnation/com.dalcomsoft.ss.jyp';
     const twicegogofightinUrl = 'https://apkpure.com/twice-go-go-fightin%E2%80%99/jp.co.tenantz.twicegogofightin';
-    const twicegogofightinUrl2 = 'https://apkcombo.com/tw-tw/twice-go-go-fightin%E2%80%99/jp.co.tenantz.twicegogofightin/#latest-version';
+    const twicegogofightinUrl2 = 'https://apkcombo.com/tw-tw/twice-go-go-fightin%E2%80%99/jp.co.tenantz.twicegogofightin/download/apk';
     let urlObj = {
         'JYPNATION': jypnationUrl,
         'TWICEgogoFightin': twicegogofightinUrl
@@ -145,7 +145,6 @@ async function prepareApk() {
     }
 
     result['TWICEgogoFightin_2'] = await apkcombo(twicegogofightinUrl2);
-    result['TWICEgogoFightin_2']['downloadLink'] = `https://apkcombo.com${result['TWICEgogoFightin_2']['downloadLink']}`
 
     return new Promise(function (resolve, reject) {
         resolve(result);
@@ -175,9 +174,10 @@ function apkcombo(url) {
         request(url, function (error, response, body) {
             const $ = cheerio.load(body);
 
-            result['version'] = $(`body > section > div > div > div.column.is-8 > table:nth-child(21) > tbody > tr:nth-child(2) > td:nth-child(2)`).text();
-            result['date'] = $(`body > section > div > div > div.column.is-8 > table:nth-child(21) > tbody > tr:nth-child(3) > td:nth-child(2)`).text();
-            result['downloadLink'] = $(`body > section > div > div > div.column.is-8 > div.abuttons > a`).attr('href');
+            let version = $(`#download-result > div:nth-child(2) > div > h1`).text();
+            result['version'] = version.substring(version.lastIndexOf('-') + 1).trim();
+            result['date'] = '未知';
+            result['downloadLink'] = $(`#download-result > div:nth-child(2) > div > table:nth-child(7) > tbody > tr > td:nth-child(1) > p > a`).attr('href');
 
             resolve(result);
         });
