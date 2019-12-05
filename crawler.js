@@ -174,10 +174,11 @@ function apkcombo(url) {
         request(url, function (error, response, body) {
             const $ = cheerio.load(body);
 
-            let version = $(`#download-result > div:nth-child(2) > div > h1`).text();
-            result['version'] = version.substring(version.lastIndexOf('-') + 1).trim();
-            result['date'] = '未知';
-            result['downloadLink'] = $(`#download-result > div:nth-child(2) > div > table:nth-child(7) > tbody > tr > td:nth-child(1) > p > a`).attr('href');
+            let version = $(`#download-result > div:nth-child(1) > div > div:nth-child(6) > a > div:nth-child(2) > b`).text();
+            result['version'] = version.substring(version.lastIndexOf('_') + 1, version.lastIndexOf('.')).trim();
+            let date = $(`#download-result > div:nth-child(1) > div > div:nth-child(6) > a > div:nth-child(2) > p`).text();
+            result['date'] = date.substring(date.lastIndexOf('·') + 1).trim();
+            result['downloadLink'] = $(`#download-result > div:nth-child(1) > div > div:nth-child(6) > a`).attr('href');
 
             resolve(result);
         });
