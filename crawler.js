@@ -175,10 +175,10 @@ function apkcombo(url) {
             const $ = cheerio.load(body);
 
             let version = $(`#download-result > div:nth-child(1) > div > div:nth-child(6) > a > div:nth-child(2) > b`).text();
-            result['version'] = version.substring(version.lastIndexOf('_') + 1, version.lastIndexOf('.')).trim();
+            result['version'] = '最新版';
             let date = $(`#download-result > div:nth-child(1) > div > div:nth-child(6) > a > div:nth-child(2) > p`).text();
-            result['date'] = date.substring(date.lastIndexOf('·') + 1).trim();
-            result['downloadLink'] = $(`#download-result > div:nth-child(1) > div > div:nth-child(6) > a`).attr('href');
+            result['date'] = '馬的網站更新的比遊戲還頻繁，還每次都變結構';
+            result['downloadLink'] = 'https://apkcombo.com/tw-tw/twice-go-go-fightin%E2%80%99/jp.co.tenantz.twicegogofightin/download/apk';
 
             resolve(result);
         });
