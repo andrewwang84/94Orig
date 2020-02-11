@@ -15,6 +15,46 @@ $(document).ready(() => {
         $('link[href*="css/styleDark.css"]').remove();
     }
 
+    const params = new URLSearchParams(window.location.search);
+    const targetUrl = params.get("url");
+    if (targetUrl != null) {
+        $('#targetUrls').val(targetUrl);
+
+        rawData = targetUrl;
+        datas = rawData.split("\n");
+
+        $.ajax({
+            type: 'Post',
+            url: 'api/',
+            dataType: 'json',
+            data: {
+                'url': datas
+            },
+            success: (res) => {
+                results = res.url.split(',');
+                if (results === "") {
+                    $('#nothing').show();
+                } else {
+                    $('#nothing').hide();
+                    for (let index = 0; index < results.length; index++) {
+                        const element = results[index];
+                        $('#result').append(`
+<div class="col-sm-3 resultCard mb-1">
+    <div class="card text-center">
+        <img src="${element}" class="card-img-top">
+        <div class="card-body">
+            <a href="${element}" class="btn btn-outline-secondary resultBtn" target="_blank">點我開啟</a>
+        </div>
+    </div>
+</div>
+                        `)
+                    }
+                }
+            }
+        });
+        window.history.pushState('', '', window.location.href.split('?url')[0]);
+    }
+
     $('nav').on('click', '#darkBtn', (e) => {
         let status = $('#darkBtn').attr('aria-pressed');
         if(status === 'false') {
