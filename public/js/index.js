@@ -23,36 +23,9 @@ $(document).ready(() => {
         rawData = targetUrl;
         datas = rawData.split("\n");
 
-        $.ajax({
-            type: 'Post',
-            url: 'api/',
-            dataType: 'json',
-            data: {
-                'url': datas
-            },
-            success: (res) => {
-                results = res.url.split(',');
-                if (results === "") {
-                    $('#nothing').show();
-                } else {
-                    $('#nothing').hide();
-                    for (let index = 0; index < results.length; index++) {
-                        const element = results[index];
-                        $('#result').append(`
-<div class="col-sm-3 resultCard mb-1">
-    <div class="card text-center">
-        <img src="${element}" class="card-img-top">
-        <div class="card-body">
-            <a href="${element}" class="btn btn-outline-secondary resultBtn" target="_blank">點我開啟</a>
-        </div>
-    </div>
-</div>
-                        `)
-                    }
-                }
-            }
-        });
-        window.history.pushState('', '', window.location.href.split('?url')[0]);
+        callApi(datas);
+
+        window.history.pushState({ 'page_id': 1}, '', window.location.href.split('?url')[0]);
     }
 
     $('nav').on('click', '#darkBtn', (e) => {
@@ -76,35 +49,7 @@ $(document).ready(() => {
         rawData = $('#targetUrls').val();
         datas = rawData.split("\n");
 
-        $.ajax({
-            type: 'Post',
-            url: 'api/',
-            dataType: 'json',
-            data: {
-                'url': datas
-            },
-            success: (res) => {
-                results = res.url.split(',');
-                if (results === "") {
-                    $('#nothing').show();
-                } else {
-                    $('#nothing').hide();
-                    for (let index = 0; index < results.length; index++) {
-                        const element = results[index];
-                        $('#result').append(`
-<div class="col-sm-3 resultCard mb-1">
-    <div class="card text-center">
-        <img src="${element}" class="card-img-top">
-        <div class="card-body">
-            <a href="${element}" class="btn btn-outline-secondary resultBtn" target="_blank">點我開啟</a>
-        </div>
-    </div>
-</div>
-                        `)
-                    }
-                }
-            }
-        });
+        callApi(datas);
     });
 
     $('#clearBtn').on('click', (e) => {
@@ -133,4 +78,37 @@ function setCookie(cname, cvalue, exdays) {
   d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
   var expires = "expires="+d.toUTCString();
   document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+}
+
+function callApi(datas) {
+    $.ajax({
+        type: 'Post',
+        url: 'api/',
+        dataType: 'json',
+        data: {
+            'url': datas
+        },
+        success: (res) => {
+            results = res.url.split(',');
+            if (results === "") {
+                $('#nothing').show();
+            } else {
+                $('#nothing').hide();
+                for (let index = 0; index < results.length; index++) {
+                    const element = results[index];
+
+                    $('#result').append(`
+<div class="col-sm-3 resultCard mb-1">
+    <div class="card text-center">
+        <img src="${element}" class="card-img-top">
+        <div class="card-body">
+            <a href="${element}" class="btn btn-outline-secondary resultBtn" target="_blank">點我開啟</a>
+        </div>
+    </div>
+</div>
+                        `)
+                }
+            }
+        }
+    });
 }
