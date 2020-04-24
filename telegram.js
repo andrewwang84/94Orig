@@ -18,11 +18,11 @@ bot.onText(/https:\/\//, async (msg, match) => {
 
   try{
     if (isStory === true) {
-      bot.sendMessage(chatId, '限時動態請稍候 10~15 秒');
+      bot.sendMessage(chatId, '限時動態請稍候 5 ~ 10 秒');
     }
-    if (target.length === 1) {
-      bot.sendMessage(chatId, `分享連結：https://origin94origin.herokuapp.com?url=${target[0]}`);
-    }
+    // if (target.length === 1) {
+    //   bot.sendMessage(chatId, `分享連結：https://origin94origin.herokuapp.com?url=${target[0]}`);
+    // }
     let resp = await callApi(target, 'api/');
     if (resp == '') {
       resp[0] = '沒東西啦 !!';
