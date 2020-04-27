@@ -1,7 +1,9 @@
 var request = require('request');
 var request = require('request').defaults({ jar: true });
 var cheerio = require('cheerio');
-const puppeteer = require('./puppeteer.js')
+const puppeteer = require('./puppeteer.js');
+var app = require('express')();
+const deepSite = require('./config.js')[app.get('env')].deepSite;
 
 let getImage = async (urls) => {
     try {
@@ -185,9 +187,9 @@ function apkcombo(url) {
     });
 }
 
-let checkDeep = async () => {
+let checkDeep = async (url) => {
     try {
-        const data = await prepareDeep();
+        const data = await prepareDeep(url);
         return data;
     } catch (error) {
         console.log(error);
@@ -196,7 +198,6 @@ let checkDeep = async () => {
 }
 
 function prepareDeep() {
-    const url = 'https://kpopdeepfakes.net/celebrities/twice/';
     let result = {};
 
     const videoBlockSelector = '.kd-video-list-item';
@@ -206,7 +207,7 @@ function prepareDeep() {
     const timeSelector = 'div.meta-info:nth-child(2) > span';
 
     return new Promise(function (resolve, reject) {
-        request(url, function (error, response, body) {
+        request(deepSite, function (error, response, body) {
             const $ = cheerio.load(body);
 
             let vidList = $(videoBlockSelector);
