@@ -212,9 +212,12 @@ function prepareDeep() {
             let vidList = $(videoBlockSelector);
 
             vidList.each((index, element) => {
-                result[index] = {
-                    'title': $(element).find(titleSelector).text(),
-                    'name': $(element).find(nameSelector).text().split(' ')[0],
+                let title = $(element).find(titleSelector).text();
+                let name = $(element).find(nameSelector).text().split(' ')[0];
+
+                result[`${name}_${title}`] = {
+                    'title': title,
+                    'name': name,
                     'updateTime': $(element).find(timeSelector).text(),
                     'link': $(element).find(videoSelector).attr('href')
                 }

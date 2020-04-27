@@ -65,6 +65,7 @@ bot.onText(/\/apk/, async (msg) => {
     }
 });
 
+var list = [];
 bot.onText(/\/deep/, async (msg) => {
     const chatId = msg.chat.id;
     console.log(chatId);
@@ -76,11 +77,26 @@ bot.onText(/\/deep/, async (msg) => {
         let links = '';
         for (const key in resp) {
             let element = resp[key];
-            msg += `${element.updateTime}  ${element.name}  ${element.title}\n`;
-            links += `${element.link}\n`;
+            if (list.includes(key) === false) {
+                msg += `${element.updateTime}  ${element.name}  ${element.title}\n`;
+                links += `${element.link}\n`;
+                list.push(`${element.name}_${element.title}`);
+            }
         }
 
-        //msg += `\n${links}`;
+        if (list.length !== 0) {
+            list.forEach((element,index) => {
+                if (!(element in resp)) {
+                    list.splice(index, 1);
+                }
+            });
+        }
+
+        if (msg === '') {
+            msg = 'No Updates';
+        } else {
+            //msg += `\n${links}`;
+        }
 
         bot.sendMessage(chatId, msg);
     } catch (error) {
