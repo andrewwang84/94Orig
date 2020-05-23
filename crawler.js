@@ -1,5 +1,10 @@
 var request = require('request');
-var request = require('request').defaults({ jar: true });
+var request = require('request').defaults({
+    jar: true,
+    headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)AppleWebKit/ 537.36(KHTML, like Gecko) Chrome/ 57.0.2987.133 Safari / 537.36'
+    }
+});
 var cheerio = require('cheerio');
 const puppeteer = require('./puppeteer.js');
 var app = require('express')();
@@ -61,7 +66,6 @@ function igUrl(url) {
 
             var $ = cheerio.load(body);
             target = $(`body > script`)[0].children[0].data;
-            console.log(target);
 
             while (target.indexOf(`"display_url"`) !== -1) {
                 var chopFront = target.substring(target.indexOf(`"display_url"`) + 15, target.length);
@@ -69,7 +73,7 @@ function igUrl(url) {
                 target = chopFront.substring(currentResult.length, chopFront.length);
 
                 currentResult = currentResult.replace(/\\u0026/g, "&");
-                console.log(currentResult);
+
                 result.push(currentResult);
             }
 
