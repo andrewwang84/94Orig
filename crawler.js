@@ -61,6 +61,7 @@ function igUrl(url) {
 
             var $ = cheerio.load(body);
             target = $(`body > script`)[0].children[0].data;
+            console.log(target);
 
             while (target.indexOf(`"display_url"`) !== -1) {
                 var chopFront = target.substring(target.indexOf(`"display_url"`) + 15, target.length);
@@ -68,7 +69,7 @@ function igUrl(url) {
                 target = chopFront.substring(currentResult.length, chopFront.length);
 
                 currentResult = currentResult.replace(/\\u0026/g, "&");
-
+                console.log(currentResult);
                 result.push(currentResult);
             }
 
