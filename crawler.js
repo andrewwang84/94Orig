@@ -2,7 +2,7 @@ var request = require('request');
 var request = require('request').defaults({
     jar: true,
     headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36'
     }
 });
 var cheerio = require('cheerio');
@@ -25,7 +25,7 @@ async function prepareData(urls) {
     for (var i = 0; i < urls.length; i++) {
         if (urls[i].search(/\/p\//) !== -1) {
             try {
-                let url = await igUrl(urls[i]);
+                let url = await puppeteer.igUrl(urls[i]);
                 imageUrls.push(url);
             } catch (error) {
                 return error;

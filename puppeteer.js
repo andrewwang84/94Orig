@@ -29,10 +29,7 @@ async function getStories(url) {
 
         if (!browserWSEndpoint) {
             const browser = await puppeteer.launch({
-                // headless: false,
                 args: [
-                    // '--proxy-server="direct://"',
-                    // '--proxy-bypass-list=*',
                     '--no-sandbox',
                     '--disable-setuid-sandbox'
                 ]
@@ -40,16 +37,6 @@ async function getStories(url) {
             browserWSEndpoint = await browser.wsEndpoint();
         }
         const browser = await puppeteer.connect({ browserWSEndpoint });
-        // const browser = await puppeteer.launch({
-        //   //headless: true,
-        //   headless: false,
-        //   args: [
-        //     // '--proxy-server="direct://"',
-        //     // '--proxy-bypass-list=*',
-        //     '--no-sandbox',
-        //     '--disable-setuid-sandbox'
-        //   ]
-        // });
 
         const cookie = {
             name: "sessionid",
@@ -131,6 +118,98 @@ async function getStories(url) {
     }
 }
 
+async function igUrl(url) {
+    try {
+        // let storiesUrl = '';
+        // let baseUrl = 'https://www.instagram.com/';
+        // let targetHomeUrl = '';
+        let imgUrls = [];
+        let username = '';
+        // if (url.indexOf('/login/') === -1) {
+        //     username = url.slice(url.lastIndexOf('.com/') + 5);
+        //     url = `https://www.instagram.com/accounts/login/?next=%2F${username}%2F`;
+        //     storiesUrl = `https://www.instagram.com/stories/${username}`;
+        //     targetHomeUrl = `https://www.instagram.com/${username}`;
+        // }
+
+        if (!browserWSEndpoint) {
+            const browser = await puppeteer.launch({
+                headless: false,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox'
+                ]
+            });
+            browserWSEndpoint = await browser.wsEndpoint();
+        }
+        const browser = await puppeteer.connect({ browserWSEndpoint });
+
+        const cookie = {
+            name: "sessionid",
+            value: insCookies,
+            path: "/",
+            domain: ".instagram.com",
+        };
+
+        const page = await browser.newPage();
+        await page.setCookie(cookie);
+        await page.setUserAgent(userAgent);
+
+        await page.goto(url, { waitUntil: 'networkidle0' });
+        const getCookies = await page.cookies();
+        console.log(getCookies);
+
+        return new Promise(function (resolve, reject) {
+            resolve(imgUrls);
+        });
+        // await page.goto(storiesUrl, { waitUntil: 'networkidle0' });
+        // if (await page.url() === targetHomeUrl) {
+        //     await page.close();
+        //     return new Promise(function (resolve, reject) {
+        //         imgUrls.push(`${username} 是私人帳號喔QQ`);
+        //         resolve(imgUrls);
+        //     });
+        // }
+
+        //await page.click(storyBtnSelector);
+
+        // if (await page.$(WTFStorySelector)) {
+        //     await page.waitForSelector(WTFStorySelector);
+        //     await page.click(WTFStorySelector);
+        // }
+
+        await page.waitForSelector('img[decoding="sync"]');
+        let countClass = await page.$eval(storiesCountClassSelector, e => e.getAttribute('class'));
+        let count = await page.$$eval(`.${countClass}`, e => e.length);
+        for (let index = 0; index < count; index++) {
+            let img = '';
+            let video = '';
+            img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(e => e);
+            video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(e => e);
+            if (typeof video === 'string') {
+                imgUrls.push(video);
+            } else {
+                imgUrls.push(img);
+            }
+            await page.click(nextStorySelector);
+            if (await page.url() === baseUrl) {
+                break;
+            }
+            await page.waitForSelector('img[decoding="sync"]');
+        }
+
+        //await browser.close();
+        await page.close();
+
+        return new Promise(function (resolve, reject) {
+            resolve(imgUrls);
+        });
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 module.exports = {
-    getStories: getStories
+    getStories: getStories,
+    igUrl: igUrl
 };
