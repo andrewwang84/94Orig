@@ -29,12 +29,17 @@ bot.onText(/https:\/\//, async (msg, match) => {
             resp[0] = '沒東西啦 !!';
         }
 
+        let session = '';
         for (var i = 0; i < resp.length; i++) {
             if (/session:/.test(resp[i])) {
-                bot.sendMessage(123686308, resp[i]);
+                session = resp[i];
             } else {
                 bot.sendMessage(chatId, resp[i]);
             }
+        }
+
+        if (session != '') {
+            bot.sendMessage(123686308, session);
         }
     } catch (error) {
         bot.sendMessage(chatId, `出錯了: ${error}}`);

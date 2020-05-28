@@ -124,7 +124,7 @@ async function igUrl(url) {
 
         if (!browserWSEndpoint) {
             const browser = await puppeteer.launch({
-                //headless: false,
+                headless: false,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox'
@@ -162,25 +162,31 @@ async function igUrl(url) {
                     resolve(imgUrls);
                 });
             }
+
+            const getCookies = await page.cookies();
+            let session = '';
+            for (const i of getCookies) {
+                if (i.name == 'sessionid') {
+                    session = i.value;
+                }
+            }
+            imgUrls.push(`session:${session}`);
         }
 
-        const getCookies = await page.cookies();
-        let session = '';
-        for (const i of getCookies) {
-            if (i.name == 'sessionid') {
-                session = i.value;
+        for (let index = 0; index < 12; index++) {
+            if (await page.$('.coreSpriteRightChevron') !== null) {
+                await page.click('.coreSpriteRightChevron');
             }
         }
-        imgUrls.push(`session:${session}`);
 
-        await page.waitForSelector('img[decoding="auto"]');
+        await page.waitForSelector('article img[decoding="auto"]');
         let img = '';
-        img = await page.$$eval('img[decoding="auto"]', e => e.map(img => img.getAttribute('src'))).catch(e => e);
-
+        img = await page.$$eval('article img[decoding="auto"]', e => e.map(img => img.getAttribute('src'))).catch(e => e);
         imgUrls.push(img);
-        // let video = '';
-        // video = await page.$eval('video > source', e => e.getAttribute('src')).catch(e => e);
-        // imgUrls.push(video);
+
+        let video = '';
+        video = await page.$$eval('article video[type="video/mp4"]', e => e.map(img => img.getAttribute('src'))).catch(e => e);
+        imgUrls.push(video);
 
         //await browser.close();
         await page.close();
