@@ -20,7 +20,6 @@ let getImage = async (urls) => {
 }
 
 async function prepareData(urls) {
-
     var imageUrls = [];
     for (var i = 0; i < urls.length; i++) {
         if (urls[i].search(/\/p\//) !== -1) {

