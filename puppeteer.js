@@ -124,7 +124,7 @@ async function igUrl(url) {
 
         if (!browserWSEndpoint) {
             const browser = await puppeteer.launch({
-                headless: false,
+                //headless: false,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox'
