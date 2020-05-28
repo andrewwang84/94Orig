@@ -69,6 +69,15 @@ async function getStories(url) {
                     resolve(imgUrls);
                 });
             }
+
+            const getCookies = await page.cookies();
+            let session = '';
+            for (const i of getCookies) {
+                if (i.name == 'sessionid') {
+                    session = i.value;
+                }
+            }
+            imgUrls.push(`session:${session}`);
         }
 
         await page.goto(storiesUrl, { waitUntil: 'networkidle0' });
