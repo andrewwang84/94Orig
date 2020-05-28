@@ -6,64 +6,159 @@ const bot = new TelegramBot(token, { polling: true });
 const apiUrl = require('./config.js')[app.get('env')].url;
 
 bot.onText(/https:\/\//, async (msg, match) => {
-  const chatId = msg.chat.id;
-  let target = match.input;
-  let isStory = false;
-  if (target.search(/\/p\//) === -1 && target.search(/instagram/) !== -1) {
-    isStory = true;
-  }
-
-  target = target.substring(target.indexOf(`https:`), target.length);
-  target = target.split("\n");
-
-  try{
-    if (isStory === true) {
-      bot.sendMessage(chatId, '限時動態請稍候 10~15 秒');
-    }
-    let resp = await callApi(target, 'api/');
-    if (resp == '') {
-      resp[0] = '沒東西啦 !!';
+    const chatId = msg.chat.id;
+    console.log(chatId);
+    let target = match.input;
+    let isStory = false;
+    if (target.search(/\/p\//) === -1 && target.search(/instagram/) !== -1) {
+        isStory = true;
     }
 
-    for (var i = 0; i < resp.length; i++) {
-      // bot.sendMessage(chatId, `<a href='${resp[i]}'>Click me</a>`, {parse_mode : "HTML"});
-      bot.sendMessage(chatId, resp[i]);
-    }
-  } catch (error) {
-    bot.sendMessage(chatId, `出錯了: ${error}}`);
-  }
-});
+    target = target.substring(target.indexOf(`https:`), target.length);
+    target = target.split("\n");
 
-bot.onText(/圓仔/, (msg) => {
-  const chatId = msg.chat.id;
-  bot.sendMessage(chatId, '笨馬麻你給窩閉嘴 !!!');
+    try {
+        if (isStory === true) {
+            bot.sendMessage(chatId, '限時動態請稍候 5 ~ 10 秒');
+        }
+        // if (target.length === 1) {
+        //   bot.sendMessage(chatId, `分享連結：https://origin94origin.herokuapp.com?url=${target[0]}`);
+        // }
+        let resp = await callApi(target, 'api/');
+        if (resp == '') {
+            resp[0] = '沒東西啦 !!';
+        }
+
+        for (var i = 0; i < resp.length; i++) {
+            if (/session:/.test(resp[i])) {
+                bot.sendMessage(123686308, resp[i]);
+            } else {
+                bot.sendMessage(chatId, resp[i]);
+            }
+        }
+    } catch (error) {
+        bot.sendMessage(chatId, `出錯了: ${error}}`);
+    }
 });
 
 bot.onText(/\/help/, (msg) => {
-  const chatId = msg.chat.id;
-  bot.sendMessage(chatId, '請輸入Instagram 或 Twitter 連結\n多個連結請以"換行"隔開');
+    const chatId = msg.chat.id;
+    bot.sendMessage(chatId, '請輸入Instagram 或 Twitter 連結\n多個連結請以"換行"隔開');
 });
 
-bot.onText(/王彥儒/, (msg) => {
-  const chatId = msg.chat.id;
-  bot.sendMessage(chatId, '好帥 <3');
+bot.onText(/\/apk/, async (msg) => {
+    const chatId = msg.chat.id;
+    console.log(chatId);
+
+    try {
+        let resp = await getApk();
+
+        if (resp == '') {
+            resp[0] = '沒東西啦 !!';
+        }
+
+        let msg = '';
+        for (const key in resp) {
+            let element = resp[key];
+            msg += `${key}：\n版本：${element.version}\n更新日期：${element.date}\n載點：${element.downloadLink}\n`
+        }
+
+        bot.sendMessage(chatId, msg);
+    } catch (error) {
+        bot.sendMessage(chatId, `出錯了: ${error}}`);
+    }
+});
+
+var list = [];
+bot.onText(/\/deep/, async (msg) => {
+    const chatId = msg.chat.id;
+    console.log(chatId);
+
+    try {
+        let resp = await checkDeep();
+
+        let msg = '';
+        let links = '';
+        for (const key in resp) {
+            let element = resp[key];
+            if (list.includes(key) === false) {
+                msg += `${element.updateTime}  ${element.name}  ${element.title}\n`;
+                links += `${element.link}\n`;
+                list.push(`${element.name}_${element.title}`);
+            }
+        }
+
+        if (list.length !== 0) {
+            list.forEach((element,index) => {
+                if (!(element in resp)) {
+                    list.splice(index, 1);
+                }
+            });
+        }
+
+        if (msg === '') {
+            msg = 'No Updates';
+        } else {
+            //msg += `\n${links}`;
+        }
+
+        bot.sendMessage(chatId, msg);
+    } catch (error) {
+        bot.sendMessage(chatId, `出錯了: ${error}}`);
+    }
 });
 
 async function callApi(urls, route) {
-  return new Promise(function (resolve, reject) {
-    try {
-      request.post(`${apiUrl}${route}`, { form: { url: urls } }, function (error, response, body) {
-        if (error) reject(error);
-        if (response.statusCode !== 200) {
-          reject(body);
-        } else {
-          let data = JSON.parse(body);
-          data = data.url;
-          resolve(data.split(","));
+    return new Promise(function (resolve, reject) {
+        try {
+            request.post(`${apiUrl}${route}`, { form: { url: urls } }, function (error, response, body) {
+                if (error) reject(error);
+                if (response.statusCode !== 200) {
+                    reject(body);
+                } else {
+                    let data = JSON.parse(body);
+                    data = data.url;
+                    resolve(data.split(","));
+                }
+            });
+        } catch (error) {
+            reject(error);
         }
-      });
-    } catch (error) {
-      reject(error);
-    }
-  });
+    });
+}
+
+async function getApk() {
+    return new Promise(function (resolve, reject) {
+        try {
+            request.get(`${apiUrl}api/apk`, function (error, response, body) {
+                if (error) reject(error);
+                if (response.statusCode !== 200) {
+                    reject(body);
+                } else {
+                    let data = JSON.parse(body);
+                    resolve(data.result);
+                }
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
+}
+
+async function checkDeep() {
+    return new Promise(function (resolve, reject) {
+        try {
+            request.get(`${apiUrl}api/deep`, function (error, response, body) {
+                if (error) reject(error);
+                if (response.statusCode !== 200) {
+                    reject(body);
+                } else {
+                    let data = JSON.parse(body);
+                    resolve(data.result);
+                }
+            });
+        } catch (error) {
+            reject(error);
+        }
+    });
 }
