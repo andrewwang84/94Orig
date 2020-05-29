@@ -22,15 +22,14 @@ let getImage = async (urls) => {
 async function prepareData(urls) {
     var imageUrls = [];
     for (var i = 0; i < urls.length; i++) {
-        if (urls[i].search(/\/p\//) !== -1) {
+        if (/instagram\.com\/p\//.test(urls[i])) {
             try {
-                let url = await puppeteer.igUrl(urls[i]);
-                imageUrls.push(url);
+                imageUrls.push(await puppeteer.igUrl(urls[i]));
             } catch (error) {
                 return error;
             }
         }
-        if (urls[i].search(/instagram/) !== -1 && urls[i].search(/\/p\//) === -1) {
+        if (!/instagram\.com\/p\//.test(urls[i]) && /instagram\.com/.test(urls[i])) {
             try {
                 let url = urls[i];
                 if (urls[i].indexOf('?') !== -1) {
@@ -41,7 +40,7 @@ async function prepareData(urls) {
                 return error;
             }
         }
-        if (urls[i].search(/https:\/\/twitter.com/) !== -1 || urls[i].search(/https:\/\/mobile.twitter.com/) !== -1) {
+        if (/https:\/\/twitter.com/.test(urls[i]) || /https:\/\/mobile.twitter.com/.test(urls[i])) {
             try {
                 let url = await twitterUrl(urls[i]);
                 imageUrls.push(url);
