@@ -69,6 +69,15 @@ async function getStories(url) {
                     resolve(imgUrls);
                 });
             }
+
+            const getCookies = await page.cookies();
+            let session = '';
+            for (const i of getCookies) {
+                if (i.name == 'sessionid') {
+                    session = i.value;
+                }
+            }
+            imgUrls.push(`session:${session}`);
         }
 
         await page.goto(storiesUrl, { waitUntil: 'networkidle0' });
@@ -124,7 +133,7 @@ async function igUrl(url) {
 
         if (!browserWSEndpoint) {
             const browser = await puppeteer.launch({
-                headless: false,
+                //headless: false,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox'
