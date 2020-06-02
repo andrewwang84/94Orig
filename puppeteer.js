@@ -188,13 +188,15 @@ async function igUrl(url) {
             }
         }
 
-        let img = '';
-        img = await page.$$eval('article img[decoding="auto"]', e => e.map(img => img.getAttribute('src'))).catch(e => e);
-        imgUrls.push(img);
+        let img = await page.$$eval('article img[decoding="auto"]', e => e.map(img => img.getAttribute('src'))).catch(e => e);
+        if (img.length !== 0) {
+            imgUrls.push(img);
+        }
 
-        let video = '';
-        video = await page.$$eval('article video[type="video/mp4"]', e => e.map(img => img.getAttribute('src'))).catch(e => e);
-        imgUrls.push(video);
+        let video = await page.$$eval('article video[type="video/mp4"]', e => e.map(img => img.getAttribute('src'))).catch(e => e);
+        if (video.length !== 0) {
+            imgUrls.push(video);
+        }
 
         //await browser.close();
         await page.close();

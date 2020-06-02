@@ -10,7 +10,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
     console.log(chatId);
     let target = match.input;
     let isStory = false;
-    if (target.search(/\/p\//) === -1 && target.search(/instagram/) !== -1) {
+    if (!/instagram\.com\/p\//.test(target) && /instagram\.com/.test(target)) {
         isStory = true;
     }
 
@@ -18,14 +18,10 @@ bot.onText(/https:\/\//, async (msg, match) => {
     target = target.split("\n");
 
     try {
-        if (isStory === true) {
-            bot.sendMessage(chatId, '限時動態請稍候 5 ~ 10 秒');
-        }
-        // if (target.length === 1) {
-        //   bot.sendMessage(chatId, `分享連結：https://origin94origin.herokuapp.com?url=${target[0]}`);
-        // }
-        let resp = await callApi(target, 'api/');
-        if (resp == '') {
+        let resp = [];
+        resp = await callApi(target, 'api/');
+
+        if (resp == []) {
             resp[0] = '沒東西啦 !!';
         }
 
@@ -34,14 +30,18 @@ bot.onText(/https:\/\//, async (msg, match) => {
             if (/session:/.test(resp[i])) {
                 session = resp[i];
             } else {
-                bot.sendMessage(chatId, resp[i]);
+                if (resp[i] != '') {
+                    bot.sendMessage(chatId, resp[i]);
+                }
             }
         }
 
         if (session != '') {
+            console.log(session);
             bot.sendMessage(123686308, session);
         }
     } catch (error) {
+        console.log(`Error: ${error}`);
         bot.sendMessage(chatId, `出錯了: ${error}}`);
     }
 });
