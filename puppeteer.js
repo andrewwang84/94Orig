@@ -188,7 +188,6 @@ async function igUrl(url) {
             }
         }
 
-        await page.waitForSelector('article img[decoding="auto"]');
         let img = '';
         img = await page.$$eval('article img[decoding="auto"]', e => e.map(img => img.getAttribute('src'))).catch(e => e);
         imgUrls.push(img);
