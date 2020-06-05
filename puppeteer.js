@@ -235,7 +235,8 @@ async function twitterUrl(url) {
         if (await page.$(twitterShowSensitiveBtn)) {
             await page.click(twitterShowSensitiveBtn);
         }
-
+        let bodyHTML = await page.evaluate(() => document.body.innerHTML);
+        console.log(bodyHTML)
         let img = await page.$$eval(twitterSelector, e => e.map((img) => {
             let rawImg = img.getAttribute('src');
             let result = '';
@@ -251,6 +252,7 @@ async function twitterUrl(url) {
 
             return result;
         })).catch(e => e);
+
         if (img.length !== 0) {
             imgUrls.push(img);
         }
