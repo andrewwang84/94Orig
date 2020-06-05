@@ -8,9 +8,10 @@ const passwordSelector = 'input[name="password"]';
 const loginBtn = 'button[type="submit"]';
 const storiesCountClassSelector = '#react-root > section > div > div > section > div > div:nth-child(1)';
 const nextStorySelector = '.coreSpriteRightChevron';
-const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36';
+const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36';
 const WTFStorySelector = '#react-root > section > div > div > section > div:nth-of-type(2) > div:nth-of-type(1) > div > div button';
-const twitterSelector = 'section > div > div > div > div:nth-of-type(1) article div:nth-of-type(3) img';
+//const twitterSelector = 'section > div > div > div > div:nth-of-type(1) article div:nth-of-type(3) img';
+const twitterSelector = 'article:nth-of-type(1) div:nth-of-type(3) img';
 const twitterShowSensitiveBtn = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div > div:nth-of-type(2) > div > div:nth-of-type(2) div[role=button]';
 const isHeadless = true;
 let browserWSEndpoint = null;
@@ -235,8 +236,7 @@ async function twitterUrl(url) {
         if (await page.$(twitterShowSensitiveBtn)) {
             await page.click(twitterShowSensitiveBtn);
         }
-        let bodyHTML = await page.evaluate(() => document.body.innerHTML);
-        console.log(bodyHTML)
+
         let img = await page.$$eval(twitterSelector, e => e.map((img) => {
             let rawImg = img.getAttribute('src');
             let result = '';
@@ -244,7 +244,6 @@ async function twitterUrl(url) {
                 if (/\?format=/.test(rawImg)) {
                     let ext = rawImg.match(/\?format=([^\&]*)\&/)[1];
                     result = `${rawImg.slice(0, rawImg.lastIndexOf('?'))}?format=${ext}&name=orig`;
-                    //result += `\n${rawImg.slice(0, rawImg.lastIndexOf('?'))}?format=png&name=orig`;
                 } else {
                     result = `${rawImg.slice(0, rawImg.lastIndexOf(':'))}:orig`;
                 }
