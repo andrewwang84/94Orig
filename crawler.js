@@ -40,9 +40,9 @@ async function prepareData(urls) {
                 return error;
             }
         }
-        if (/https:\/\/twitter.com/.test(urls[i]) || /https:\/\/mobile.twitter.com/.test(urls[i])) {
+        if (/https:\/\/twitter\.com/.test(urls[i]) || /https:\/\/mobile\.twitter\.com/.test(urls[i])) {
             try {
-                let url = await twitterUrl(urls[i]);
+                let url = await puppeteer.twitterUrl(urls[i]);
                 imageUrls.push(url);
             } catch (error) {
                 return error;
@@ -52,73 +52,6 @@ async function prepareData(urls) {
 
     return new Promise(function (resolve, reject) {
         resolve(imageUrls);
-    });
-}
-
-function igUrl(url) {
-    var result = [];
-    var target = '';
-    return new Promise(function (resolve, reject) {
-        request(url, function (error, response, body) {
-            if (error) reject(error);
-
-            var $ = cheerio.load(body);
-            target = $(`body > script`)[0].children[0].data;
-
-            while (target.indexOf(`"display_url"`) !== -1) {
-                var chopFront = target.substring(target.indexOf(`"display_url"`) + 15, target.length);
-                var currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
-                target = chopFront.substring(currentResult.length, chopFront.length);
-
-                currentResult = currentResult.replace(/\\u0026/g, "&");
-
-                result.push(currentResult);
-            }
-
-            target = $(`body > script`)[0].children[0].data;
-            while (target.indexOf(`"video_url"`) !== -1) {
-                chopFront = target.substring(target.indexOf(`"video_url"`) + 13, target.length);
-                currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
-                target = chopFront.substring(currentResult.length, chopFront.length);
-                currentResult = currentResult.replace(/\\u0026/gi, '&');
-
-                result.push(currentResult);
-            }
-
-            if (result.length > 1) {
-                result.shift();
-            }
-
-            resolve(result);
-        });
-    });
-}
-
-function twitterUrl(url) {
-    var result = [];
-    let mobileUrl = url;
-    let webUrl = url;
-
-    if (url.search(/https:\/\/mobile.twitter.com/) !== -1) {
-        webUrl = url.substring(url.indexOf(`https:\/\/mobile.`) + 15, url.length);
-        webUrl = `https://${webUrl}`;
-    }
-
-    return new Promise(function (resolve, reject) {
-        // deal with img
-        request(webUrl, function (error, response, body) {
-            if (error) reject(error);
-
-            const $ = cheerio.load(body);
-
-            $(`.permalink-tweet-container img`).each((index, element) => {
-                if (element['attribs']['src'].indexOf('/media/') !== -1) {
-                    result.push(`${element['attribs']['src']}:orig`);
-                }
-            })
-
-            resolve(result);
-        });
     });
 }
 

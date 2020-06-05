@@ -11,6 +11,7 @@ const nextStorySelector = '.coreSpriteRightChevron';
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36';
 const WTFStorySelector = '#react-root > section > div > div > section > div.GHEPc > div.Igw0E.IwRSH.eGOV_._4EzTm.NUiEW > div > div > div.Igw0E.IwRSH.YBx95._4EzTm.O1flK.D8xaz.fm1AK.TxciK.yiMZG > div > div > button';
 const storyBtnSelector = '#react-root > section > main > div > header > div > div > span > img';
+const twitterSelector = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div:nth-of-type(2) img';
 let browserWSEndpoint = null;
 
 async function getStories(url) {
@@ -209,7 +210,65 @@ async function igUrl(url) {
     }
 }
 
+async function twitterUrl(url) {
+    try {
+        let imgUrls = [];
+
+        if (!browserWSEndpoint) {
+            const browser = await puppeteer.launch({
+                //headless: false,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox'
+                ]
+            });
+            browserWSEndpoint = await browser.wsEndpoint();
+        }
+        const browser = await puppeteer.connect({ browserWSEndpoint });
+
+        const page = await browser.newPage();
+        await page.setUserAgent(userAgent);
+
+        await page.goto(url, { waitUntil: 'networkidle0' });
+
+        await page.waitForSelector('img');
+        let img = await page.$$eval(twitterSelector, e => e.map((img) => {
+            let rawImg = img.getAttribute('src');
+            let result = '';
+            if (/https:\/\/pbs\.twimg\.com\/media\//.test(rawImg)) {
+                if (/\?format=/.test(rawImg)) {
+                    let ext = rawImg.match(/\?format=([^\&]*)\&/)[1];
+                    result = `${rawImg.slice(0, rawImg.lastIndexOf('?'))}?format=${ext}&name=orig`;
+                    //result += `\n${rawImg.slice(0, rawImg.lastIndexOf('?'))}?format=png&name=orig`;
+                } else {
+                    result = `${rawImg.slice(0, rawImg.lastIndexOf(':'))}:orig`;
+                }
+            }
+
+            return result;
+        })).catch(e => e);
+        if (img.length !== 0) {
+            imgUrls.push(img);
+        }
+
+        // let video = await page.$$eval('article video[type="video/mp4"]', e => e.map(img => img.getAttribute('src'))).catch(e => e);
+        // if (video.length !== 0) {
+        //     imgUrls.push(video);
+        // }
+
+        //await browser.close();
+        await page.close();
+
+        return new Promise(function (resolve, reject) {
+            resolve(imgUrls);
+        });
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 module.exports = {
     getStories: getStories,
-    igUrl: igUrl
+    igUrl: igUrl,
+    twitterUrl: twitterUrl
 };
