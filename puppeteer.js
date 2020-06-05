@@ -12,6 +12,7 @@ const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/5
 const WTFStorySelector = '#react-root > section > div > div > section > div.GHEPc > div.Igw0E.IwRSH.eGOV_._4EzTm.NUiEW > div > div > div.Igw0E.IwRSH.YBx95._4EzTm.O1flK.D8xaz.fm1AK.TxciK.yiMZG > div > div > button';
 const storyBtnSelector = '#react-root > section > main > div > header > div > div > span > img';
 const twitterSelector = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div:nth-of-type(2) img';
+const twitterShowSensitiveBtn = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div > div:nth-of-type(2) > div > div:nth-of-type(2) div[role=button]';
 let browserWSEndpoint = null;
 
 async function getStories(url) {
@@ -231,7 +232,11 @@ async function twitterUrl(url) {
 
         await page.goto(url, { waitUntil: 'networkidle0' });
 
-        await page.waitForSelector('img');
+        // for twitter sensitive content block
+        if (await page.$(twitterShowSensitiveBtn)) {
+            await page.click(twitterShowSensitiveBtn);
+        }
+
         let img = await page.$$eval(twitterSelector, e => e.map((img) => {
             let rawImg = img.getAttribute('src');
             let result = '';
