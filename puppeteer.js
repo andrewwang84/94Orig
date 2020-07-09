@@ -11,7 +11,7 @@ const nextStorySelector = '.coreSpriteRightChevron';
 const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36';
 const WTFStorySelector = '#react-root > section > div > div > section > div:nth-of-type(2) > div:nth-of-type(1) > div > div button';
 //const twitterSelector = 'section > div > div > div > div:nth-of-type(1) article div:nth-of-type(3) img';
-const twitterSelector = 'article:nth-of-type(1) div:nth-of-type(3) img';
+const twitterSelector = 'article:nth-of-type(1) img';
 const twitterShowSensitiveBtn = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div > div:nth-of-type(2) > div > div:nth-of-type(2) div[role=button]';
 const isHeadless = true;
 let browserWSEndpoint = null;
