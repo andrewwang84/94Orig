@@ -6,9 +6,6 @@ const bot = new TelegramBot(token, { polling: true });
 const apiUrl = require('./config.js')[app.get('env')].url;
 
 bot.onText(/https:\/\//, async (msg, match) => {
-    if (/line\.me\//.test(match.input)) {
-        return;
-    }
     const chatId = msg.chat.id;
     console.log(chatId);
     let target = match.input;
@@ -35,9 +32,6 @@ bot.onText(/https:\/\//, async (msg, match) => {
             } else {
                 if (resp[i] != '') {
                     bot.sendMessage(chatId, resp[i]);
-                    // bot.sendMessage(chatId, `[Link](${resp[i]})`, {
-                    //     parse_mode: 'Markdown'
-                    // });
                 }
             }
         }
