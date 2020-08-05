@@ -8,11 +8,12 @@ const passwordSelector = 'input[name="password"]';
 const loginBtn = 'button[type="submit"]';
 const storiesCountClassSelector = '#react-root > section > div > div > section > div > div:nth-child(1)';
 const nextStorySelector = '.coreSpriteRightChevron';
-const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36';
-const WTFStorySelector = '#react-root > section > div > div > section > div.GHEPc > div.Igw0E.IwRSH.eGOV_._4EzTm.NUiEW > div > div > div.Igw0E.IwRSH.YBx95._4EzTm.O1flK.D8xaz.fm1AK.TxciK.yiMZG > div > div > button';
-const storyBtnSelector = '#react-root > section > main > div > header > div > div > span > img';
-const twitterSelector = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div:nth-of-type(2) img';
+const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36';
+const WTFStorySelector = '#react-root > section > div > div > section > div:nth-of-type(2) > div:nth-of-type(1) > div > div button';
+//const twitterSelector = 'section > div > div > div > div:nth-of-type(1) article div:nth-of-type(3) img';
+const twitterSelector = 'article:nth-of-type(1) img';
 const twitterShowSensitiveBtn = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div > div:nth-of-type(2) > div > div:nth-of-type(2) div[role=button]';
+const isHeadless = true;
 let browserWSEndpoint = null;
 
 async function getStories(url) {
@@ -31,6 +32,7 @@ async function getStories(url) {
 
         if (!browserWSEndpoint) {
             const browser = await puppeteer.launch({
+                headless: isHeadless,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox'
@@ -98,7 +100,6 @@ async function getStories(url) {
             await page.click(WTFStorySelector);
         }
 
-        await page.waitForSelector('img[decoding="sync"]');
         let countClass = await page.$eval(storiesCountClassSelector, e => e.getAttribute('class'));
         let count = await page.$$eval(`.${countClass}`, e => e.length);
         for (let index = 0; index < count; index++) {
@@ -115,7 +116,6 @@ async function getStories(url) {
             if (await page.url() === baseUrl) {
                 break;
             }
-            await page.waitForSelector('img[decoding="sync"]');
         }
 
         //await browser.close();
@@ -135,7 +135,7 @@ async function igUrl(url) {
 
         if (!browserWSEndpoint) {
             const browser = await puppeteer.launch({
-                //headless: false,
+                headless: isHeadless,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox'
@@ -217,7 +217,7 @@ async function twitterUrl(url) {
 
         if (!browserWSEndpoint) {
             const browser = await puppeteer.launch({
-                //headless: false,
+                headless: isHeadless,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox'
@@ -244,7 +244,6 @@ async function twitterUrl(url) {
                 if (/\?format=/.test(rawImg)) {
                     let ext = rawImg.match(/\?format=([^\&]*)\&/)[1];
                     result = `${rawImg.slice(0, rawImg.lastIndexOf('?'))}?format=${ext}&name=orig`;
-                    //result += `\n${rawImg.slice(0, rawImg.lastIndexOf('?'))}?format=png&name=orig`;
                 } else {
                     result = `${rawImg.slice(0, rawImg.lastIndexOf(':'))}:orig`;
                 }
@@ -252,6 +251,7 @@ async function twitterUrl(url) {
 
             return result;
         })).catch(e => e);
+
         if (img.length !== 0) {
             imgUrls.push(img);
         }
