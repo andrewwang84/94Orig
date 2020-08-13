@@ -6,7 +6,6 @@ const upload = multer();
 
 router.post('/', upload.array(), async function (req, res) {
     try {
-        req.setTimeout(0);
         console.log(req.body.url)
         let result = await crawler.getImage(req.body.url);
         res.status(200).json({ url: `${result}` });

@@ -9,10 +9,6 @@ bot.onText(/https:\/\//, async (msg, match) => {
     const chatId = msg.chat.id;
     console.log(chatId);
     let target = match.input;
-    let isStory = false;
-    if (!/instagram\.com\/p\//.test(target) && /instagram\.com/.test(target)) {
-        isStory = true;
-    }
 
     target = target.substring(target.indexOf(`https:`), target.length);
     target = target.split("\n");

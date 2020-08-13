@@ -1,6 +1,6 @@
 {
   "name": "94orig",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "start": "node ./bin/www"
@@ -9,6 +9,7 @@
     "node": "10.13.0"
   },
   "dependencies": {
+    "@line/bot-sdk": "^7.0.0",
     "cheerio": "^1.0.0-rc.3",
     "cookie-parser": "^1.4.4",
     "debug": "~2.6.9",

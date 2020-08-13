@@ -6,7 +6,9 @@ var config = {
         port: 3000,
         insCookies: null,
         url: 'http://127.0.0.1:3000/',
-        deepSite: null
+        deepSite: null,
+        lineAccessToken: null,
+        lineSecret: null
     },
     production: {
         telegramToken: process.env.telegramToken,
@@ -15,7 +17,9 @@ var config = {
         port: process.env.PORT,
         insCookies: process.env.insCookies,
         url: process.env.url,
-        deepSite: process.env.deepSite
+        deepSite: process.env.deepSite,
+        lineAccessToken: process.env.lineAccessToken,
+        lineSecret: process.env.lineSecret
     }
 }
 
@@ -25,6 +29,8 @@ if (process.env.NODE_ENV != 'production') {
     config.development['insPass'] = require('./cred.js').insPass;
     config.development['insCookies'] = require('./cred.js').insCookies;
     config.development['deepSite'] = require('./cred.js').deepSite;
+    config.development['lineAccessToken'] = require('./cred.js').lineAccessToken;
+    config.development['lineSecret'] = require('./cred.js').lineSecret;
 }
 
 module.exports = config;
