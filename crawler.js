@@ -16,7 +16,7 @@ let getImage = async (urls) => {
         let start = Date.now();
         const data = await prepareData(urls);
         let end = Date.now();
-        console.log(`[LOG] Get Image Done. Used ${end - start} seconds`);
+        console.log(`[LOG] Get Image Done. Used ${(end - start)/1000} seconds`);
         return data;
     } catch (error) {
         return next(error);
