@@ -22,12 +22,11 @@ router.post('/webhook', (req, res) => {
 
 const client = new line.Client(config);
 async function handleEvent(event) {
-    if (event.type !== 'message' || event.message.type !== 'text') {
-        // ignore non-text-message event
+    let msg = event.message.text;
+    if (event.type !== 'message' || event.message.type !== 'text' || (!/^https:\/\/instagram\.com\//.test(msg) && !/^https:\/\/twitter\.com\//.test(msg) && !/^https:\/\/mobile\.twitter\.com\//.test(msg))) {
         return Promise.resolve(null);
     }
 
-    let msg = event.message.text;
     let msgArr = msg.split('\n');
     let res = [];
     try {
