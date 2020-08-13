@@ -12,7 +12,11 @@ const deepSite = require('./config.js')[app.get('env')].deepSite;
 
 let getImage = async (urls) => {
     try {
+        console.log(`[LOG] Start Getting Image`);
+        let start = Date.now();
         const data = await prepareData(urls);
+        let end = Date.now();
+        console.log(`[LOG] Get Image Done. Used ${end - start} seconds`);
         return data;
     } catch (error) {
         return next(error);
