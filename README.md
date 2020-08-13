@@ -14,13 +14,12 @@
 - [X] IG video
 - [X] IG Story image
 - [X] IG Story video
-- [X] Twitter image
+- [ ] Twitter image
 - [ ] Twitter video
 - [ ] Twitter video as Gif
 - [X] Error handling
 - [X] Web
-- [ ] Line
-- [ ] Facebook messenger
+- [X] Line
 
 ## Input
 
