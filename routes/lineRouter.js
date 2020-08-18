@@ -28,10 +28,10 @@ async function handleEvent(event) {
     }
 
     let msg = event.message.text;
-    let msgArr = msg.split('\n');
+    let targetArr = (msg.match(/https:\/\/www\.instagram\.com\/p\/\S{11}\//g)).concat(msg.match(/https:\/\/instagram\.com\/\S+/g));
     let res = [];
     try {
-        res = await crawler.getImage(msgArr);
+        res = await crawler.getImage(targetArr);
 
         if (res.length !== 0) {
             res = res[0][0];
