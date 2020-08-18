@@ -34,7 +34,7 @@ async function handleEvent(event) {
     let res = [];
     try {
         res = await crawler.getImage(targetArr);
-
+        console.log(res);
         if (res.length !== 0) {
             res = res[0][0];
 
