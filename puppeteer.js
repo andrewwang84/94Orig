@@ -256,7 +256,8 @@ async function twitterUrl(url) {
             return result;
         })).catch(e => e);
         console.log(`[DEBUG_LOG] img get`);
-        console.log(img);
+        const html = await page.content();
+        console.log(html);
         if (img.length !== 0) {
             imgUrls.push(img);
         }
