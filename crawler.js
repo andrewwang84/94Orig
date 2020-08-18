@@ -26,9 +26,9 @@ let getImage = async (urls) => {
 async function prepareData(urls) {
     var imageUrls = [];
     for (var i = 0; i < urls.length; i++) {
-        console.log(`[LOG] Running url: ${urls[i]}`);
         if (/instagram\.com\/p\//.test(urls[i])) {
             try {
+                console.log(`[LOG][IG] Running url: ${urls[i]}`);
                 imageUrls.push(await puppeteer.igUrl(urls[i]));
             } catch (error) {
                 return error;
@@ -40,6 +40,7 @@ async function prepareData(urls) {
                 if (urls[i].indexOf('?') !== -1) {
                     url = urls[i].slice(0, urls[i].indexOf('?'));
                 }
+                console.log(`[LOG][IG_STORY] Running url: ${urls[i]}`);
                 imageUrls.push(await puppeteer.getStories(url));
             } catch (error) {
                 return error;
@@ -47,6 +48,7 @@ async function prepareData(urls) {
         }
         if (/https:\/\/twitter\.com/.test(urls[i]) || /https:\/\/mobile\.twitter\.com/.test(urls[i])) {
             try {
+                console.log(`[LOG][TWITTER] Running url: ${urls[i]}`);
                 let url = await puppeteer.twitterUrl(urls[i]);
                 imageUrls.push(url);
             } catch (error) {
