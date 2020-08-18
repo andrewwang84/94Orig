@@ -57,7 +57,8 @@ async function handleEvent(event) {
                     }
                 }
             }
-
+            console.log(`[DEBUG_LOG]`);
+            console.log(msg);
             let msgArrObj = [];
             for (let i = 0; i < msg.length; i++) {
                 let currentMsg = msg[i];
