@@ -12,11 +12,11 @@ const deepSite = require('./config.js')[app.get('env')].deepSite;
 
 let getImage = async (urls) => {
     try {
-        console.log(`[LOG] Start Getting Image`);
+        console.log(`[LOG] Start Getting Images`);
         let start = Date.now();
         const data = await prepareData(urls);
         let end = Date.now();
-        console.log(`[LOG] Get Image Done. Used ${(end - start)/1000} seconds`);
+        console.log(`[LOG] Get Images Done. Used ${(end - start)/1000} seconds`);
         return data;
     } catch (error) {
         return next(error);
@@ -26,6 +26,7 @@ let getImage = async (urls) => {
 async function prepareData(urls) {
     var imageUrls = [];
     for (var i = 0; i < urls.length; i++) {
+        console.log(`[LOG] Running url: ${urls[i]}`);
         if (/instagram\.com\/p\//.test(urls[i])) {
             try {
                 imageUrls.push(await puppeteer.igUrl(urls[i]));
