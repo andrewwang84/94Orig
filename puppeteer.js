@@ -13,6 +13,7 @@ const WTFStorySelector = '#react-root > section > div > div > section > div:nth-
 //const twitterSelector = 'section > div > div > div > div:nth-of-type(1) article div:nth-of-type(3) img';
 const twitterSelector = 'article:nth-of-type(1) img';
 const twitterShowSensitiveBtn = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div > div:nth-of-type(2) > div > div:nth-of-type(2) div[role=button]';
+//const isHeadless = false;
 const isHeadless = true;
 let browserWSEndpoint = null;
 
@@ -31,6 +32,7 @@ async function getStories(url) {
         }
 
         if (!browserWSEndpoint) {
+            console.log(`[LOG] Launch Browser`);
             const browser = await puppeteer.launch({
                 headless: isHeadless,
                 args: [
@@ -134,6 +136,7 @@ async function igUrl(url) {
         let imgUrls = [];
 
         if (!browserWSEndpoint) {
+            console.log(`[LOG] Launch Browser`);
             const browser = await puppeteer.launch({
                 headless: isHeadless,
                 args: [
@@ -216,6 +219,7 @@ async function twitterUrl(url) {
         let imgUrls = [];
 
         if (!browserWSEndpoint) {
+            console.log(`[LOG] Launch Browser`);
             const browser = await puppeteer.launch({
                 headless: isHeadless,
                 args: [
@@ -251,17 +255,12 @@ async function twitterUrl(url) {
 
             return result;
         })).catch(e => e);
-
+        console.log(`[DEBUG_LOG] img get`);
+        console.log(img);
         if (img.length !== 0) {
             imgUrls.push(img);
         }
 
-        // let video = await page.$$eval('article video[type="video/mp4"]', e => e.map(img => img.getAttribute('src'))).catch(e => e);
-        // if (video.length !== 0) {
-        //     imgUrls.push(video);
-        // }
-
-        //await browser.close();
         await page.close();
 
         return new Promise(function (resolve, reject) {
