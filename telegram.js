@@ -23,12 +23,8 @@ bot.onText(/https:\/\//, async (msg, match) => {
 
         let session = '';
         for (var i = 0; i < resp.length; i++) {
-            if (/session:/.test(resp[i])) {
-                session = resp[i];
-            } else {
-                if (resp[i] != '') {
-                    bot.sendMessage(chatId, resp[i]);
-                }
+            if (resp[i] != '') {
+                //bot.sendMessage(chatId, resp[i]);
             }
         }
 

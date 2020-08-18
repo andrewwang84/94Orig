@@ -8,7 +8,7 @@ const passwordSelector = 'input[name="password"]';
 const loginBtn = 'button[type="submit"]';
 const storiesCountClassSelector = '#react-root > section > div > div > section > div > div:nth-child(1)';
 const nextStorySelector = '.coreSpriteRightChevron';
-const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36';
+const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36';
 const WTFStorySelector = '#react-root > section > div > div > section > div:nth-of-type(2) > div:nth-of-type(1) > div > div button';
 //const twitterSelector = 'section > div > div > div > div:nth-of-type(1) article div:nth-of-type(3) img';
 const twitterSelector = 'article:nth-of-type(1) img';
@@ -75,15 +75,6 @@ async function getStories(url) {
                     resolve(imgUrls);
                 });
             }
-
-            const getCookies = await page.cookies();
-            let session = '';
-            for (const i of getCookies) {
-                if (i.name == 'sessionid') {
-                    session = i.value;
-                }
-            }
-            imgUrls.push(`session:${session}`);
         }
 
         await page.goto(storiesUrl, { waitUntil: 'networkidle0' });
@@ -105,10 +96,8 @@ async function getStories(url) {
         let countClass = await page.$eval(storiesCountClassSelector, e => e.getAttribute('class'));
         let count = await page.$$eval(`.${countClass}`, e => e.length);
         for (let index = 0; index < count; index++) {
-            let img = '';
-            let video = '';
-            img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(e => e);
-            video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(e => e);
+            let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
+            let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
             if (typeof video === 'string') {
                 imgUrls.push(video);
             } else {
@@ -176,15 +165,6 @@ async function igUrl(url) {
                     resolve(imgUrls);
                 });
             }
-
-            const getCookies = await page.cookies();
-            let session = '';
-            for (const i of getCookies) {
-                if (i.name == 'sessionid') {
-                    session = i.value;
-                }
-            }
-            imgUrls.push(`session:${session}`);
         }
 
         for (let index = 0; index < 12; index++) {
@@ -193,15 +173,9 @@ async function igUrl(url) {
             }
         }
 
-        let img = await page.$$eval('article img[decoding="auto"]', e => e.map(img => img.getAttribute('src'))).catch(e => e);
-        if (img.length !== 0) {
-            imgUrls.push(img);
-        }
-
-        let video = await page.$$eval('article video[type="video/mp4"]', e => e.map(img => img.getAttribute('src'))).catch(e => e);
-        if (video.length !== 0) {
-            imgUrls.push(video);
-        }
+        let img = await page.$$eval('article img[decoding="auto"]', e => e.map(img => img.getAttribute('src'))).catch(err => err);
+        let video = await page.$$eval('article video[type="video/mp4"]', e => e.map(img => img.getAttribute('src'))).catch(err => err);
+        imgUrls = [].concat(img, video);
 
         //await browser.close();
         await page.close();
