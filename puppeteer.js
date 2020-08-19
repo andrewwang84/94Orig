@@ -208,6 +208,7 @@ async function igUrl(url) {
     }
 }
 
+// Deprecated due to twitter's blocking of headless chrome
 async function twitterUrl(url) {
     try {
         let imgUrls = [];

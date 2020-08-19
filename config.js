@@ -8,7 +8,8 @@ var config = {
         url: 'http://127.0.0.1:3000/',
         deepSite: null,
         lineAccessToken: null,
-        lineSecret: null
+        lineSecret: null,
+        twitterToken: null
     },
     production: {
         telegramToken: process.env.telegramToken,
@@ -19,7 +20,8 @@ var config = {
         url: process.env.url,
         deepSite: process.env.deepSite,
         lineAccessToken: process.env.lineAccessToken,
-        lineSecret: process.env.lineSecret
+        lineSecret: process.env.lineSecret,
+        twitterToken: process.env.twitterToken
     }
 }
 
@@ -31,6 +33,7 @@ if (process.env.NODE_ENV != 'production') {
     config.development['deepSite'] = require('./cred.js').deepSite;
     config.development['lineAccessToken'] = require('./cred.js').lineAccessToken;
     config.development['lineSecret'] = require('./cred.js').lineSecret;
+    config.development['twitterToken'] = require('./cred.js').twitterToken;
 }
 
 module.exports = config;

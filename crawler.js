@@ -1,14 +1,15 @@
 var request = require('request');
-var request = require('request').defaults({
-    jar: true,
-    headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36'
-    }
-});
 var cheerio = require('cheerio');
 const puppeteer = require('./puppeteer.js');
 var app = require('express')();
 const deepSite = require('./config.js')[app.get('env')].deepSite;
+const twitterToken = require('./config.js')[app.get('env')].twitterToken;
+var request = require('request').defaults({
+    jar: true,
+    headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36',
+    }
+});
 
 let getImage = async (urls) => {
     try {
@@ -49,7 +50,7 @@ async function prepareData(urls) {
         if (/https:\/\/twitter\.com/.test(urls[i])) {
             try {
                 console.log(`[LOG][TWITTER] Running url: ${urls[i]}`);
-                imageUrls.push(await puppeteer.twitterUrl(urls[i]));
+                imageUrls.push(await twitterUrl(urls[i]));
             } catch (error) {
                 return error;
             }
@@ -58,7 +59,7 @@ async function prepareData(urls) {
             try {
                 let targetUrl = urls[i].replace('mobile.', '');
                 console.log(`[LOG][TWITTER] Running url: ${targetUrl}`);
-                imageUrls.push(await puppeteer.twitterUrl(targetUrl));
+                imageUrls.push(await twitterUrl(targetUrl));
             } catch (error) {
                 return error;
             }
@@ -67,6 +68,28 @@ async function prepareData(urls) {
 
     return new Promise(function (resolve, reject) {
         resolve(imageUrls);
+    });
+}
+
+function twitterUrl (url) {
+    let id = url.match(/https:\/\/twitter\.com\/\S+\/status\/([0-9]+)/)[1];
+
+    return new Promise(function (resolve, reject) {
+        request.get(`https://api.twitter.com/2/tweets?ids=${id}&media.fields=type,url&expansions=attachments.media_keys`, {
+            'auth': {
+                'bearer': twitterToken
+            }
+        }, function (error, response, body) {
+            let data = JSON.parse(body);
+            let media = data.includes.media;
+            let result = [];
+            for (let i = 0; i < media.length; i++) {
+                let data = media[i];
+                result.push(`${data.url}:orig`);
+            }
+
+            resolve(result);
+        });
     });
 }
 
