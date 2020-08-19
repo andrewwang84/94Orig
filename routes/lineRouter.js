@@ -93,7 +93,7 @@ async function handleEvent(event) {
                 }
             }
 
-            if (newArr.length <= 5) {
+            if (newArr.length > 5) {
                 msgArrObj = {
                     "type": "template",
                     "altText": "94Orig Results",
