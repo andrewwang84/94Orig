@@ -127,7 +127,7 @@ async function handleEvent(event) {
                         }
                     }
 
-                    msgArrObj.push(vidArr)
+                    msgArrObj = msgArrObj.concat(vidArr);
                 }
             }
 
