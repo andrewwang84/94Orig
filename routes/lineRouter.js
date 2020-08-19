@@ -34,16 +34,18 @@ async function handleEvent(event) {
     let res = [];
     try {
         res = await crawler.getImage(targetArr);
-        console.log(res);
         if (res.length !== 0) {
-            res = res[0];
+            let newArr = [];
+            for (let i = 0; i < res.length; i++) {
+                newArr = newArr.concat(res[i]);
+            }
 
             let msg = [];
-            let imgPerMsg = Math.ceil(res.length / 5);
-            for (let i = 0; i < res.length; i++) {
-                let img = res[i];
+            let imgPerMsg = Math.ceil(newArr.length / 5);
+            for (let i = 0; i < newArr.length; i++) {
+                let img = newArr[i];
                 let imgIndex = i+1;
-                if (res.length <= 5) {
+                if (newArr.length <= 5) {
                     if (msg[Math.floor(i / imgPerMsg)] !== undefined) {
                         msg[Math.floor(i / imgPerMsg)] += `${img}`;
                     } else {
@@ -57,22 +59,50 @@ async function handleEvent(event) {
                     }
                 }
             }
-            console.log(`[DEBUG_LOG]`);
-            console.log(msg);
             let msgArrObj = [];
             for (let i = 0; i < msg.length; i++) {
                 let currentMsg = msg[i];
-                if (res.length <= 5) {
-                    msgArrObj.push({
-                        'type': 'image',
-                        "originalContentUrl": currentMsg,
-                        "previewImageUrl": currentMsg
-                    });
+                if (newArr.length <= 5) {
+                    if (/\.mp4/.test(currentMsg)) {
+                        msgArrObj.push({
+                            'type': 'video',
+                            "originalContentUrl": currentMsg,
+                            "previewImageUrl": currentMsg
+                        });
+                    } else if (/\.jpe?g|\.png/i.test(currentMsg)) {
+                        msgArrObj.push({
+                            'type': 'image',
+                            "originalContentUrl": currentMsg,
+                            "previewImageUrl": currentMsg
+                        });
+                    } else {
+                        msgArrObj.push({
+                            'type': 'text',
+                            'text': currentMsg
+                        });
+                    }
                 } else {
                     msgArrObj.push({
-                        'type': 'text',
-                        'text': currentMsg
+                        "imageUrl": currentMsg,
+                        "action": {
+                            "type": "uri",
+                            "label": "看大圖",
+                            "uri": currentMsg
+                        }
                     });
+                }
+            }
+
+            if (newArr.length <= 5) {
+                msgArrObj = {
+                    "type": "template",
+                    "altText": "94Orig Results",
+                    "template": {
+                        "type": "image_carousel",
+                        "columns": [
+                            msgArrObj
+                        ]
+                    }
                 }
             }
 
