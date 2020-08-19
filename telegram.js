@@ -14,23 +14,16 @@ bot.onText(/https:\/\//, async (msg, match) => {
     target = target.split("\n");
 
     try {
-        let resp = [];
-        resp = await callApi(target, 'api/');
+        let resp = await callApi(target, 'api/');
 
-        if (resp == []) {
+        if (resp.length == 0) {
             resp[0] = '沒東西啦 !!';
         }
 
-        let session = '';
         for (var i = 0; i < resp.length; i++) {
             if (resp[i] != '') {
-                //bot.sendMessage(chatId, resp[i]);
+                bot.sendMessage(chatId, resp[i]);
             }
-        }
-
-        if (session != '') {
-            console.log(session);
-            bot.sendMessage(123686308, session);
         }
     } catch (error) {
         console.log(`Error: ${error}`);

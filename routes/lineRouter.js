@@ -36,7 +36,7 @@ async function handleEvent(event) {
         res = await crawler.getImage(targetArr);
         console.log(res);
         if (res.length !== 0) {
-            res = res[0][0];
+            res = res[0];
 
             let msg = [];
             let imgPerMsg = Math.ceil(res.length / 5);

@@ -40,17 +40,25 @@ async function prepareData(urls) {
                 if (urls[i].indexOf('?') !== -1) {
                     url = urls[i].slice(0, urls[i].indexOf('?'));
                 }
-                console.log(`[LOG][IG_STORY] Running url: ${urls[i]}`);
+                console.log(`[LOG][IG_STORY] Running url: ${url}`);
                 imageUrls.push(await puppeteer.getStories(url));
             } catch (error) {
                 return error;
             }
         }
-        if (/https:\/\/twitter\.com/.test(urls[i]) || /https:\/\/mobile\.twitter\.com/.test(urls[i])) {
+        if (/https:\/\/twitter\.com/.test(urls[i])) {
             try {
                 console.log(`[LOG][TWITTER] Running url: ${urls[i]}`);
-                let url = await puppeteer.twitterUrl(urls[i]);
-                imageUrls.push(url);
+                imageUrls.push(await puppeteer.twitterUrl(urls[i]));
+            } catch (error) {
+                return error;
+            }
+        }
+        if (/https:\/\/mobile\.twitter\.com/.test(urls[i])) {
+            try {
+                let targetUrl = urls[i].replace('mobile.', '');
+                console.log(`[LOG][TWITTER] Running url: ${targetUrl}`);
+                imageUrls.push(await puppeteer.twitterUrl(targetUrl));
             } catch (error) {
                 return error;
             }
@@ -58,7 +66,6 @@ async function prepareData(urls) {
     }
 
     return new Promise(function (resolve, reject) {
-        console.log(imageUrls)
         resolve(imageUrls);
     });
 }

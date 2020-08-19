@@ -8,11 +8,11 @@ const passwordSelector = 'input[name="password"]';
 const loginBtn = 'button[type="submit"]';
 const storiesCountClassSelector = '#react-root > section > div > div > section > div > div:nth-child(1)';
 const nextStorySelector = '.coreSpriteRightChevron';
-const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36';
 const WTFStorySelector = '#react-root > section > div > div > section > div:nth-of-type(2) > div:nth-of-type(1) > div > div button';
 //const twitterSelector = 'section > div > div > div > div:nth-of-type(1) article div:nth-of-type(3) img';
 const twitterSelector = 'article:nth-of-type(1) img';
 const twitterShowSensitiveBtn = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div > div:nth-of-type(2) > div > div:nth-of-type(2) div[role=button]';
+const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36';
 //const isHeadless = false;
 const isHeadless = true;
 let browserWSEndpoint = null;
@@ -98,11 +98,19 @@ async function getStories(url) {
         for (let index = 0; index < count; index++) {
             let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
             let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
-            if (typeof video === 'string') {
-                imgUrls.push(video);
+            let result = null;
+            if (/Error:/.test(video) && /Error:/.test(img)) {
+                result = null;
+            } else if (/Error:/.test(video)) {
+                result = img;
             } else {
-                imgUrls.push(img);
+                result = video;
             }
+            if (result == null) {
+                result = `${targetHomeUrl} 限時下載錯誤，請稍後再試一次`;
+            }
+            imgUrls.push(result);
+
             await page.click(nextStorySelector);
             if (await page.url() === baseUrl) {
                 break;
@@ -117,6 +125,9 @@ async function getStories(url) {
         });
     } catch (error) {
         console.log(error);
+        return new Promise(function (resolve, reject) {
+            resolve([`${targetHomeUrl} 發生錯誤，請再試一次`]);
+        });
     }
 }
 
@@ -167,15 +178,21 @@ async function igUrl(url) {
             }
         }
 
+        let count = 1;
         for (let index = 0; index < 12; index++) {
             if (await page.$('.coreSpriteRightChevron') !== null) {
                 await page.click('.coreSpriteRightChevron');
+                count++;
             }
         }
 
         let img = await page.$$eval('article img[decoding="auto"]', e => e.map(img => img.getAttribute('src'))).catch(err => err);
         let video = await page.$$eval('article video[type="video/mp4"]', e => e.map(img => img.getAttribute('src'))).catch(err => err);
         imgUrls = [].concat(img, video);
+
+        if (imgUrls.length < count) {
+            imgUrls.push(`[警告] ${url} 疑似下載不完全`);
+        }
 
         //await browser.close();
         await page.close();
@@ -185,6 +202,9 @@ async function igUrl(url) {
         });
     } catch (error) {
         console.log(error);
+        return new Promise(function (resolve, reject) {
+            resolve([`${url} 發生錯誤，請再試一次`]);
+        });
     }
 }
 
@@ -207,6 +227,12 @@ async function twitterUrl(url) {
 
         const page = await browser.newPage();
         await page.setUserAgent(userAgent);
+        //Pass the Webdriver Test.
+        await page.evaluateOnNewDocument(() => {
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => false,
+            });
+        });
 
         await page.goto(url, { waitUntil: 'networkidle0' });
 
@@ -229,11 +255,14 @@ async function twitterUrl(url) {
 
             return result;
         })).catch(e => e);
-        console.log(`[DEBUG_LOG] img get`);
-        const html = await page.content();
-        console.log(html);
+
+        img = img.filter(url => url !== '');
         if (img.length !== 0) {
-            imgUrls.push(img);
+            imgUrls = [].concat(img);
+        } else {
+            const html = await page.content();
+            console.log(html);
+            imgUrls.push(`${url} 找不到圖片`);
         }
 
         await page.close();
@@ -243,6 +272,9 @@ async function twitterUrl(url) {
         });
     } catch (error) {
         console.log(error);
+        return new Promise(function (resolve, reject) {
+            resolve([`${url} 發生錯誤，請再試一次`]);
+        });
     }
 }
 
