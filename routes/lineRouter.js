@@ -45,19 +45,20 @@ async function handleEvent(event) {
             for (let i = 0; i < newArr.length; i++) {
                 let img = newArr[i];
                 let imgIndex = i+1;
-                if (newArr.length <= 5) {
-                    if (msg[Math.floor(i / imgPerMsg)] !== undefined) {
-                        msg[Math.floor(i / imgPerMsg)] += `${img}`;
-                    } else {
-                        msg[Math.floor(i / imgPerMsg)] = `${img}`;
-                    }
-                } else {
-                    if (msg[Math.floor(i / imgPerMsg)] !== undefined) {
-                        msg[Math.floor(i / imgPerMsg)] += `${imgIndex}: ${img}\n`;
-                    } else {
-                        msg[Math.floor(i / imgPerMsg)] = `${imgIndex}: ${img}\n`;
-                    }
-                }
+                // if (newArr.length <= 5) {
+                //     if (msg[Math.floor(i / imgPerMsg)] !== undefined) {
+                //         msg[Math.floor(i / imgPerMsg)] += `${img}`;
+                //     } else {
+                //         msg[Math.floor(i / imgPerMsg)] = `${img}`;
+                //     }
+                // } else {
+                //     if (msg[Math.floor(i / imgPerMsg)] !== undefined) {
+                //         msg[Math.floor(i / imgPerMsg)] += `${imgIndex}: ${img}\n`;
+                //     } else {
+                //         msg[Math.floor(i / imgPerMsg)] = `${imgIndex}: ${img}\n`;
+                //     }
+                // }
+                msg[i] = img;
             }
             let msgArrObj = [];
             for (let i = 0; i < msg.length; i++) {
@@ -73,7 +74,7 @@ async function handleEvent(event) {
                         msgArrObj.push({
                             'type': 'image',
                             "originalContentUrl": currentMsg,
-                            "previewImageUrl": currentMsg
+                            "previewImageUrl": "https://pbs.twimg.com/profile_images/1269685818345394176/lPyLjEXz_400x400.jpg"
                         });
                     } else {
                         msgArrObj.push({
