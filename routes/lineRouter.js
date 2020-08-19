@@ -61,6 +61,7 @@ async function handleEvent(event) {
                 msg[i] = img;
             }
             let msgArrObj = [];
+            let tmpVideoMsg = [];
             for (let i = 0; i < msg.length; i++) {
                 let currentMsg = msg[i];
                 if (newArr.length <= 5) {
@@ -68,13 +69,13 @@ async function handleEvent(event) {
                         msgArrObj.push({
                             'type': 'video',
                             "originalContentUrl": currentMsg,
-                            "previewImageUrl": currentMsg
+                            "previewImageUrl": "https://pbs.twimg.com/profile_images/1269685818345394176/lPyLjEXz_400x400.jpg"
                         });
                     } else if (/\.jpe?g|\.png/i.test(currentMsg)) {
                         msgArrObj.push({
                             'type': 'image',
                             "originalContentUrl": currentMsg,
-                            "previewImageUrl": "https://pbs.twimg.com/profile_images/1269685818345394176/lPyLjEXz_400x400.jpg"
+                            "previewImageUrl": currentMsg
                         });
                     } else {
                         msgArrObj.push({
@@ -83,27 +84,50 @@ async function handleEvent(event) {
                         });
                     }
                 } else {
-                    msgArrObj.push({
-                        "imageUrl": currentMsg,
-                        "action": {
-                            "type": "uri",
-                            "label": "看大圖",
-                            "uri": currentMsg
-                        }
-                    });
+                    if (/\.mp4/.test(currentMsg)) {
+                        tmpVideoMsg.push(currentMsg);
+                    } else {
+                        msgArrObj.push({
+                            "imageUrl": currentMsg,
+                            "action": {
+                                "type": "uri",
+                                "label": "看大圖",
+                                "uri": currentMsg
+                            }
+                        });
+                    }
                 }
             }
 
             if (newArr.length > 5) {
-                msgArrObj = {
+                msgArrObj = [{
                     "type": "template",
                     "altText": "94Orig Results",
                     "template": {
                         "type": "image_carousel",
-                        "columns": [
-                            msgArrObj
-                        ]
+                        "columns": msgArrObj
                     }
+                }];
+
+                if (tmpVideoMsg.length !== 0) {
+                    let vidArr = [];
+                    for (let i = 0; i < tmpVideoMsg.length; i++) {
+                        let vid = tmpVideoMsg[i];
+                        if (tmpVideoMsg.length > 4) {
+                            vidArr.push({
+                                'type': 'text',
+                                'text': vid
+                            });
+                        } else {
+                            vidArr.push({
+                                'type': 'video',
+                                "originalContentUrl": vid,
+                                "previewImageUrl": "https://pbs.twimg.com/profile_images/1269685818345394176/lPyLjEXz_400x400.jpg"
+                            });
+                        }
+                    }
+
+                    msgArrObj.push(vidArr)
                 }
             }
 
