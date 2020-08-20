@@ -112,7 +112,7 @@ async function handleEvent(event) {
                 //     }
                 // }];
 
-                let msg = '圖片太多，超出 Line Api 單次發送限制，以下是剩下的圖片\n';
+                let msg = '圖片太多，超出 Line Api 單次發送限制，以下是剩下的圖片:\n';
                 let count = 4;
                 if (tmpVideoMsg.length !== 0) {
                     for (let i = 0; i < tmpVideoMsg.length; i++) {
