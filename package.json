@@ -12,15 +12,16 @@
     "@line/bot-sdk": "^7.0.0",
     "cheerio": "^1.0.0-rc.3",
     "cookie-parser": "^1.4.4",
-    "debug": "~2.6.9",
-    "ejs": "~2.5.7",
+    "debug": "^4.1.1",
+    "ejs": "^3.1.5",
     "express": "^4.17.1",
-    "http-errors": "~1.6.2",
-    "morgan": "^1.9.1",
+    "http-errors": "^1.8.0",
+    "latest": "^0.2.0",
+    "morgan": "^1.10.0",
     "multer": "^1.4.1",
-    "node-telegram-bot-api": "^0.30.0",
-    "puppeteer": "^1.18.1",
-    "request": "^2.88.0"
+    "node-telegram-bot-api": "^0.50.0",
+    "puppeteer": "^5.2.1",
+    "request": "^2.88.2"
   },
   "description": "service to return original instagram and twitter image to user",
   "keywords": [
