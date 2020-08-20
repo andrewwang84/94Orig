@@ -42,30 +42,30 @@ async function handleEvent(event) {
                 newArr = newArr.concat(res[i]);
             }
 
-            let msg = [];
-            let imgPerMsg = Math.ceil(newArr.length / 5);
-            for (let i = 0; i < newArr.length; i++) {
-                let img = newArr[i];
-                let imgIndex = i+1;
-                // if (newArr.length <= 5) {
-                //     if (msg[Math.floor(i / imgPerMsg)] !== undefined) {
-                //         msg[Math.floor(i / imgPerMsg)] += `${img}`;
-                //     } else {
-                //         msg[Math.floor(i / imgPerMsg)] = `${img}`;
-                //     }
-                // } else {
-                //     if (msg[Math.floor(i / imgPerMsg)] !== undefined) {
-                //         msg[Math.floor(i / imgPerMsg)] += `${imgIndex}: ${img}\n`;
-                //     } else {
-                //         msg[Math.floor(i / imgPerMsg)] = `${imgIndex}: ${img}\n`;
-                //     }
-                // }
-                msg[i] = img;
-            }
+            // let msg = [];
+            // let imgPerMsg = Math.ceil(newArr.length / 5);
+            // for (let i = 0; i < newArr.length; i++) {
+            //     let img = newArr[i];
+            //     let imgIndex = i+1;
+            //     if (newArr.length <= 5) {
+            //         if (msg[Math.floor(i / imgPerMsg)] !== undefined) {
+            //             msg[Math.floor(i / imgPerMsg)] += `${img}`;
+            //         } else {
+            //             msg[Math.floor(i / imgPerMsg)] = `${img}`;
+            //         }
+            //     } else {
+            //         if (msg[Math.floor(i / imgPerMsg)] !== undefined) {
+            //             msg[Math.floor(i / imgPerMsg)] += `${imgIndex}: ${img}\n`;
+            //         } else {
+            //             msg[Math.floor(i / imgPerMsg)] = `${imgIndex}: ${img}\n`;
+            //         }
+            //     }
+            // }
             let msgArrObj = [];
             let tmpVideoMsg = [];
-            for (let i = 0; i < msg.length; i++) {
-                let currentMsg = msg[i];
+            let tmpTxtMsg = [];
+            for (let i = 0; i < newArr.length; i++) {
+                let currentMsg = newArr[i];
                 if (newArr.length <= 5) {
                     if (/\.mp4/.test(currentMsg)) {
                         msgArrObj.push({
@@ -89,48 +89,67 @@ async function handleEvent(event) {
                     if (/\.mp4/.test(currentMsg)) {
                         tmpVideoMsg.push(currentMsg);
                     } else {
-                        msgArrObj.push({
-                            "imageUrl": currentMsg,
-                            "action": {
-                                "type": "uri",
-                                "label": "看大圖",
-                                "uri": currentMsg
-                            }
-                        });
+                        // msgArrObj.push({
+                        //     "imageUrl": currentMsg,
+                        //     "action": {
+                        //         "type": "uri",
+                        //         "label": "看大圖",
+                        //         "uri": currentMsg
+                        //     }
+                        // });
+                        tmpTxtMsg.push(currentMsg);
                     }
                 }
             }
 
             if (newArr.length > 5) {
-                msgArrObj = [{
-                    "type": "template",
-                    "altText": "94Orig Results",
-                    "template": {
-                        "type": "image_carousel",
-                        "columns": msgArrObj
-                    }
-                }];
+                // msgArrObj = [{
+                //     "type": "template",
+                //     "altText": "94Orig Results",
+                //     "template": {
+                //         "type": "image_carousel",
+                //         "columns": msgArrObj
+                //     }
+                // }];
 
+                let msg = '圖片太多，超出 Line Api 單次發送限制，以下是剩下的圖片\n';
+                let count = 4;
                 if (tmpVideoMsg.length !== 0) {
-                    let vidArr = [];
                     for (let i = 0; i < tmpVideoMsg.length; i++) {
                         let vid = tmpVideoMsg[i];
-                        if (tmpVideoMsg.length > 4) {
-                            vidArr.push({
-                                'type': 'text',
-                                'text': vid
-                            });
-                        } else {
-                            vidArr.push({
+
+                        if (count > 0) {
+                            msgArrObj.push({
                                 'type': 'video',
                                 "originalContentUrl": vid,
                                 "previewImageUrl": "https://pbs.twimg.com/profile_images/1269685818345394176/lPyLjEXz_400x400.jpg"
                             });
+                            count--;
+                        } else {
+                            msg += `- ${vid}\n`;
                         }
                     }
-
-                    msgArrObj = msgArrObj.concat(vidArr);
                 }
+                if (tmpTxtMsg.length !== 0) {
+                    for (let i = 0; i < tmpTxtMsg.length; i++) {
+                        let img = tmpTxtMsg[i];
+
+                        if (count > 0) {
+                            msgArrObj.push({
+                                'type': 'image',
+                                "originalContentUrl": img,
+                                "previewImageUrl": img
+                            });
+                            count--;
+                        } else {
+                            msg += `- ${img}\n`;
+                        }
+                    }
+                }
+                msgArrObj.push({
+                    'type': 'text',
+                    'text': msg
+                });
             }
 
             client.replyMessage(event.replyToken, msgArrObj)
