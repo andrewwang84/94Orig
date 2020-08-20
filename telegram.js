@@ -4,26 +4,32 @@ var app = require('./app');
 const token = require('./config.js')[app.get('env')].telegramToken;
 const bot = new TelegramBot(token, { polling: true });
 const apiUrl = require('./config.js')[app.get('env')].url;
+const crawler = require('./crawler.js');
 
 bot.onText(/https:\/\//, async (msg, match) => {
     const chatId = msg.chat.id;
     console.log(chatId);
-    let target = match.input;
+    let chatMsg = match.input;
 
-    target = target.substring(target.indexOf(`https:`), target.length);
-    target = target.split("\n");
+    let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11}\/)|(?:https:\/\/instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
+    let isPup = (chatMsg.match(/-pup/i) !== null) ? true : false;
 
     try {
-        let resp = await callApi(target, 'api/');
+        let resp = await crawler.getImage(target, isPup);;
 
-        if (resp.length == 0) {
-            resp[0] = '沒東西啦 !!';
-        }
-
-        for (var i = 0; i < resp.length; i++) {
-            if (resp[i] != '') {
-                bot.sendMessage(chatId, resp[i]);
+        if (resp.length !== 0) {
+            let resArr = [];
+            for (let i = 0; i < resp.length; i++) {
+                resArr = resArr.concat(resp[i]);
             }
+
+            for (var i = 0; i < resArr.length; i++) {
+                if (resArr[i] != '') {
+                    bot.sendMessage(chatId, resArr[i]);
+                }
+            }
+        } else {
+            bot.sendMessage(chatId, '沒東西啦 !!');
         }
     } catch (error) {
         console.log(`Error: ${error}`);
@@ -98,6 +104,7 @@ bot.onText(/\/deep/, async (msg) => {
     }
 });
 
+// Deprecated, switch to direct function call
 async function callApi(urls, route) {
     return new Promise(function (resolve, reject) {
         try {

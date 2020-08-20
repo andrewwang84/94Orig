@@ -4,6 +4,7 @@ const puppeteer = require('./puppeteer.js');
 var app = require('express')();
 const deepSite = require('./config.js')[app.get('env')].deepSite;
 const twitterToken = require('./config.js')[app.get('env')].twitterToken;
+const insCookies = require('./config.js')[app.get('env')].insCookies;
 var request = require('request').defaults({
     jar: true,
     headers: {
@@ -11,11 +12,11 @@ var request = require('request').defaults({
     }
 });
 
-let getImage = async (urls) => {
+let getImage = async (urls, isPup = false) => {
     try {
         console.log(`[LOG] Start Getting Images`);
         let start = Date.now();
-        const data = await prepareData(urls);
+        const data = await prepareData(urls, isPup);
         let end = Date.now();
         console.log(`[LOG] Get Images Done. Used ${(end - start)/1000} seconds`);
         return data;
@@ -24,13 +25,17 @@ let getImage = async (urls) => {
     }
 }
 
-async function prepareData(urls) {
+async function prepareData(urls, isPup = false) {
     var imageUrls = [];
     for (var i = 0; i < urls.length; i++) {
         if (/instagram\.com\/p\//.test(urls[i])) {
             try {
                 console.log(`[LOG][IG] Running url: ${urls[i]}`);
-                imageUrls.push(await puppeteer.igUrl(urls[i]));
+                if (isPup == true) {
+                    imageUrls.push(await puppeteer.igUrl(urls[i]));
+                } else {
+                    imageUrls.push(await igUrl(urls[i]));
+                }
             } catch (error) {
                 return error;
             }
@@ -68,6 +73,47 @@ async function prepareData(urls) {
 
     return new Promise(function (resolve, reject) {
         resolve(imageUrls);
+    });
+}
+
+function igUrl(url) {
+    var result = [];
+    var target = '';
+    return new Promise(function (resolve, reject) {
+        const j = request.jar();
+        const cookie = request.cookie(`sessionid=${insCookies}`);
+        j.setCookie(cookie, url);
+        request({url: url, jar: j}, function (error, response, body) {
+            if (error) reject(error);
+
+            var $ = cheerio.load(body);
+            target = $(`body > script:contains("window.__additionalDataLoaded")`)[0].children[0].data;
+            while (/"display_url"/.test(target)) {
+                var chopFront = target.substring(target.indexOf(`"display_url"`) + 15, target.length);
+                var currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
+                target = chopFront.substring(currentResult.length, chopFront.length);
+
+                currentResult = currentResult.replace(/\\u0026/gi, "&");
+
+                result.push(currentResult);
+            }
+
+            target = $(`body > script:contains("window.__additionalDataLoaded")`)[0].children[0].data;
+            while (/"video_url"/.test(target)) {
+                chopFront = target.substring(target.indexOf(`"video_url"`) + 13, target.length);
+                currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
+                target = chopFront.substring(currentResult.length, chopFront.length);
+                currentResult = currentResult.replace(/\\u0026/gi, '&');
+
+                result.push(currentResult);
+            }
+
+            if (result.length > 1) {
+                result.shift();
+            }
+
+            resolve(result);
+        });
     });
 }
 

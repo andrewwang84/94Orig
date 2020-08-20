@@ -58,6 +58,7 @@ async function getStories(url) {
         await page.goto(url, { waitUntil: 'networkidle0' });
 
         if (await page.$(usernameSelector)) {
+            console.log(`[LOG] Start Login`);
             // login
             await page.click(usernameSelector);
             await page.keyboard.type(insEmail);
@@ -132,6 +133,7 @@ async function getStories(url) {
 }
 
 async function igUrl(url) {
+    console.log(`[LOG] Get IG from Puppeteer`);
     try {
         let imgUrls = [];
 
@@ -161,6 +163,7 @@ async function igUrl(url) {
 
         await page.goto(url, { waitUntil: 'networkidle0' });
         if (await page.$(usernameSelector)) {
+            console.log(`[LOG] Start Login`);
             // login
             await page.click(usernameSelector);
             await page.keyboard.type(insEmail);
