@@ -13,9 +13,10 @@ bot.onText(/https:\/\//, async (msg, match) => {
 
     let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11}\/)|(?:https:\/\/instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
     let isPup = (chatMsg.match(/-pup/i) !== null) ? true : false;
+    let forceUpdate = (chatMsg.match(/--f/i) !== null) ? true : false;
 
     try {
-        let resp = await crawler.getImage(target, isPup);;
+        let resp = await crawler.getImage(target, isPup, forceUpdate);;
 
         if (resp.length !== 0) {
             let resArr = [];

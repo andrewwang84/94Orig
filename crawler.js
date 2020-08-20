@@ -12,11 +12,11 @@ var request = require('request').defaults({
     }
 });
 
-let getImage = async (urls, isPup = false) => {
+let getImage = async (urls, isPup = false, forceUpdate = false) => {
     try {
         console.log(`[LOG] Start Getting Images`);
         let start = Date.now();
-        const data = await prepareData(urls, isPup);
+        const data = await prepareData(urls, isPup, forceUpdate);
         let end = Date.now();
         console.log(`[LOG] Get Images Done. Used ${(end - start)/1000} seconds`);
         return data;
@@ -25,7 +25,7 @@ let getImage = async (urls, isPup = false) => {
     }
 }
 
-async function prepareData(urls, isPup = false) {
+async function prepareData(urls, isPup = false, forceUpdate = false) {
     var imageUrls = [];
     for (var i = 0; i < urls.length; i++) {
         if (/instagram\.com\/p\//.test(urls[i])) {
@@ -47,7 +47,7 @@ async function prepareData(urls, isPup = false) {
                     url = urls[i].slice(0, urls[i].indexOf('?'));
                 }
                 console.log(`[LOG][IG_STORY] Running url: ${url}`);
-                imageUrls.push(await puppeteer.getStories(url));
+                imageUrls.push(await puppeteer.getStories(url, forceUpdate));
             } catch (error) {
                 return error;
             }

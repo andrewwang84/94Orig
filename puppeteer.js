@@ -16,8 +16,10 @@ const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/5
 //const isHeadless = false;
 const isHeadless = true;
 let browserWSEndpoint = null;
+const waitUntil = 'networkidle0';
+const CACHE = new Map();
 
-async function getStories(url) {
+async function getStories(url, forceUpdate = false) {
     try {
         let storiesUrl = '';
         let baseUrl = 'https://www.instagram.com/';
@@ -26,9 +28,18 @@ async function getStories(url) {
         let username = '';
         if (url.indexOf('/login/') === -1) {
             username = url.slice(url.lastIndexOf('.com/') + 5);
-            url = `https://www.instagram.com/accounts/login/?next=%2F${username}%2F`;
+            loginUrl = `https://www.instagram.com/accounts/login/?next=%2F${username}%2F`;
             storiesUrl = `https://www.instagram.com/stories/${username}`;
             targetHomeUrl = `https://www.instagram.com/${username}`;
+        }
+
+        // get Cache
+        var date = new Date().toISOString().replace(/:[0-9]{2}:[0-9]{2}\..+/, '');
+        if (CACHE.has(`${targetHomeUrl}_${date}`) && !forceUpdate) {
+            console.info(`[LOG] Get Story From Cache`);
+            return new Promise(function (resolve, reject) {
+                resolve(CACHE.get(`${targetHomeUrl}_${date}`));
+            });
         }
 
         if (!browserWSEndpoint) {
@@ -37,7 +48,12 @@ async function getStories(url) {
                 headless: isHeadless,
                 args: [
                     '--no-sandbox',
-                    '--disable-setuid-sandbox'
+                    '--disable-setuid-sandbox',
+                    // '--disable-gpu',
+                    // '--single-process',
+                    //'--disable-dev-shm-usage',
+                    //'--no-first-run',
+                    //'--no-zygote',
                 ]
             });
             browserWSEndpoint = await browser.wsEndpoint();
@@ -54,8 +70,13 @@ async function getStories(url) {
         const page = await browser.newPage();
         await page.setCookie(cookie);
         await page.setUserAgent(userAgent);
+        await page.setRequestInterception(true);
+        page.on('request', (request) => {
+            if (request.resourceType() === 'image' || request.resourceType() === 'font' || request.resourceType() === 'media') request.abort();
+            else request.continue();
+        });
 
-        await page.goto(url, { waitUntil: 'networkidle0' });
+        await page.goto(loginUrl, { waitUntil: waitUntil });
 
         if (await page.$(usernameSelector)) {
             console.log(`[LOG] Start Login`);
@@ -64,9 +85,9 @@ async function getStories(url) {
             await page.keyboard.type(insEmail);
             await page.click(passwordSelector);
             await page.keyboard.type(insPass);
-            await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: 'networkidle0' }));
+            await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntil }));
 
-            //await page.waitForNavigation({waitUntil: 'networkidle0'});
+            //await page.waitForNavigation({waitUntil: waitUntil});
 
             currentPage = await page.url();
             if (currentPage.search(/\/challenge\//) !== -1) {
@@ -78,7 +99,7 @@ async function getStories(url) {
             }
         }
 
-        await page.goto(storiesUrl, { waitUntil: 'networkidle0' });
+        await page.goto(storiesUrl, { waitUntil: waitUntil });
         if (await page.url() === targetHomeUrl) {
             await page.close();
             return new Promise(function (resolve, reject) {
@@ -96,6 +117,7 @@ async function getStories(url) {
 
         let countClass = await page.$eval(storiesCountClassSelector, e => e.getAttribute('class'));
         let count = await page.$$eval(`.${countClass}`, e => e.length);
+        let errFlag = false;
         for (let index = 0; index < count; index++) {
             let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
             let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
@@ -109,6 +131,7 @@ async function getStories(url) {
             }
             if (result == null) {
                 result = `${targetHomeUrl} 限時下載錯誤，請稍後再試一次`;
+                errFlag = true;
             }
             imgUrls.push(result);
 
@@ -116,6 +139,12 @@ async function getStories(url) {
             if (await page.url() === baseUrl) {
                 break;
             }
+        }
+
+        if (!errFlag) {
+            let date = new Date().toISOString().replace(/:[0-9]{2}:[0-9]{2}\..+/, '');
+
+            CACHE.set(`${targetHomeUrl}_${date}`, imgUrls);
         }
 
         //await browser.close();
@@ -161,7 +190,7 @@ async function igUrl(url) {
         await page.setCookie(cookie);
         await page.setUserAgent(userAgent);
 
-        await page.goto(url, { waitUntil: 'networkidle0' });
+        await page.goto(url, { waitUntil: waitUntil });
         if (await page.$(usernameSelector)) {
             console.log(`[LOG] Start Login`);
             // login
@@ -169,7 +198,7 @@ async function igUrl(url) {
             await page.keyboard.type(insEmail);
             await page.click(passwordSelector);
             await page.keyboard.type(insPass);
-            await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: 'networkidle0' }));
+            await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntil }));
 
             currentPage = await page.url();
             if (currentPage.search(/\/challenge\//) !== -1) {
@@ -232,7 +261,7 @@ async function twitterUrl(url) {
         const page = await browser.newPage();
         await page.setUserAgent(userAgent);
 
-        await page.goto(url, { waitUntil: 'networkidle0' });
+        await page.goto(url, { waitUntil: waitUntil });
 
         // for twitter sensitive content block
         if (await page.$(twitterShowSensitiveBtn)) {

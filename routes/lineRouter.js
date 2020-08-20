@@ -33,9 +33,10 @@ async function handleEvent(event) {
     // let twArr = (msg.match(/https:\/\/(?:mobile\.)?twitter\.com/g) !== null) ? msg.match(/https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+/g) : [];
     let targetArr = msg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11}\/)|(?:https:\/\/instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
     let isPup = (msg.match(/-pup/i) !== null) ? true : false;
+    let forceUpdate = (msg.match(/--f/i) !== null) ? true : false;
     let res = [];
     try {
-        res = await crawler.getImage(targetArr, isPup);
+        res = await crawler.getImage(targetArr, isPup, forceUpdate);
         if (res.length !== 0) {
             let newArr = [];
             for (let i = 0; i < res.length; i++) {
