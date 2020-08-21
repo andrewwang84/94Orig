@@ -23,7 +23,8 @@ const LAUNCH_ARGS = [
     '--disable-setuid-sandbox',
     '--disable-infobars',
     '--disable-gpu',
-    '--disable-dev-shm-usage'
+    '--disable-dev-shm-usage',
+    '--no-zygote'
 ];
 
 async function getStories(url, forceUpdate = false) {
