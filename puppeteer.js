@@ -18,6 +18,13 @@ const isHeadless = true;
 let browserWSEndpoint = null;
 const waitUntil = 'networkidle0';
 const CACHE = new Map();
+const LAUNCH_ARGS = [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-infobars',
+    '--disable-gpu',
+    '--disable-dev-shm-usage'
+];
 
 async function getStories(url, forceUpdate = false) {
     try {
@@ -34,27 +41,25 @@ async function getStories(url, forceUpdate = false) {
         }
 
         // get Cache
-        var date = new Date().toISOString().replace(/:[0-9]{2}:[0-9]{2}\..+/, '');
-        if (CACHE.has(`${targetHomeUrl}_${date}`) && !forceUpdate) {
+        if (CACHE.has(targetHomeUrl) && !forceUpdate) {
             console.info(`[LOG] Get Story From Cache`);
-            return new Promise(function (resolve, reject) {
-                resolve(CACHE.get(`${targetHomeUrl}_${date}`));
-            });
+            let timestamp = Date.now();
+            let cache = CACHE.get(targetHomeUrl);
+            if (timestamp - cache.time > 30 * 60 * 1000) {
+                console.info(`[LOG] Cache Outdated, Delete Cache`);
+                CACHE.delete(targetHomeUrl);
+            } else {
+                return new Promise(function (resolve, reject) {
+                    resolve(cache.data);
+                });
+            }
         }
 
         if (!browserWSEndpoint) {
             console.log(`[LOG] Launch Browser`);
             const browser = await puppeteer.launch({
                 headless: isHeadless,
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    // '--disable-gpu',
-                    // '--single-process',
-                    //'--disable-dev-shm-usage',
-                    //'--no-first-run',
-                    //'--no-zygote',
-                ]
+                args: LAUNCH_ARGS
             });
             browserWSEndpoint = await browser.wsEndpoint();
         }
@@ -142,9 +147,12 @@ async function getStories(url, forceUpdate = false) {
         }
 
         if (!errFlag) {
-            let date = new Date().toISOString().replace(/:[0-9]{2}:[0-9]{2}\..+/, '');
+            let timestamp = Date.now();
 
-            CACHE.set(`${targetHomeUrl}_${date}`, imgUrls);
+            CACHE.set(targetHomeUrl, {
+                'time': timestamp,
+                'data': imgUrls
+            });
         }
 
         //await browser.close();
@@ -170,10 +178,7 @@ async function igUrl(url) {
             console.log(`[LOG] Launch Browser`);
             const browser = await puppeteer.launch({
                 headless: isHeadless,
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox'
-                ]
+                args: LAUNCH_ARGS
             });
             browserWSEndpoint = await browser.wsEndpoint();
         }
@@ -249,10 +254,7 @@ async function twitterUrl(url) {
             console.log(`[LOG] Launch Browser`);
             const browser = await puppeteer.launch({
                 headless: isHeadless,
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox'
-                ]
+                args: LAUNCH_ARGS
             });
             browserWSEndpoint = await browser.wsEndpoint();
         }

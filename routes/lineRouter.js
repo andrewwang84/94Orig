@@ -38,6 +38,7 @@ async function handleEvent(event) {
     try {
         res = await crawler.getImage(targetArr, isPup, forceUpdate);
         if (res.length !== 0) {
+            console.log(`[LOG] Get ${res.length} Images/Videos`);
             let newArr = [];
             for (let i = 0; i < res.length; i++) {
                 newArr = newArr.concat(res[i]);
