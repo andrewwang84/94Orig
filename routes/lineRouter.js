@@ -28,7 +28,8 @@ async function handleEvent(event) {
     }
 
     let msg = event.message.text;
-    let id = event.source.groupId ?? event.source.roomId ?? event.source.userId;
+    let id = (event.source.groupId == undefined) ? event.source.userId : event.source.groupId;
+    id = (event.source.roomId == undefined) ? event.source.userId : event.source.roomId;
     let targetArr = msg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11}\/)|(?:https:\/\/instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
     let isPup = (msg.match(/-pup/i) !== null) ? true : false;
     let forceUpdate = (msg.match(/--f/i) !== null) ? true : false;
