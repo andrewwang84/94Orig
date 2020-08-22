@@ -28,9 +28,7 @@ async function handleEvent(event) {
     }
 
     let msg = event.message.text;
-    // let igArr = (msg.match(/https:\/\/www\.instagram\.com\/p\/\S{11}\//g) !== null) ? msg.match(/https:\/\/www\.instagram\.com\/p\/\S{11}\//g) : [];
-    // let igStoryArr = (msg.match(/https:\/\/instagram\.com\/\S+/g) !== null) ? msg.match(/https:\/\/instagram\.com\/\S+/g) : [];
-    // let twArr = (msg.match(/https:\/\/(?:mobile\.)?twitter\.com/g) !== null) ? msg.match(/https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+/g) : [];
+    let id = event.source.groupId ?? event.source.roomId ?? event.source.userId;
     let targetArr = msg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11}\/)|(?:https:\/\/instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
     let isPup = (msg.match(/-pup/i) !== null) ? true : false;
     let forceUpdate = (msg.match(/--f/i) !== null) ? true : false;
@@ -44,117 +42,131 @@ async function handleEvent(event) {
                 newArr = newArr.concat(res[i]);
             }
 
-            // let msg = [];
-            // let imgPerMsg = Math.ceil(newArr.length / 5);
+            // let msgArrObj = [];
+            // let tmpVideoMsg = [];
+            // let tmpTxtMsg = [];
             // for (let i = 0; i < newArr.length; i++) {
-            //     let img = newArr[i];
-            //     let imgIndex = i+1;
+            //     let currentMsg = newArr[i];
             //     if (newArr.length <= 5) {
-            //         if (msg[Math.floor(i / imgPerMsg)] !== undefined) {
-            //             msg[Math.floor(i / imgPerMsg)] += `${img}`;
+            //         if (/\.mp4/.test(currentMsg)) {
+            //             msgArrObj.push({
+            //                 'type': 'video',
+            //                 "originalContentUrl": currentMsg,
+            //                 "previewImageUrl": "https://pbs.twimg.com/profile_images/1269685818345394176/lPyLjEXz_400x400.jpg"
+            //             });
+            //         } else if (/\.jpe?g|\.png/i.test(currentMsg)) {
+            //             msgArrObj.push({
+            //                 'type': 'image',
+            //                 "originalContentUrl": currentMsg,
+            //                 "previewImageUrl": currentMsg
+            //             });
             //         } else {
-            //             msg[Math.floor(i / imgPerMsg)] = `${img}`;
+            //             msgArrObj.push({
+            //                 'type': 'text',
+            //                 'text': currentMsg
+            //             });
             //         }
             //     } else {
-            //         if (msg[Math.floor(i / imgPerMsg)] !== undefined) {
-            //             msg[Math.floor(i / imgPerMsg)] += `${imgIndex}: ${img}\n`;
+            //         if (/\.mp4/.test(currentMsg)) {
+            //             tmpVideoMsg.push(currentMsg);
             //         } else {
-            //             msg[Math.floor(i / imgPerMsg)] = `${imgIndex}: ${img}\n`;
+            //             tmpTxtMsg.push(currentMsg);
             //         }
             //     }
             // }
-            let msgArrObj = [];
-            let tmpVideoMsg = [];
-            let tmpTxtMsg = [];
+
+            // if (newArr.length > 5) {
+            //     let msg = '圖片太多，超出 Line Api 單次發送限制，以下是剩下的圖片:\n';
+            //     let count = 4;
+            //     if (tmpVideoMsg.length !== 0) {
+            //         for (let i = 0; i < tmpVideoMsg.length; i++) {
+            //             let vid = tmpVideoMsg[i];
+
+            //             if (count > 0) {
+            //                 msgArrObj.push({
+            //                     'type': 'video',
+            //                     "originalContentUrl": vid,
+            //                     "previewImageUrl": "https://pbs.twimg.com/profile_images/1269685818345394176/lPyLjEXz_400x400.jpg"
+            //                 });
+            //                 count--;
+            //             } else {
+            //                 msg += `- ${vid}\n`;
+            //             }
+            //         }
+            //     }
+            //     if (tmpTxtMsg.length !== 0) {
+            //         for (let i = 0; i < tmpTxtMsg.length; i++) {
+            //             let img = tmpTxtMsg[i];
+
+            //             if (count > 0) {
+            //                 msgArrObj.push({
+            //                     'type': 'image',
+            //                     "originalContentUrl": img,
+            //                     "previewImageUrl": img
+            //                 });
+            //                 count--;
+            //             } else {
+            //                 msg += `- ${img}\n`;
+            //             }
+            //         }
+            //     }
+            //     msgArrObj.push({
+            //         'type': 'text',
+            //         'text': msg
+            //     });
+            // }
+
+            let replyMsgArrObj = [];
+            let pushMsgArrObj = [];
             for (let i = 0; i < newArr.length; i++) {
                 let currentMsg = newArr[i];
-                if (newArr.length <= 5) {
+                if (i < 5) {
                     if (/\.mp4/.test(currentMsg)) {
-                        msgArrObj.push({
+                        replyMsgArrObj.push({
                             'type': 'video',
                             "originalContentUrl": currentMsg,
                             "previewImageUrl": "https://pbs.twimg.com/profile_images/1269685818345394176/lPyLjEXz_400x400.jpg"
                         });
                     } else if (/\.jpe?g|\.png/i.test(currentMsg)) {
-                        msgArrObj.push({
+                        replyMsgArrObj.push({
                             'type': 'image',
                             "originalContentUrl": currentMsg,
                             "previewImageUrl": currentMsg
                         });
                     } else {
-                        msgArrObj.push({
+                        replyMsgArrObj.push({
                             'type': 'text',
                             'text': currentMsg
                         });
                     }
                 } else {
                     if (/\.mp4/.test(currentMsg)) {
-                        tmpVideoMsg.push(currentMsg);
+                        pushMsgArrObj.push({
+                            'type': 'video',
+                            "originalContentUrl": currentMsg,
+                            "previewImageUrl": "https://pbs.twimg.com/profile_images/1269685818345394176/lPyLjEXz_400x400.jpg"
+                        });
+                    } else if (/\.jpe?g|\.png/i.test(currentMsg)) {
+                        pushMsgArrObj.push({
+                            'type': 'image',
+                            "originalContentUrl": currentMsg,
+                            "previewImageUrl": currentMsg
+                        });
                     } else {
-                        // msgArrObj.push({
-                        //     "imageUrl": currentMsg,
-                        //     "action": {
-                        //         "type": "uri",
-                        //         "label": "看大圖",
-                        //         "uri": currentMsg
-                        //     }
-                        // });
-                        tmpTxtMsg.push(currentMsg);
+                        pushMsgArrObj.push({
+                            'type': 'text',
+                            'text': currentMsg
+                        });
                     }
                 }
             }
 
-            if (newArr.length > 5) {
-                // msgArrObj = [{
-                //     "type": "template",
-                //     "altText": "94Orig Results",
-                //     "template": {
-                //         "type": "image_carousel",
-                //         "columns": msgArrObj
-                //     }
-                // }];
-
-                let msg = '圖片太多，超出 Line Api 單次發送限制，以下是剩下的圖片:\n';
-                let count = 4;
-                if (tmpVideoMsg.length !== 0) {
-                    for (let i = 0; i < tmpVideoMsg.length; i++) {
-                        let vid = tmpVideoMsg[i];
-
-                        if (count > 0) {
-                            msgArrObj.push({
-                                'type': 'video',
-                                "originalContentUrl": vid,
-                                "previewImageUrl": "https://pbs.twimg.com/profile_images/1269685818345394176/lPyLjEXz_400x400.jpg"
-                            });
-                            count--;
-                        } else {
-                            msg += `- ${vid}\n`;
-                        }
-                    }
-                }
-                if (tmpTxtMsg.length !== 0) {
-                    for (let i = 0; i < tmpTxtMsg.length; i++) {
-                        let img = tmpTxtMsg[i];
-
-                        if (count > 0) {
-                            msgArrObj.push({
-                                'type': 'image',
-                                "originalContentUrl": img,
-                                "previewImageUrl": img
-                            });
-                            count--;
-                        } else {
-                            msg += `- ${img}\n`;
-                        }
-                    }
-                }
-                msgArrObj.push({
-                    'type': 'text',
-                    'text': msg
+            client.replyMessage(event.replyToken, replyMsgArrObj)
+                .catch((err) => {
+                    console.error(err);
                 });
-            }
 
-            client.replyMessage(event.replyToken, msgArrObj)
+            client.pushMessage(id, pushMsgArrObj)
                 .catch((err) => {
                     console.error(err);
                 });
