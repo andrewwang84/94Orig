@@ -43,85 +43,58 @@ async function handleEvent(event) {
                 newArr = newArr.concat(res[i]);
             }
 
-            // let msgArrObj = [];
-            // let tmpVideoMsg = [];
-            // let tmpTxtMsg = [];
+            // 自用，reply 不足全部用 push 補齊
+            // let replyMsgArrObj = [];
+            // let pushMsgArrObj = [];
             // for (let i = 0; i < newArr.length; i++) {
             //     let currentMsg = newArr[i];
-            //     if (newArr.length <= 5) {
+            //     if (i < 5) {
             //         if (/\.mp4/.test(currentMsg)) {
-            //             msgArrObj.push({
+            //             replyMsgArrObj.push({
             //                 'type': 'video',
             //                 "originalContentUrl": currentMsg,
             //                 "previewImageUrl": "https://pbs.twimg.com/profile_images/1269685818345394176/lPyLjEXz_400x400.jpg"
             //             });
             //         } else if (/\.jpe?g|\.png/i.test(currentMsg)) {
-            //             msgArrObj.push({
+            //             replyMsgArrObj.push({
             //                 'type': 'image',
             //                 "originalContentUrl": currentMsg,
             //                 "previewImageUrl": currentMsg
             //             });
             //         } else {
-            //             msgArrObj.push({
+            //             replyMsgArrObj.push({
             //                 'type': 'text',
             //                 'text': currentMsg
             //             });
             //         }
             //     } else {
             //         if (/\.mp4/.test(currentMsg)) {
-            //             tmpVideoMsg.push(currentMsg);
+            //             pushMsgArrObj.push({
+            //                 'type': 'video',
+            //                 "originalContentUrl": currentMsg,
+            //                 "previewImageUrl": "https://pbs.twimg.com/profile_images/1269685818345394176/lPyLjEXz_400x400.jpg"
+            //             });
+            //         } else if (/\.jpe?g|\.png/i.test(currentMsg)) {
+            //             pushMsgArrObj.push({
+            //                 'type': 'image',
+            //                 "originalContentUrl": currentMsg,
+            //                 "previewImageUrl": currentMsg
+            //             });
             //         } else {
-            //             tmpTxtMsg.push(currentMsg);
+            //             pushMsgArrObj.push({
+            //                 'type': 'text',
+            //                 'text': currentMsg
+            //             });
             //         }
             //     }
             // }
 
-            // if (newArr.length > 5) {
-            //     let msg = '圖片太多，超出 Line Api 單次發送限制，以下是剩下的圖片:\n';
-            //     let count = 4;
-            //     if (tmpVideoMsg.length !== 0) {
-            //         for (let i = 0; i < tmpVideoMsg.length; i++) {
-            //             let vid = tmpVideoMsg[i];
-
-            //             if (count > 0) {
-            //                 msgArrObj.push({
-            //                     'type': 'video',
-            //                     "originalContentUrl": vid,
-            //                     "previewImageUrl": "https://pbs.twimg.com/profile_images/1269685818345394176/lPyLjEXz_400x400.jpg"
-            //                 });
-            //                 count--;
-            //             } else {
-            //                 msg += `- ${vid}\n`;
-            //             }
-            //         }
-            //     }
-            //     if (tmpTxtMsg.length !== 0) {
-            //         for (let i = 0; i < tmpTxtMsg.length; i++) {
-            //             let img = tmpTxtMsg[i];
-
-            //             if (count > 0) {
-            //                 msgArrObj.push({
-            //                     'type': 'image',
-            //                     "originalContentUrl": img,
-            //                     "previewImageUrl": img
-            //                 });
-            //                 count--;
-            //             } else {
-            //                 msg += `- ${img}\n`;
-            //             }
-            //         }
-            //     }
-            //     msgArrObj.push({
-            //         'type': 'text',
-            //         'text': msg
-            //     });
-            // }
-
+            // 公開用，超過五張圖時，前四張以外的圖片用網址形式傳送
             let replyMsgArrObj = [];
-            let pushMsgArrObj = [];
+            let txtMsg = '因為 Line Api 限制，剩餘圖片為網址形式，請點擊網址另存圖片\n';
             for (let i = 0; i < newArr.length; i++) {
                 let currentMsg = newArr[i];
-                if (i < 5) {
+                if (newArr.length <= 5) {
                     if (/\.mp4/.test(currentMsg)) {
                         replyMsgArrObj.push({
                             'type': 'video',
@@ -141,25 +114,35 @@ async function handleEvent(event) {
                         });
                     }
                 } else {
-                    if (/\.mp4/.test(currentMsg)) {
-                        pushMsgArrObj.push({
-                            'type': 'video',
-                            "originalContentUrl": currentMsg,
-                            "previewImageUrl": "https://pbs.twimg.com/profile_images/1269685818345394176/lPyLjEXz_400x400.jpg"
-                        });
-                    } else if (/\.jpe?g|\.png/i.test(currentMsg)) {
-                        pushMsgArrObj.push({
-                            'type': 'image',
-                            "originalContentUrl": currentMsg,
-                            "previewImageUrl": currentMsg
-                        });
+                    if (i < 4) {
+                        if (/\.mp4/.test(currentMsg)) {
+                            replyMsgArrObj.push({
+                                'type': 'video',
+                                "originalContentUrl": currentMsg,
+                                "previewImageUrl": "https://pbs.twimg.com/profile_images/1269685818345394176/lPyLjEXz_400x400.jpg"
+                            });
+                        } else if (/\.jpe?g|\.png/i.test(currentMsg)) {
+                            replyMsgArrObj.push({
+                                'type': 'image',
+                                "originalContentUrl": currentMsg,
+                                "previewImageUrl": currentMsg
+                            });
+                        } else {
+                            replyMsgArrObj.push({
+                                'type': 'text',
+                                'text': currentMsg
+                            });
+                        }
                     } else {
-                        pushMsgArrObj.push({
-                            'type': 'text',
-                            'text': currentMsg
-                        });
+                        txtMsg += `- ${currentMsg}\n`;
                     }
                 }
+            }
+            if (newArr.length > 5) {
+                replyMsgArrObj.push({
+                    'type': 'text',
+                    'text': txtMsg
+                });
             }
 
             client.replyMessage(event.replyToken, replyMsgArrObj)
@@ -167,10 +150,10 @@ async function handleEvent(event) {
                     console.error(err);
                 });
 
-            client.pushMessage(id, pushMsgArrObj)
-                .catch((err) => {
-                    console.error(err);
-                });
+            // client.pushMessage(id, pushMsgArrObj)
+            //     .catch((err) => {
+            //         console.error(err);
+            //     });
         }
     } catch (error) {
         console.error(error);
