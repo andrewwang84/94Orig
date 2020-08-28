@@ -37,11 +37,11 @@ async function handleEvent(event) {
     try {
         res = await crawler.getImage(targetArr, isPup, forceUpdate);
         if (res.length !== 0) {
-            console.log(`[LOG] Get ${res.length} Images/Videos`);
             let newArr = [];
             for (let i = 0; i < res.length; i++) {
                 newArr = newArr.concat(res[i]);
             }
+            console.log(`[LOG] Get ${newArr.length} Images/Videos`);
 
             // 自用，reply 不足全部用 push 補齊
             // let replyMsgArrObj = [];

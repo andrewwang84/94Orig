@@ -19,11 +19,11 @@ bot.onText(/https:\/\//, async (msg, match) => {
         let resp = await crawler.getImage(target, isPup, forceUpdate);;
 
         if (resp.length !== 0) {
-            console.log(`[LOG] Get ${resp.length} Images/Videos`);
             let resArr = [];
             for (let i = 0; i < resp.length; i++) {
                 resArr = resArr.concat(resp[i]);
             }
+            console.log(`[LOG] Get ${resArr.length} Images/Videos`);
 
             for (var i = 0; i < resArr.length; i++) {
                 if (resArr[i] != '') {
