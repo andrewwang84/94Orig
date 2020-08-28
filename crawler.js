@@ -21,7 +21,7 @@ let getImage = async (urls, isPup = false, forceUpdate = false) => {
         console.log(`[LOG] Get Images Done. Used ${(end - start)/1000} seconds`);
         return data;
     } catch (error) {
-        return next(error);
+        console.error(`[ERROR] ${error}`);
     }
 }
 
