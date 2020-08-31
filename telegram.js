@@ -8,7 +8,7 @@ const crawler = require('./crawler.js');
 
 bot.onText(/https:\/\//, async (msg, match) => {
     const chatId = msg.chat.id;
-    console.log(chatId);
+    //console.log(chatId);
     let chatMsg = match.input;
 
     let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11}\/)|(?:https:\/\/instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);

@@ -14,7 +14,7 @@ var request = require('request').defaults({
 
 let getImage = async (urls, isPup = false, forceUpdate = false) => {
     try {
-        console.log(`[LOG] Start Getting Images`);
+        //console.log(`[LOG] Start Getting Images`);
         let start = Date.now();
         const data = await prepareData(urls, isPup, forceUpdate);
         let end = Date.now();
