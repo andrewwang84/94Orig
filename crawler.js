@@ -30,13 +30,15 @@ async function prepareData(urls, isPup = false, forceUpdate = false) {
             try {
                 start = Date.now();
                 if (isPup == true) {
-                    imageUrls.push(await puppeteer.igUrl(urls[i]));
+                    let res = await puppeteer.igUrl(urls[i]);
+                    imageUrls.push(res);
                     end = Date.now();
-                    console.log(`[LOG][IG][${urls[i]}][${(end - start) / 1000}s] Puppeteer Done`);
+                    console.log(`[LOG][IG][${urls[i]}][${(end - start) / 1000}s][${res.length}] Puppeteer Done`);
                 } else {
-                    imageUrls.push(await igUrl(urls[i]));
+                    let res = await igUrl(urls[i]);
+                    imageUrls.push(res);
                     end = Date.now();
-                    console.log(`[LOG][IG][${urls[i]}][${(end - start) / 1000}s] Done`);
+                    console.log(`[LOG][IG][${urls[i]}][${(end - start) / 1000}s][${res.length}] Done`);
                 }
             } catch (error) {
                 return error;
@@ -49,9 +51,10 @@ async function prepareData(urls, isPup = false, forceUpdate = false) {
                     url = urls[i].slice(0, urls[i].indexOf('?'));
                 }
                 start = Date.now();
-                imageUrls.push(await puppeteer.getStories(url, forceUpdate));
+                let res = await puppeteer.getStories(url, forceUpdate);
+                imageUrls.push(res);
                 end = Date.now();
-                console.log(`[LOG][IG_STORY][${url}][${(end - start) / 1000}s] Puppeteer Done`);
+                console.log(`[LOG][IG_STORY][${url}][${(end - start) / 1000}s][${res.length}] Puppeteer Done`);
             } catch (error) {
                 return error;
             }
@@ -59,9 +62,10 @@ async function prepareData(urls, isPup = false, forceUpdate = false) {
         if (/https:\/\/twitter\.com/.test(urls[i])) {
             try {
                 start = Date.now();
-                imageUrls.push(await twitterUrl(urls[i]));
+                let res = await twitterUrl(urls[i]);
+                imageUrls.push(res);
                 end = Date.now();
-                console.log(`[LOG][TWITTER][${urls[i]}][${(end - start) / 1000}s] Done`);
+                console.log(`[LOG][TWITTER][${urls[i]}][${(end - start) / 1000}s][${res.length}] Done`);
             } catch (error) {
                 return error;
             }
@@ -70,9 +74,10 @@ async function prepareData(urls, isPup = false, forceUpdate = false) {
             try {
                 let targetUrl = urls[i].replace('mobile.', '');
                 start = Date.now();
-                imageUrls.push(await twitterUrl(targetUrl));
+                let res = await twitterUrl(targetUrl);
+                imageUrls.push(res);
                 end = Date.now();
-                console.log(`[LOG][TWITTER][${targetUrl}][${(end - start) / 1000}s] Done`);
+                console.log(`[LOG][TWITTER][${targetUrl}][${(end - start) / 1000}s][${res.length}] Done`);
             } catch (error) {
                 return error;
             }

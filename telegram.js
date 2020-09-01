@@ -8,7 +8,7 @@ const crawler = require('./crawler.js');
 
 bot.onText(/https:\/\//, async (msg, match) => {
     const chatId = msg.chat.id;
-    //console.log(chatId);
+    console.log(`[LOG][TG] ${chatId}`);
     let chatMsg = match.input;
 
     let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11}\/)|(?:https:\/\/instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
@@ -23,7 +23,6 @@ bot.onText(/https:\/\//, async (msg, match) => {
             for (let i = 0; i < resp.length; i++) {
                 resArr = resArr.concat(resp[i]);
             }
-            console.log(`[LOG] Get ${resArr.length} Images/Videos`);
 
             for (var i = 0; i < resArr.length; i++) {
                 if (resArr[i] != '') {
@@ -51,7 +50,7 @@ bot.onText(/\/help/, (msg) => {
 
 bot.onText(/\/apk/, async (msg) => {
     const chatId = msg.chat.id;
-    console.log(chatId);
+    console.log(`[LOG][TG] ${chatId}`);
 
     try {
         let resp = await getApk();
@@ -75,7 +74,7 @@ bot.onText(/\/apk/, async (msg) => {
 var list = [];
 bot.onText(/\/deep/, async (msg) => {
     const chatId = msg.chat.id;
-    console.log(chatId);
+    console.log(`[LOG][TG] ${chatId}`);
 
     try {
         let resp = await checkDeep();
