@@ -11,14 +11,12 @@ var request = require('request').defaults({
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36',
     }
 });
+var start = '';
+var end = '';
 
 let getImage = async (urls, isPup = false, forceUpdate = false) => {
     try {
-        //console.log(`[LOG] Start Getting Images`);
-        let start = Date.now();
         const data = await prepareData(urls, isPup, forceUpdate);
-        let end = Date.now();
-        console.log(`[LOG] Get Images Done. Used ${(end - start)/1000} seconds`);
         return data;
     } catch (error) {
         console.error(`[ERROR] ${error}`);
@@ -30,11 +28,15 @@ async function prepareData(urls, isPup = false, forceUpdate = false) {
     for (var i = 0; i < urls.length; i++) {
         if (/instagram\.com\/p\//.test(urls[i])) {
             try {
-                console.log(`[LOG][IG] Running url: ${urls[i]}`);
+                start = Date.now();
                 if (isPup == true) {
                     imageUrls.push(await puppeteer.igUrl(urls[i]));
+                    end = Date.now();
+                    console.log(`[LOG][IG][${urls[i]}][${(end - start) / 1000}s] Puppeteer Done`);
                 } else {
                     imageUrls.push(await igUrl(urls[i]));
+                    end = Date.now();
+                    console.log(`[LOG][IG][${urls[i]}][${(end - start) / 1000}s] Done`);
                 }
             } catch (error) {
                 return error;
@@ -46,16 +48,20 @@ async function prepareData(urls, isPup = false, forceUpdate = false) {
                 if (urls[i].indexOf('?') !== -1) {
                     url = urls[i].slice(0, urls[i].indexOf('?'));
                 }
-                console.log(`[LOG][IG_STORY] Running url: ${url}`);
+                start = Date.now();
                 imageUrls.push(await puppeteer.getStories(url, forceUpdate));
+                end = Date.now();
+                console.log(`[LOG][IG_STORY][${url}][${(end - start) / 1000}s] Puppeteer Done`);
             } catch (error) {
                 return error;
             }
         }
         if (/https:\/\/twitter\.com/.test(urls[i])) {
             try {
-                console.log(`[LOG][TWITTER] Running url: ${urls[i]}`);
+                start = Date.now();
                 imageUrls.push(await twitterUrl(urls[i]));
+                end = Date.now();
+                console.log(`[LOG][TWITTER][${urls[i]}][${(end - start) / 1000}s] Done`);
             } catch (error) {
                 return error;
             }
@@ -63,8 +69,10 @@ async function prepareData(urls, isPup = false, forceUpdate = false) {
         if (/https:\/\/mobile\.twitter\.com/.test(urls[i])) {
             try {
                 let targetUrl = urls[i].replace('mobile.', '');
-                console.log(`[LOG][TWITTER] Running url: ${targetUrl}`);
+                start = Date.now();
                 imageUrls.push(await twitterUrl(targetUrl));
+                end = Date.now();
+                console.log(`[LOG][TWITTER][${targetUrl}][${(end - start) / 1000}s] Done`);
             } catch (error) {
                 return error;
             }
