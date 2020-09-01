@@ -8,7 +8,7 @@ const crawler = require('./crawler.js');
 
 bot.onText(/https:\/\//, async (msg, match) => {
     const chatId = msg.chat.id;
-    console.log(`[LOG][TG] ${chatId}`);
+    console.log(`[LOG][Telegram] ${chatId}`);
     let chatMsg = match.input;
 
     let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11}\/)|(?:https:\/\/instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
@@ -50,7 +50,7 @@ bot.onText(/\/help/, (msg) => {
 
 bot.onText(/\/apk/, async (msg) => {
     const chatId = msg.chat.id;
-    console.log(`[LOG][TG] ${chatId}`);
+    console.log(`[LOG][Telegram] ${chatId}`);
 
     try {
         let resp = await getApk();
@@ -74,7 +74,7 @@ bot.onText(/\/apk/, async (msg) => {
 var list = [];
 bot.onText(/\/deep/, async (msg) => {
     const chatId = msg.chat.id;
-    console.log(`[LOG][TG] ${chatId}`);
+    console.log(`[LOG][Telegram] ${chatId}`);
 
     try {
         let resp = await checkDeep();
