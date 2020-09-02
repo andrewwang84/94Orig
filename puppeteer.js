@@ -9,12 +9,12 @@ const loginBtn = 'button[type="submit"]';
 const storiesCountClassSelector = '#react-root > section > div > div > section > div > div:nth-child(1)';
 const nextStorySelector = '.coreSpriteRightChevron';
 const WTFStorySelector = '#react-root > section > div > div > section > div:nth-of-type(2) > div:nth-of-type(1) > div > div button';
-//const twitterSelector = 'section > div > div > div > div:nth-of-type(1) article div:nth-of-type(3) img';
+const storyHomeEnterSelector = `#react-root > section > main > div > header > div > div > span`;
 const twitterSelector = 'article:nth-of-type(1) img';
 const twitterShowSensitiveBtn = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div > div:nth-of-type(2) > div > div:nth-of-type(2) div[role=button]';
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36';
-//const isHeadless = false;
-const isHeadless = true;
+const isHeadless = false;
+//const isHeadless = true;
 let browserWSEndpoint = null;
 const waitUntil = 'networkidle0';
 const CACHE = new Map();
@@ -105,7 +105,8 @@ async function getStories(url, forceUpdate = false) {
             }
         }
 
-        await page.goto(storiesUrl, { waitUntil: waitUntil });
+        await page.goto(homeUrl, { waitUntil: 'domcontentloaded' });
+        await page.click(storyHomeEnterSelector).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntil }));
         if (await page.url() === homeUrl) {
             await page.close();
             return new Promise(function (resolve, reject) {
@@ -113,8 +114,6 @@ async function getStories(url, forceUpdate = false) {
                 resolve(imgUrls);
             });
         }
-
-        //await page.click(storyBtnSelector);
 
         if (await page.$(WTFStorySelector)) {
             await page.waitForSelector(WTFStorySelector);
@@ -125,6 +124,8 @@ async function getStories(url, forceUpdate = false) {
         let count = await page.$$eval(`.${countClass}`, e => e.length);
         let errFlag = false;
         for (let index = 0; index < count; index++) {
+            currentPage = await page.url();
+            console.log(`[DEBUG] ${currentPage}`);
             let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
             let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
             let result = null;

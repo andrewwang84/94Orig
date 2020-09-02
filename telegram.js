@@ -27,7 +27,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
             for (var i = 0; i < resArr.length; i++) {
                 if (resArr[i] != '') {
                     if (/mp4|jpe?g|png/.test(resArr[i])) {
-                        bot.sendDocument(chatId, resArr[i]);
+                        //bot.sendDocument(chatId, resArr[i]);
                     } else {
                         bot.sendMessage(chatId, resArr[i]);
                     }
