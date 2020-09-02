@@ -29,26 +29,26 @@ const LAUNCH_ARGS = [
 
 async function getStories(url, forceUpdate = false) {
     try {
-        let storiesUrl = '';
         let baseUrl = 'https://www.instagram.com/';
-        let targetHomeUrl = '';
+        let storiesUrl = '';
+        let homeUrl = '';
         let imgUrls = [];
         let username = '';
         if (url.indexOf('/login/') === -1) {
-            username = url.slice(url.lastIndexOf('.com/') + 5);
+            username = url.match(/https:\/\/instagram\.com\/(?:stories\/)?([a-zA-Z0-9\.\_]+)/)[1];
             loginUrl = `https://www.instagram.com/accounts/login/?next=%2F${username}%2F`;
             storiesUrl = `https://www.instagram.com/stories/${username}`;
-            targetHomeUrl = `https://www.instagram.com/${username}`;
+            homeUrl = `https://www.instagram.com/${username}`;
         }
 
         // get Cache
-        if (CACHE.has(targetHomeUrl) && !forceUpdate) {
+        if (CACHE.has(homeUrl) && !forceUpdate) {
             console.info(`[LOG] Get Story From Cache`);
             let timestamp = Date.now();
-            let cache = CACHE.get(targetHomeUrl);
+            let cache = CACHE.get(homeUrl);
             if (timestamp - cache.time > 30 * 60 * 1000) {
                 console.info(`[LOG] Cache Outdated, Delete Cache`);
-                CACHE.delete(targetHomeUrl);
+                CACHE.delete(homeUrl);
             } else {
                 return new Promise(function (resolve, reject) {
                     resolve(cache.data);
@@ -106,7 +106,7 @@ async function getStories(url, forceUpdate = false) {
         }
 
         await page.goto(storiesUrl, { waitUntil: waitUntil });
-        if (await page.url() === targetHomeUrl) {
+        if (await page.url() === homeUrl) {
             await page.close();
             return new Promise(function (resolve, reject) {
                 imgUrls.push(`${username} 是私人帳號喔QQ`);
@@ -136,7 +136,7 @@ async function getStories(url, forceUpdate = false) {
                 result = video;
             }
             if (result == null) {
-                result = `${targetHomeUrl} 限時下載錯誤，請稍後再試一次`;
+                result = `${homeUrl} 限時下載錯誤，請稍後再試一次`;
                 errFlag = true;
             }
             imgUrls.push(result);
@@ -150,7 +150,7 @@ async function getStories(url, forceUpdate = false) {
         if (!errFlag) {
             let timestamp = Date.now();
 
-            CACHE.set(targetHomeUrl, {
+            CACHE.set(homeUrl, {
                 'time': timestamp,
                 'data': imgUrls
             });
@@ -165,7 +165,7 @@ async function getStories(url, forceUpdate = false) {
     } catch (error) {
         console.log(error);
         return new Promise(function (resolve, reject) {
-            resolve([`${targetHomeUrl} 發生錯誤，請再試一次`]);
+            resolve([`${homeUrl} 發生錯誤，請再試一次`]);
         });
     }
 }
