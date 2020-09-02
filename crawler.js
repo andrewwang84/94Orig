@@ -41,6 +41,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false) {
                     console.log(`[LOG][IG][${urls[i]}][${(end - start) / 1000}s][${res.length}] Done`);
                 }
             } catch (error) {
+                console.log(`[ERROR][IG][${urls[i]}]`);
                 return error;
             }
         }
@@ -56,6 +57,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false) {
                 end = Date.now();
                 console.log(`[LOG][IG_STORY][${url}][${(end - start) / 1000}s][${res.length}] Puppeteer Done`);
             } catch (error) {
+                console.log(`[ERROR][IG_STORY][${urls[i]}]`);
                 return error;
             }
         }
@@ -67,6 +69,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false) {
                 end = Date.now();
                 console.log(`[LOG][TWITTER][${urls[i]}][${(end - start) / 1000}s][${res.length}] Done`);
             } catch (error) {
+                console.log(`[ERROR][TWITTER][${urls[i]}]`);
                 return error;
             }
         }
@@ -79,6 +82,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false) {
                 end = Date.now();
                 console.log(`[LOG][TWITTER][${targetUrl}][${(end - start) / 1000}s][${res.length}] Done`);
             } catch (error) {
+                console.log(`[ERROR][TWITTER][${urls[i]}]`);
                 return error;
             }
         }
