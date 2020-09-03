@@ -11,11 +11,17 @@ bot.onText(/https:\/\//, async (msg, match) => {
     console.log(`[LOG][Telegram] ${chatId}`);
     let chatMsg = match.input;
 
-    let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11}\/)|(?:https:\/\/instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
-    let isPup = (chatMsg.match(/-pup/i) !== null) ? true : false;
-    let forceUpdate = (chatMsg.match(/--f/i) !== null) ? true : false;
-
     try {
+        if (/https:\/\/www\.instagram\.com\/tv\//.test(chatMsg)) {
+            throw new Error('目前尚未支援 IGTV 下載喔～')
+        }
+        let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11}\/)|(?:https:\/\/instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
+        let isPup = (chatMsg.match(/-pup/i) !== null) ? true : false;
+        let forceUpdate = (chatMsg.match(/--f/i) !== null) ? true : false;
+
+        if (target == null) {
+            throw new Error(`目前不支援該網址`);
+        }
         let resp = await crawler.getImage(target, isPup, forceUpdate);;
 
         if (resp.length !== 0) {
@@ -38,8 +44,8 @@ bot.onText(/https:\/\//, async (msg, match) => {
             bot.sendMessage(chatId, '沒東西啦 !!');
         }
     } catch (error) {
-        console.log(`Error: ${error}`);
-        bot.sendMessage(chatId, `出錯了: ${error}}`);
+        console.log(`[ERROR] ${error}`);
+        bot.sendMessage(chatId, `出錯了: ${error}`);
     }
 });
 

@@ -171,6 +171,15 @@ async function handleEvent(event) {
             console.error(error);
             return Promise.reject(error);
         }
+    } else {
+        if (/https:\/\/www\.instagram\.com\/tv\//.test(msg)) {
+            client.replyMessage(event.replyToken, [{
+                'type': 'text',
+                'text': '目前尚未支援 IGTV 下載喔～'
+            }]).catch((err) => {
+                console.error(err);
+            });
+        }
     }
 
     return true;
