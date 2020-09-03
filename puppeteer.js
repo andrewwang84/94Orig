@@ -6,15 +6,16 @@ const insCookies = require('./config.js')[app.get('env')].insCookies;
 const usernameSelector = 'input[name="username"]';
 const passwordSelector = 'input[name="password"]';
 const loginBtn = 'button[type="submit"]';
-const storiesCountClassSelector = '#react-root > section > div > div > section > div > div:nth-child(1)';
+const storiesCountClassSelector = '#react-root > section > div > div > section > div:first-of-type > div';
 const nextStorySelector = '.coreSpriteRightChevron';
 const WTFStorySelector = '#react-root > section > div > div > section > div:nth-of-type(2) > div:nth-of-type(1) > div > div button';
-const storyHomeEnterSelector = `#react-root > section > main > div > header > div > div > span`;
+const storyHomeEnterSelector = `#react-root > section > main > div > header > div > div > canvas`;
+const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const twitterSelector = 'article:nth-of-type(1) img';
 const twitterShowSensitiveBtn = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div > div:nth-of-type(2) > div > div:nth-of-type(2) div[role=button]';
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36';
-const isHeadless = false;
-//const isHeadless = true;
+//const isHeadless = false;
+const isHeadless = true;
 let browserWSEndpoint = null;
 const waitUntil = 'networkidle0';
 const CACHE = new Map();
@@ -30,16 +31,12 @@ const LAUNCH_ARGS = [
 async function getStories(url, forceUpdate = false) {
     try {
         let baseUrl = 'https://www.instagram.com/';
-        let storiesUrl = '';
-        let homeUrl = '';
         let imgUrls = [];
-        let username = '';
-        if (url.indexOf('/login/') === -1) {
-            username = url.match(/https:\/\/instagram\.com\/(?:stories\/)?([a-zA-Z0-9\.\_]+)/)[1];
-            loginUrl = `https://www.instagram.com/accounts/login/?next=%2F${username}%2F`;
-            storiesUrl = `https://www.instagram.com/stories/${username}`;
-            homeUrl = `https://www.instagram.com/${username}`;
-        }
+        let username = url.match(/https:\/\/(?:www\.)?instagram\.com\/(?:stories\/)?([a-zA-Z0-9\.\_]+)/)[1];
+        let loginUrl = `https://www.instagram.com/accounts/login/?next=%2F${username}%2F`;
+        let storyId = (url.match(/https:\/\/(?:www\.)?instagram.com\/stories\/[a-zA-Z0-9\.\_]+\/([0-9]+)/) == null) ? null : url.match(/https:\/\/(?:www\.)?instagram.com\/stories\/[a-zA-Z0-9\.\_]+\/([0-9]+)/)[1];
+        let storiesUrl = (storyId == null) ? null : `https://www.instagram.com/stories/${username}/${storyId}/`;
+        let homeUrl = `https://www.instagram.com/${username}/`;
 
         // get Cache
         if (CACHE.has(homeUrl) && !forceUpdate) {
@@ -50,9 +47,21 @@ async function getStories(url, forceUpdate = false) {
                 console.info(`[LOG] Cache Outdated, Delete Cache`);
                 CACHE.delete(homeUrl);
             } else {
-                return new Promise(function (resolve, reject) {
-                    resolve(cache.data);
-                });
+                let data = cache.data;
+                let result = [];
+                if (storiesUrl !== null) {
+                    result.push(data[storiesUrl]);
+                    return new Promise(function (resolve, reject) {
+                        resolve(result);
+                    });
+                } else {
+                    for (const key in data) {
+                        result.push(data[key]);
+                    }
+                    return new Promise(function (resolve, reject) {
+                        resolve(result);
+                    });
+                }
             }
         }
 
@@ -82,18 +91,17 @@ async function getStories(url, forceUpdate = false) {
             else request.continue();
         });
 
-        await page.goto(loginUrl, { waitUntil: waitUntil });
-
+        await page.goto(homeUrl, { waitUntil: waitUntil });
+        // login
         if (await page.$(usernameSelector)) {
+            await page.goto(loginUrl, { waitUntil: waitUntil });
+
             console.log(`[LOG] Start Login`);
-            // login
             await page.click(usernameSelector);
             await page.keyboard.type(insEmail);
             await page.click(passwordSelector);
             await page.keyboard.type(insPass);
             await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntil }));
-
-            //await page.waitForNavigation({waitUntil: waitUntil});
 
             currentPage = await page.url();
             if (currentPage.search(/\/challenge\//) !== -1) {
@@ -104,13 +112,18 @@ async function getStories(url, forceUpdate = false) {
                 });
             }
         }
-
-        await page.goto(homeUrl, { waitUntil: 'domcontentloaded' });
+        if (await page.$(privateAccSelector)) {
+            await page.close();
+            return new Promise(function (resolve, reject) {
+                imgUrls.push(`@${username} 是私人帳號`);
+                resolve(imgUrls);
+            });
+        }
         await page.click(storyHomeEnterSelector).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntil }));
         if (await page.url() === homeUrl) {
             await page.close();
             return new Promise(function (resolve, reject) {
-                imgUrls.push(`${username} 是私人帳號喔QQ`);
+                imgUrls.push(`@${username} 目前沒有限時動態喔`);
                 resolve(imgUrls);
             });
         }
@@ -120,12 +133,11 @@ async function getStories(url, forceUpdate = false) {
             await page.click(WTFStorySelector);
         }
 
-        let countClass = await page.$eval(storiesCountClassSelector, e => e.getAttribute('class'));
-        let count = await page.$$eval(`.${countClass}`, e => e.length);
+        await page.waitForSelector(storiesCountClassSelector);
+        let count = await page.$$eval(storiesCountClassSelector, div => div.length);
         let errFlag = false;
+        let cacheArr = [];
         for (let index = 0; index < count; index++) {
-            currentPage = await page.url();
-            console.log(`[DEBUG] ${currentPage}`);
             let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
             let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
             let result = null;
@@ -140,6 +152,8 @@ async function getStories(url, forceUpdate = false) {
                 result = `${homeUrl} 限時下載錯誤，請稍後再試一次`;
                 errFlag = true;
             }
+            currentPage = await page.url();
+            cacheArr[currentPage] = result;
             imgUrls.push(result);
 
             await page.click(nextStorySelector);
@@ -153,7 +167,7 @@ async function getStories(url, forceUpdate = false) {
 
             CACHE.set(homeUrl, {
                 'time': timestamp,
-                'data': imgUrls
+                'data': cacheArr
             });
         }
 
@@ -161,7 +175,11 @@ async function getStories(url, forceUpdate = false) {
         await page.close();
 
         return new Promise(function (resolve, reject) {
-            resolve(imgUrls);
+            if (storiesUrl !== null) {
+                resolve([cacheArr[storiesUrl]]);
+            } else {
+                resolve(imgUrls);
+            }
         });
     } catch (error) {
         console.log(error);
