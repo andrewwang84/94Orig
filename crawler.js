@@ -13,6 +13,13 @@ var request = require('request').defaults({
 });
 var start = '';
 var end = '';
+const blackList = [
+    'sooyaaa__',
+    'jennierubyjane',
+    'roses_are_rosie',
+    'lalalalisa_m',
+    'blackpinkofficial'
+];
 
 let getImage = async (urls, isPup = false, forceUpdate = false) => {
     try {
@@ -105,6 +112,11 @@ function igUrl(url) {
 
             var $ = cheerio.load(body);
             target = $(`body > script:contains("window.__additionalDataLoaded")`)[0].children[0].data;
+            let userName = target.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/)[1];
+            if (blackList.includes(userName)) {
+                resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+            }
+
             while (/"display_url"/.test(target)) {
                 var chopFront = target.substring(target.indexOf(`"display_url"`) + 15, target.length);
                 var currentResult = chopFront.substring(0, chopFront.indexOf(`","`));

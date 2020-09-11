@@ -8,7 +8,7 @@ const passwordSelector = 'input[name="password"]';
 const loginBtn = 'button[type="submit"]';
 const storiesCountClassSelector = '#react-root > section > div > div > section > div:first-of-type > div';
 const nextStorySelector = '.coreSpriteRightChevron';
-const WTFStorySelector = '#react-root > section > div > div > section > div:nth-of-type(2) > div:nth-of-type(1) > div > div button';
+const WTFStorySelector = '#react-root > section > div > div > section > div.GHEPc > div.Igw0E.IwRSH.eGOV_._4EzTm.NUiEW > div > div > button > div';
 const storyHomeEnterSelector = `#react-root > section > main > div > header > div > div > canvas`;
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const twitterSelector = 'article:nth-of-type(1) img';
@@ -27,6 +27,13 @@ const LAUNCH_ARGS = [
     '--disable-dev-shm-usage',
     '--no-zygote'
 ];
+const blackList = [
+    'sooyaaa__',
+    'jennierubyjane',
+    'roses_are_rosie',
+    'lalalalisa_m',
+    'blackpinkofficial'
+];
 
 async function getStories(url, forceUpdate = false) {
     try {
@@ -38,6 +45,11 @@ async function getStories(url, forceUpdate = false) {
         let storiesUrl = (storyId == null) ? null : `https://www.instagram.com/stories/${username}/${storyId}/`;
         let homeUrl = `https://www.instagram.com/${username}/`;
 
+        if (blackList.includes(username)) {
+            return new Promise(function (resolve, reject) {
+                resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+            });
+        }
         // get Cache
         if (CACHE.has(homeUrl) && !forceUpdate) {
             console.info(`[LOG] Get Story From Cache`);
@@ -129,6 +141,7 @@ async function getStories(url, forceUpdate = false) {
         }
 
         if (await page.$(WTFStorySelector)) {
+            console.log(`[DEBUG_LOG][IG_STORY] WTF Btn Clicked`)
             await page.waitForSelector(WTFStorySelector);
             await page.click(WTFStorySelector);
         }
@@ -138,6 +151,11 @@ async function getStories(url, forceUpdate = false) {
         let errFlag = false;
         let cacheArr = [];
         for (let index = 0; index < count; index++) {
+            if (await page.$(WTFStorySelector)) {
+                console.log(`[DEBUG_LOG][IG_STORY] WTF Btn Clicked`)
+                await page.waitForSelector(WTFStorySelector);
+                await page.click(WTFStorySelector);
+            }
             let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
             let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
             let result = null;
@@ -156,7 +174,8 @@ async function getStories(url, forceUpdate = false) {
             cacheArr[currentPage] = result;
             imgUrls.push(result);
 
-            await page.click(nextStorySelector);
+            page.click(nextStorySelector);
+            await page.waitForNavigation({ waitUntil: waitUntil })
             if (await page.url() === baseUrl) {
                 break;
             }
@@ -233,6 +252,14 @@ async function igUrl(url) {
                     resolve(imgUrls);
                 });
             }
+        }
+
+        const html = await page.content();
+        let userName = html.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/)[1];
+        if (blackList.includes(userName)) {
+            return new Promise(function (resolve, reject) {
+                resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+            });
         }
 
         let count = 1;
