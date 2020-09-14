@@ -36,12 +36,9 @@ async function handleEvent(event) {
     let res = [];
 
     if (targetArr != null) {
-        client.getProfile(event.source.userId)
+        await client.getProfile(event.source.userId)
         .then((profile) => {
             console.log(`[LOG][LINE] ${profile.displayName}`);
-        })
-        .catch((err) => {
-            console.log(`[ERROR][LINE] ${err}`);
         });
         //console.log(`[LOG][LINE] ${event.source.userId}`);
         try {
