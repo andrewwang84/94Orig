@@ -113,6 +113,7 @@ function igUrl(url) {
             var $ = cheerio.load(body);
             target = $(`body > script:contains("window.__additionalDataLoaded")`)[0].children[0].data;
             let userName = target.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/)[1];
+            console.log(`[LOG][IG][${userName}]`);
             if (blackList.includes(userName)) {
                 resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
             }
