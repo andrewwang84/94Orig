@@ -36,7 +36,14 @@ async function handleEvent(event) {
     let res = [];
 
     if (targetArr != null) {
-        console.log(`[LOG][LINE] ${event.source.userId}`);
+        client.getProfile(event.source.userId)
+        .then((profile) => {
+            console.log(`[LOG][LINE] ${profile.displayName}`);
+        })
+        .catch((err) => {
+            console.log(`[ERROR][LINE] ${err}`);
+        });
+        //console.log(`[LOG][LINE] ${event.source.userId}`);
         try {
             res = await crawler.getImage(targetArr, isPup, forceUpdate);
             if (res.length !== 0) {
