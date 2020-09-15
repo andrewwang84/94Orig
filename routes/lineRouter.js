@@ -40,7 +40,6 @@ async function handleEvent(event) {
         .then((profile) => {
             console.log(`[LOG][LINE] ${profile.displayName}`);
         });
-        //console.log(`[LOG][LINE] ${event.source.userId}`);
         try {
             res = await crawler.getImage(targetArr, isPup, forceUpdate);
             if (res.length !== 0) {

@@ -17,7 +17,8 @@ const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/5
 //const isHeadless = false;
 const isHeadless = true;
 let browserWSEndpoint = null;
-const waitUntil = 'networkidle0';
+const waitUntilMain = 'networkidle0';
+const waitUntilMinor = 'domcontentloaded';
 const CACHE = new Map();
 const LAUNCH_ARGS = [
     '--no-sandbox',
@@ -103,17 +104,17 @@ async function getStories(url, forceUpdate = false) {
             else request.continue();
         });
 
-        await page.goto(homeUrl, { waitUntil: waitUntil });
+        await page.goto(homeUrl, { waitUntil: waitUntilMain });
         // login
         if (await page.$(usernameSelector)) {
-            await page.goto(loginUrl, { waitUntil: waitUntil });
+            await page.goto(loginUrl, { waitUntil: waitUntilMain });
 
             console.log(`[LOG] Start Login`);
             await page.click(usernameSelector);
             await page.keyboard.type(insEmail);
             await page.click(passwordSelector);
             await page.keyboard.type(insPass);
-            await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntil }));
+            await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntilMinor }));
 
             currentPage = await page.url();
             if (currentPage.search(/\/challenge\//) !== -1) {
@@ -131,11 +132,14 @@ async function getStories(url, forceUpdate = false) {
                 resolve(imgUrls);
             });
         }
-        await page.click(storyHomeEnterSelector).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntil }));
-        if (await page.url() === homeUrl) {
+
+        try {
+            await page.click(storyHomeEnterSelector).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntilMinor }));
+        } catch (error) {
             await page.close();
             return new Promise(function (resolve, reject) {
-                imgUrls.push(`@${username} 目前沒有限時動態喔`);
+                console.log(`[ERROR][IG_STORY][${username}] Not Found`)
+                imgUrls.push(`@${username} 目前沒有限時動態或是非公開帳號`);
                 resolve(imgUrls);
             });
         }
@@ -168,6 +172,8 @@ async function getStories(url, forceUpdate = false) {
             }
             if (result == null) {
                 result = `${homeUrl} 限時下載錯誤，請稍後再試一次`;
+                // const html = await page.content();
+                // console.log(html);
                 errFlag = true;
             }
             currentPage = await page.url();
@@ -175,7 +181,7 @@ async function getStories(url, forceUpdate = false) {
             imgUrls.push(result);
 
             page.click(nextStorySelector);
-            await page.waitForNavigation({ waitUntil: waitUntil })
+            await page.waitForNavigation({ waitUntil: waitUntilMain })
             if (await page.url() === baseUrl) {
                 break;
             }
@@ -202,6 +208,7 @@ async function getStories(url, forceUpdate = false) {
         });
     } catch (error) {
         console.log(error);
+        await page.close();
         return new Promise(function (resolve, reject) {
             resolve([`${homeUrl} 發生錯誤，請再試一次`]);
         });
@@ -234,7 +241,7 @@ async function igUrl(url) {
         await page.setCookie(cookie);
         await page.setUserAgent(userAgent);
 
-        await page.goto(url, { waitUntil: waitUntil });
+        await page.goto(url, { waitUntil: waitUntilMain });
         if (await page.$(usernameSelector)) {
             console.log(`[LOG] Start Login`);
             // login
@@ -242,7 +249,7 @@ async function igUrl(url) {
             await page.keyboard.type(insEmail);
             await page.click(passwordSelector);
             await page.keyboard.type(insPass);
-            await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntil }));
+            await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
 
             currentPage = await page.url();
             if (currentPage.search(/\/challenge\//) !== -1) {
@@ -310,7 +317,7 @@ async function twitterUrl(url) {
         const page = await browser.newPage();
         await page.setUserAgent(userAgent);
 
-        await page.goto(url, { waitUntil: waitUntil });
+        await page.goto(url, { waitUntil: waitUntilMain });
 
         // for twitter sensitive content block
         if (await page.$(twitterShowSensitiveBtn)) {
