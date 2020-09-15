@@ -7,7 +7,7 @@
     "test": "export NODE_ENV=development && npm start"
   },
   "engines": {
-    "node": "10.13.0"
+    "node": "12.x"
   },
   "dependencies": {
     "@line/bot-sdk": "^7.0.0",
