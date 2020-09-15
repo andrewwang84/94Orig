@@ -118,24 +118,11 @@ function igUrl(url) {
                 resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
             }
 
-            while (/"display_url"/.test(target)) {
-                var chopFront = target.substring(target.indexOf(`"display_url"`) + 15, target.length);
-                var currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
-                target = chopFront.substring(currentResult.length, chopFront.length);
+            let results = target.matchAll(/"(?:display_url|video_url)":"([^"]+)",/gi);
+            for (let value of results) {
+                value = value[1].replace(/\\u0026/gi, "&");
 
-                currentResult = currentResult.replace(/\\u0026/gi, "&");
-
-                result.push(currentResult);
-            }
-
-            target = $(`body > script:contains("window.__additionalDataLoaded")`)[0].children[0].data;
-            while (/"video_url"/.test(target)) {
-                chopFront = target.substring(target.indexOf(`"video_url"`) + 13, target.length);
-                currentResult = chopFront.substring(0, chopFront.indexOf(`","`));
-                target = chopFront.substring(currentResult.length, chopFront.length);
-                currentResult = currentResult.replace(/\\u0026/gi, '&');
-
-                result.push(currentResult);
+                result.push(value);
             }
 
             if (result.length > 1) {
