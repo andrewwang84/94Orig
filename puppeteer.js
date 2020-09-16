@@ -128,6 +128,14 @@ async function getStories(url, forceUpdate = false) {
         if (await page.$(privateAccSelector)) {
             await page.close();
             return new Promise(function (resolve, reject) {
+                let timestamp = Date.now();
+                let cacheArr = [];
+                cacheArr[url] = `@${username} 是私人帳號`;
+                CACHE.set(homeUrl, {
+                    'time': timestamp,
+                    'data': cacheArr
+                });
+
                 imgUrls.push(`@${username} 是私人帳號`);
                 resolve(imgUrls);
             });
@@ -138,8 +146,15 @@ async function getStories(url, forceUpdate = false) {
         } catch (error) {
             await page.close();
             return new Promise(function (resolve, reject) {
-                console.log(`[ERROR][IG_STORY][${username}] Not Found`)
-                imgUrls.push(`@${username} 目前沒有限時動態或是非公開帳號`);
+                console.log(`[ERROR][IG_STORY][${username}] Not Found`);
+                let timestamp = Date.now();
+                let cacheArr = [];
+                cacheArr[url] = `@${username} 目前沒有限時動態`;
+                CACHE.set(homeUrl, {
+                    'time': timestamp,
+                    'data': cacheArr
+                });
+                imgUrls.push(`@${username} 目前沒有限時動態`);
                 resolve(imgUrls);
             });
         }

@@ -83,20 +83,21 @@ function setCookie(cname, cvalue, exdays) {
 function callApi(datas) {
     $.ajax({
         type: 'Post',
-        url: 'api/',
+        url: 'api/web/',
         dataType: 'json',
         data: {
             'url': datas
-        },
-        success: (res) => {
-            results = res.url.split(',');
-            if (results === "") {
-                $('#nothing').show();
-            } else {
-                $('#nothing').hide();
-                for (let index = 0; index < results.length; index++) {
-                    const element = results[index];
+        }
+    }).done((res) => {
+        results = res.url.split(',');
+        if (results === "") {
+            $('#nothing').show();
+        } else {
+            $('#nothing').hide();
+            for (let index = 0; index < results.length; index++) {
+                const element = results[index];
 
+                if (/jpe?g/i.test(element)) {
                     $('#result').append(`
 <div class="col-sm-3 resultCard mb-1">
     <div class="card text-center">
@@ -106,9 +107,38 @@ function callApi(datas) {
         </div>
     </div>
 </div>
-                        `)
+                    `);
+                } else if (/mp4/i.test(element)) {
+                    $('#result').append(`
+<div class="col-sm-3 resultCard mb-1">
+    <div class="card text-center">
+        <video controls width="250" preload="none">
+            <source src="${element}"
+                    type="video/mp4">
+            Sorry, your browser doesn't support embedded videos.
+        </video>
+        <div class="card-body">
+            <a href="${element}" class="btn btn-outline-secondary resultBtn" target="_blank">點我開啟</a>
+        </div>
+    </div>
+</div>
+                    `);
+                } else {
+                    $('#result').append(`
+<div class="col-sm-3 resultCard mb-1">
+    <div class="card text-center">
+        <div class="card-body">
+            <p>${element}</p>
+        </div>
+    </div>
+</div>
+                    `);
                 }
+
+
             }
         }
+    }).fail(() => {
+        $('#nothing').show();
     });
 }
