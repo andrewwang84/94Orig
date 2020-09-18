@@ -53,11 +53,11 @@ async function getStories(url, forceUpdate = false) {
         }
         // get Cache
         if (CACHE.has(homeUrl) && !forceUpdate) {
-            console.info(`[LOG] Get Story From Cache`);
+            console.info(`[LOG][IG_STORY]Get Story From Cache`);
             let timestamp = Date.now();
             let cache = CACHE.get(homeUrl);
             if (timestamp - cache.time > 30 * 60 * 1000) {
-                console.info(`[LOG] Cache Outdated, Delete Cache`);
+                console.info(`[LOG][IG_STORY]Cache Outdated, Delete Cache`);
                 CACHE.delete(homeUrl);
             } else {
                 let data = cache.data;
@@ -79,7 +79,7 @@ async function getStories(url, forceUpdate = false) {
         }
 
         if (!browserWSEndpoint) {
-            console.log(`[LOG] Launch Browser`);
+            console.log(`[LOG][IG_STORY]Launch Browser`);
             const browser = await puppeteer.launch({
                 headless: isHeadless,
                 args: LAUNCH_ARGS
