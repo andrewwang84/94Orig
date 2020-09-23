@@ -84,7 +84,7 @@ async function getStories(url, forceUpdate = false) {
             }
         }
         if (score >= 150) {
-            console.log(`[LOG][IG_Story][Blink_Block]`);
+            console.log(`[LOG][IG_Story][Blink_Block][${score}]`);
             resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
         }
 
@@ -329,7 +329,7 @@ async function igUrl(url) {
             }
         }
         if (score >= 150) {
-            console.log(`[LOG][IG][Puppeteer][Blink_Block]`);
+            console.log(`[LOG][IG][Puppeteer][Blink_Block][${score}]`);
             resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
         }
 
