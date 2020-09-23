@@ -18,8 +18,33 @@ const blackList = [
     'jennierubyjane',
     'roses_are_rosie',
     'lalalalisa_m',
-    'blackpinkofficial'
+    'blackpinkofficial',
+    'lesyeuxdenini'
 ];
+const greyList = {
+    'chae': 20,
+    'rose': 75,
+    'rosepark': 500,
+    'chaeyoungpark': 500,
+    'chaeyoung': 20,
+    'jennie': 75,
+    'jen': 20,
+    'kim': 30,
+    'park': 30,
+    'jenniekim': 500,
+    'rosie': 80,
+    'lalisa': 500,
+    'lisa': 75,
+    'jisookim': 500,
+    'jisoo': 75,
+    'blink': 500,
+    'black': 80,
+    'pink': 80,
+    'ink': 20,
+    'bp': 50,
+    'area': 40,
+    'blackpink': 500
+};
 
 let getImage = async (urls, isPup = false, forceUpdate = false) => {
     try {
@@ -115,6 +140,18 @@ function igUrl(url) {
             let userName = target.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/)[1];
             console.log(`[LOG][IG][${userName}]`);
             if (blackList.includes(userName)) {
+                console.log(`[LOG][IG][Blink_Block]`);
+                resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+            }
+            let score = 0;
+            userName = userName.toLowerCase();
+            for (const key in greyList) {
+                if (userName.search(key) !== -1) {
+                    score += parseInt(greyList[key]);
+                }
+            }
+            if (score >= 150) {
+                console.log(`[LOG][IG][Blink_Block]`);
                 resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
             }
 

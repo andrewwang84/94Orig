@@ -35,6 +35,30 @@ const blackList = [
     'lalalalisa_m',
     'blackpinkofficial'
 ];
+const greyList = {
+    'chae': 20,
+    'rose': 75,
+    'rosepark': 500,
+    'chaeyoungpark': 500,
+    'chaeyoung': 20,
+    'jennie': 75,
+    'jen': 20,
+    'kim': 30,
+    'park': 30,
+    'jenniekim': 500,
+    'rosie': 80,
+    'lalisa': 500,
+    'lisa': 75,
+    'jisookim': 500,
+    'jisoo': 75,
+    'blink': 500,
+    'black': 80,
+    'pink': 80,
+    'ink': 20,
+    'bp': 50,
+    'area': 40,
+    'blackpink': 500
+};
 
 async function getStories(url, forceUpdate = false) {
     try {
@@ -48,9 +72,22 @@ async function getStories(url, forceUpdate = false) {
 
         if (blackList.includes(username)) {
             return new Promise(function (resolve, reject) {
+                console.log(`[LOG][IG_Story][Blink_Block]`);
                 resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
             });
         }
+        let score = 0;
+        userName = userName.toLowerCase();
+        for (const key in greyList) {
+            if (userName.search(key) !== -1) {
+                score += parseInt(greyList[key]);
+            }
+        }
+        if (score >= 150) {
+            console.log(`[LOG][IG_Story][Blink_Block]`);
+            resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+        }
+
         // get Cache
         if (CACHE.has(homeUrl) && !forceUpdate) {
             console.info(`[LOG][IG_STORY]Get Story From Cache`);
@@ -280,8 +317,20 @@ async function igUrl(url) {
         let userName = html.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/)[1];
         if (blackList.includes(userName)) {
             return new Promise(function (resolve, reject) {
+                console.log(`[LOG][IG][Puppeteer][Blink_Block]`);
                 resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
             });
+        }
+        let score = 0;
+        userName = userName.toLowerCase();
+        for (const key in greyList) {
+            if (userName.search(key) !== -1) {
+                score += parseInt(greyList[key]);
+            }
+        }
+        if (score >= 150) {
+            console.log(`[LOG][IG][Puppeteer][Blink_Block]`);
+            resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
         }
 
         let count = 1;
