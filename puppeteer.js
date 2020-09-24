@@ -77,9 +77,9 @@ async function getStories(url, forceUpdate = false) {
             });
         }
         let score = 0;
-        userName = userName.toLowerCase();
+        username = username.toLowerCase();
         for (const key in greyList) {
-            if (userName.search(key) !== -1) {
+            if (username.search(key) !== -1) {
                 score += parseInt(greyList[key]);
             }
         }
