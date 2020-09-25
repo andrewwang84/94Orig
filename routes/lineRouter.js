@@ -105,7 +105,7 @@ async function handleEvent(event) {
                                 replyMsgArrObj.push({
                                     'type': 'video',
                                     "originalContentUrl": currentMsg,
-                                    "previewImageUrl": "https://pbs.twimg.com/profile_images/1269685818345394176/lPyLjEXz_400x400.jpg"
+                                    "previewImageUrl": "../public/img/instagram-square.png"
                                 });
                             } else if (/\.jpe?g|\.png/i.test(currentMsg)) {
                                 replyMsgArrObj.push({
