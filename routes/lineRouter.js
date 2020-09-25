@@ -105,7 +105,7 @@ async function handleEvent(event) {
                                 replyMsgArrObj.push({
                                     'type': 'video',
                                     "originalContentUrl": currentMsg,
-                                    "previewImageUrl": "../public/img/instagram-square.png"
+                                    "previewImageUrl": "https://origin94origin.herokuapp.com/img/instagram-square.png"
                                 });
                             } else if (/\.jpe?g|\.png/i.test(currentMsg)) {
                                 replyMsgArrObj.push({
