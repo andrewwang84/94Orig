@@ -56,8 +56,11 @@ const greyList = {
     'pink': 80,
     'ink': 20,
     'bp': 50,
-    'area': 40,
-    'blackpink': 500
+    'blackpink': 500,
+    'inyourarea': 100,
+    'in': 35,
+    'your': 35,
+    'area': 35
 };
 
 async function getStories(url, forceUpdate = false) {
