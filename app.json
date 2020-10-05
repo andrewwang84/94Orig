@@ -36,6 +36,18 @@
     "url": {
       "description": "your project url",
       "value": ""
+    },
+    "lineAccessToken": {
+      "description": "line bot token",
+      "value": ""
+    },
+    "lineSecret": {
+      "description": "line bot secret",
+      "value": ""
+    },
+    "twitterToken": {
+      "description": "twitter bearer token for api access",
+      "value": ""
     }
   }
 }
