@@ -14,7 +14,7 @@
 - [X] IG video
 - [X] IG Story image
 - [X] IG Story video
-- [ ] Twitter image
+- [X] Twitter image
 - [ ] Twitter video
 - [ ] Twitter video as Gif
 - [X] Error handling
@@ -43,5 +43,8 @@
 - NODE_ENV: production
 - telegramToken: [telegram bot token, you can recieve it from bot father]
 - url: https://[your heroku project name].herokuapp.com
+- lineAccessToken: [line bot token]
+- lineSecret: [line bot secret]
+- twitterToken: [twitter bearer token for api access]
 
 cause the region difference, I highly recommend not to use your own instagram account in this bot
