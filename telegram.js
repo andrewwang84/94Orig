@@ -9,7 +9,7 @@ const crawler = require('./crawler.js');
 bot.onText(/https:\/\//, async (msg, match) => {
     const chatId = msg.chat.id;
     let logName = msg.from.username || msg.from.first_name || msg.from.id;
-    console.log(`[LOG][Telegram][getImage] ${logName}`);
+    console.log(`[LOG][Telegram] ${logName}`);
     let chatMsg = match.input;
 
     try {
