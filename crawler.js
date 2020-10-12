@@ -145,7 +145,7 @@ function igUrl(url) {
             console.log(`[LOG][IG][${userName}]`);
             if (blackList.includes(userName)) {
                 console.log(`[LOG][IG][Blink_Block]`);
-                resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+                resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
             }
             let score = 0;
             userName = userName.toLowerCase();
@@ -156,7 +156,7 @@ function igUrl(url) {
             }
             if (score >= 150) {
                 console.log(`[LOG][IG][Blink_Block][${score}]`);
-                resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+                resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
             }
 
             let results = target.matchAll(/"(?:display_url|video_url)":"([^"]+)",/gi);

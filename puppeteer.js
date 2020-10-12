@@ -76,7 +76,7 @@ async function getStories(url, forceUpdate = false) {
         if (blackList.includes(username)) {
             return new Promise(function (resolve, reject) {
                 console.log(`[LOG][IG_Story][Blink_Block]`);
-                resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+                resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
             });
         }
         let score = 0;
@@ -88,7 +88,7 @@ async function getStories(url, forceUpdate = false) {
         }
         if (score >= 150) {
             console.log(`[LOG][IG_Story][Blink_Block][${score}]`);
-            resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+            resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
         }
 
         // get Cache
@@ -321,7 +321,7 @@ async function igUrl(url) {
         if (blackList.includes(userName)) {
             return new Promise(function (resolve, reject) {
                 console.log(`[LOG][IG][Puppeteer][Blink_Block]`);
-                resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+                resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
             });
         }
         let score = 0;
@@ -333,7 +333,7 @@ async function igUrl(url) {
         }
         if (score >= 150) {
             console.log(`[LOG][IG][Puppeteer][Blink_Block][${score}]`);
-            resolve(['非常抱歉，本工具不支援 Blind，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+            resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
         }
 
         let count = 1;
