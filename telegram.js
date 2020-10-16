@@ -34,7 +34,12 @@ bot.onText(/https:\/\//, async (msg, match) => {
             for (var i = 0; i < resArr.length; i++) {
                 if (resArr[i] != '') {
                     if (/mp4|jpe?g|png/.test(resArr[i])) {
-                        await bot.sendDocument(chatId, resArr[i]);
+                        try {
+                            await bot.sendDocument(chatId, resArr[i]);
+                        } catch (error) {
+                            await bot.sendMessage(chatId, resArr[i]);
+                        }
+
                     } else {
                         await bot.sendMessage(chatId, resArr[i]);
                     }
