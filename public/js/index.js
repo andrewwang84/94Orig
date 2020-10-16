@@ -50,6 +50,10 @@ $(document).ready(() => {
         datas = rawData.split("\n");
 
         callApi(datas);
+        $('#submitBtn').prop('disabled', true);
+        setTimeout(() => {
+            $('#submitBtn').prop('disabled', false);
+        }, 5000);
     });
 
     $('#clearBtn').on('click', (e) => {
@@ -89,6 +93,7 @@ function callApi(datas) {
             'url': datas
         }
     }).done((res) => {
+        $('#submitBtn').prop('disabled', false);
         results = res.url.split(',');
         if (results === "") {
             $('#nothing').show();
@@ -139,6 +144,7 @@ function callApi(datas) {
             }
         }
     }).fail(() => {
+        $('#submitBtn').prop('disabled', false);
         $('#nothing').show();
     });
 }
