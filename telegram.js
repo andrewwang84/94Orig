@@ -13,9 +13,6 @@ bot.onText(/https:\/\//, async (msg, match) => {
     let chatMsg = match.input;
 
     try {
-        if (/https:\/\/www\.instagram\.com\/tv\//.test(chatMsg)) {
-            throw new Error('目前尚未支援 IGTV 下載喔～')
-        }
         let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11}\/)|(?:https:\/\/(?:www\.)?instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
         let isPup = (chatMsg.match(/-pup/i) !== null) ? true : false;
         let forceUpdate = (chatMsg.match(/--f/i) !== null) ? true : false;

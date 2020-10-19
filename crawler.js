@@ -62,7 +62,7 @@ let getImage = async (urls, isPup = false, forceUpdate = false) => {
 async function prepareData(urls, isPup = false, forceUpdate = false) {
     var imageUrls = [];
     for (var i = 0; i < urls.length; i++) {
-        if (/instagram\.com\/p\//.test(urls[i])) {
+        if (/instagram\.com\/(?:p|tv)\//.test(urls[i])) {
             try {
                 start = Date.now();
                 if (isPup == true) {
@@ -80,8 +80,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false) {
                 console.log(`[ERROR][IG][${urls[i]}]`);
                 return error;
             }
-        }
-        if (!/instagram\.com\/p\//.test(urls[i]) && /instagram\.com/.test(urls[i])) {
+        } else if (!/instagram\.com\/(?:p|tv)\//.test(urls[i]) && /instagram\.com/.test(urls[i])) {
             try {
                 let url = urls[i];
                 if (urls[i].indexOf('?') !== -1) {
@@ -96,8 +95,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false) {
                 console.log(`[ERROR][IG_STORY][${urls[i]}]`);
                 return error;
             }
-        }
-        if (/https:\/\/twitter\.com/.test(urls[i])) {
+        } else if (/https:\/\/twitter\.com/.test(urls[i])) {
             try {
                 start = Date.now();
                 let res = await twitterUrl(urls[i]);
@@ -108,8 +106,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false) {
                 console.log(`[ERROR][TWITTER][${urls[i]}]`);
                 return error;
             }
-        }
-        if (/https:\/\/mobile\.twitter\.com/.test(urls[i])) {
+        } else if (/https:\/\/mobile\.twitter\.com/.test(urls[i])) {
             try {
                 let targetUrl = urls[i].replace('mobile.', '');
                 start = Date.now();
