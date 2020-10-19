@@ -5,3 +5,15 @@ body {
 a {
   color: #00B7FF;
 }
+
+.line-btn, .line-btn a {
+  color: #00b900;
+}
+
+.tele-btn, .tele-btn a {
+  color: #2e87ca;
+}
+
+.app_btn img{
+  height: 20px;
+}

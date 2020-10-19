@@ -1,49 +1,83 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>94Orig</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link rel='stylesheet' href='/css/style.css' />
-  </head>
-  <body>
-    <nav class="navbar sticky-top navbar-light bg-light mb-3" id="navBar">
-        <a class="navbar-brand" href="#">94Orig</a>
-        <button type="button" id="darkBtn" class="btn btn-outline-dark" data-toggle="button" aria-pressed="false" autocomplete="off">
-            關燈模式
-        </button>
-    </nav>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-8 offset-md-2 mb-3 text-center">
-                <h1>歡迎來到 94Orig</h1>
-                <h5>限時動態請輸入帳號網址，並稍候 5~10 秒（限公開帳號）</h5>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        <title>94Orig</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <link rel='stylesheet' href='/css/style.css' />
+    </head>
+    <body>
+        <nav class="navbar sticky-top navbar-light bg-light mb-3" id="navBar">
+            <a class="navbar-brand" href="#">94Orig</a>
+            <button type="button" id="darkBtn" class="btn btn-outline-dark" data-toggle="button" aria-pressed="false" autocomplete="off">
+                關燈模式
+            </button>
+        </nav>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-8 offset-md-2 mb-3 text-center">
+                    <h1>歡迎來到 94Orig</h1>
+                    <div class="app_btn">
+                        <p>其他平台版本：</p>
+                        <ul class="list-inline">
+                            <li class="line-btn list-inline-item">
+                                <a href="javascript:;" data-toggle="modal" data-target="#lineModel">
+                                    <img src="img/LINE_logo.png">
+                                    <span>@bch6035i</span>
+                                </a>
+                            </li>
+                            <li class="tele-btn list-inline-item">
+                                <a href="https://t.me/orig_bot" target="_blank">
+                                    <img src="img/TELE_logo.png">
+                                    <span>@orig_bot</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <h5>限時動態請輸入帳號網址，並稍候 5~10 秒（限公開帳號）</h5>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <label for="targetUrls">請輸入推特或 Instagram 貼文網址:</label>
+                    <textarea type="text" class="form-control" id="targetUrls" rows="8" cols="100" placeholder="輸入多個網址請換行隔開"></textarea>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-8 offset-md-2 text-right mt-1 mb-2">
+                    <button class="btn btn-outline-secondary btn-lg" type="button" id="clearBtn">Clear</button>
+                    <button class="btn btn-outline-success btn-lg" type="button" id="submitBtn">GET</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md text-center">
+                    <p id="nothing" style="display:none"><strong>沒東西</strong></p>
+                </div>
+            </div>
+            <div class="row" id="result">
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-8 offset-md-2">
-                <label for="targetUrls">請輸入推特或 Instagram 貼文網址:</label>
-                <textarea type="text" class="form-control" id="targetUrls" rows="8" cols="100" placeholder="輸入多個網址請換行隔開"></textarea>
+        <!-- Modal -->
+        <div class="modal fade" id="lineModel" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content text-center">
+                    <div class="modal-header">
+                        <h4 class="modal-title text-dark" id="lineModel">94Orig Line Bot</h4>
+                        <button type="button" class="close" data-dismiss="modal">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <h6 class="text-dark">掃描 QRcode 將機器人加為好友</h6>
+                        <img src="img/bch6035i.png">
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-8 offset-md-2 text-right mt-1 mb-2">
-                <button class="btn btn-outline-secondary btn-lg" type="button" id="clearBtn">Clear</button>
-                <button class="btn btn-outline-success btn-lg" type="button" id="submitBtn">GET</button>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md text-center">
-                <p id="nothing" style="display:none"><strong>沒東西</strong></p>
-            </div>
-        </div>
-        <div class="row" id="result">
-        </div>
-    </div>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-    <script src="js/index.js"></script>
-  </body>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <script src="js/index.js"></script>
+    </body>
 </html>
