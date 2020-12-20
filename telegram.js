@@ -34,6 +34,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
                         try {
                             await bot.sendDocument(chatId, resArr[i]);
                         } catch (error) {
+                            console.log(`[ERROR] sendDocument error: ${error}`);
                             await bot.sendMessage(chatId, resArr[i]);
                         }
 
