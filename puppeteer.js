@@ -6,7 +6,7 @@ const insCookies = require('./config.js')[app.get('env')].insCookies;
 const usernameSelector = 'input[name="username"]';
 const passwordSelector = 'input[name="password"]';
 const loginBtn = 'button[type="submit"]';
-const storiesCountClassSelector = '#react-root > section > div > div > section > div:first-of-type > div';
+const storiesCountClassSelector = '#react-root > section > div > div > section > div > header > div:first-of-type > div';
 const nextStorySelector = '.coreSpriteRightChevron';
 const WTFStorySelector = '#react-root > section > div > div > section > div.GHEPc > div.Igw0E.IwRSH.eGOV_._4EzTm.NUiEW > div > div > button > div';
 const storyHomeEnterSelector = `#react-root > section > main > div > header > div > div > canvas`;
@@ -14,10 +14,10 @@ const privateAccSelector = `#react-root > section > main > div > header > div > 
 const twitterSelector = 'article:nth-of-type(1) img';
 const twitterShowSensitiveBtn = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div > div:nth-of-type(2) > div > div:nth-of-type(2) div[role=button]';
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36';
-//const isHeadless = false;
-const isHeadless = true;
+const isHeadless = false;
+//const isHeadless = true;
 let browserWSEndpoint = null;
-const waitUntilMain = 'networkidle0';
+const waitUntilMain = 'networkidle2';
 const waitUntilMinor = 'domcontentloaded';
 const CACHE = new Map();
 const LAUNCH_ARGS = [
@@ -73,6 +73,15 @@ async function getStories(url, forceUpdate = false) {
         let storiesUrl = (storyId == null) ? null : `https://www.instagram.com/stories/${username}/${storyId}/`;
         let homeUrl = `https://www.instagram.com/${username}/`;
 
+        if (!browserWSEndpoint) {
+            console.log(`[LOG][IG_STORY]Launch Browser`);
+            const browser = await puppeteer.launch({
+                headless: isHeadless,
+                args: LAUNCH_ARGS
+            });
+            browserWSEndpoint = await browser.wsEndpoint();
+        }
+
         if (blackList.includes(username)) {
             return new Promise(function (resolve, reject) {
                 console.log(`[LOG][IG_Story][Blink_Block]`);
@@ -118,14 +127,6 @@ async function getStories(url, forceUpdate = false) {
             }
         }
 
-        if (!browserWSEndpoint) {
-            console.log(`[LOG][IG_STORY]Launch Browser`);
-            const browser = await puppeteer.launch({
-                headless: isHeadless,
-                args: LAUNCH_ARGS
-            });
-            browserWSEndpoint = await browser.wsEndpoint();
-        }
         const browser = await puppeteer.connect({ browserWSEndpoint });
 
         const cookie = {
@@ -182,7 +183,7 @@ async function getStories(url, forceUpdate = false) {
         }
 
         try {
-            await page.click(storyHomeEnterSelector).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntilMinor }));
+            await page.click(storyHomeEnterSelector).catch(e => puppeteerError(e)).then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
         } catch (error) {
             await page.close();
             return new Promise(function (resolve, reject) {
@@ -205,7 +206,7 @@ async function getStories(url, forceUpdate = false) {
             await page.click(WTFStorySelector);
         }
 
-        await page.waitForSelector(storiesCountClassSelector);
+        await page.waitForSelector(storiesCountClassSelector).catch(e => puppeteerError(e));
         let count = await page.$$eval(storiesCountClassSelector, div => div.length);
         let errFlag = false;
         let cacheArr = [];
@@ -215,8 +216,8 @@ async function getStories(url, forceUpdate = false) {
                 await page.waitForSelector(WTFStorySelector);
                 await page.click(WTFStorySelector);
             }
-            let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
-            let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
+            let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => puppeteerError(err));
+            let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => puppeteerError(err));
             let result = null;
             if (/Error:/.test(video) && /Error:/.test(img)) {
                 result = null;
@@ -235,10 +236,12 @@ async function getStories(url, forceUpdate = false) {
             cacheArr[currentPage] = result;
             imgUrls.push(result);
 
-            page.click(nextStorySelector);
-            await page.waitForNavigation({ waitUntil: waitUntilMain })
-            if (await page.url() === baseUrl) {
-                break;
+            if (await page.$(nextStorySelector) !== null) {
+                page.click(nextStorySelector);
+                await page.waitForNavigation({ waitUntil: waitUntilMain })
+                if (await page.url() === baseUrl) {
+                    break;
+                }
             }
         }
 
@@ -426,6 +429,10 @@ async function twitterUrl(url) {
             resolve([`${url} 發生錯誤，請再試一次`]);
         });
     }
+}
+
+function puppeteerError(e) {
+    console.log(`[ERROR][Puppeteer] ${e}`);
 }
 
 module.exports = {
