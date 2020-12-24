@@ -14,8 +14,8 @@ const privateAccSelector = `#react-root > section > main > div > header > div > 
 const twitterSelector = 'article:nth-of-type(1) img';
 const twitterShowSensitiveBtn = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div > div:nth-of-type(2) > div > div:nth-of-type(2) div[role=button]';
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36';
-const isHeadless = false;
-//const isHeadless = true;
+//const isHeadless = false;
+const isHeadless = true;
 let browserWSEndpoint = null;
 const waitUntilMain = 'networkidle2';
 const waitUntilMinor = 'domcontentloaded';
