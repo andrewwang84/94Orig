@@ -9,15 +9,15 @@ const loginBtn = 'button[type="submit"]';
 const storiesCountClassSelector = '#react-root > section > div > div > section > div > header > div:first-of-type > div';
 const nextStorySelector = '.coreSpriteRightChevron';
 const WTFStorySelector = '#react-root > section > div > div > section > div.GHEPc > div.Igw0E.IwRSH.eGOV_._4EzTm.NUiEW > div > div > button > div';
-const storyHomeEnterSelector = `#react-root > section > main > div > header > div > div > canvas`;
+const storyHomeEnterSelector = `#react-root > section > main > div > header > div > div`;
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const twitterSelector = 'article:nth-of-type(1) img';
 const twitterShowSensitiveBtn = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div > div:nth-of-type(2) > div > div:nth-of-type(2) div[role=button]';
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36';
-const isHeadless = false;
-//const isHeadless = true;
+//const isHeadless = false;
+const isHeadless = true;
 let browserWSEndpoint = null;
-const waitUntilMain = 'networkidle2';
+const waitUntilMain = 'networkidle0';
 const waitUntilMinor = 'domcontentloaded';
 const CACHE = new Map();
 const LAUNCH_ARGS = [
@@ -74,7 +74,7 @@ async function getStories(url, forceUpdate = false) {
         let homeUrl = `https://www.instagram.com/${username}/`;
 
         if (!browserWSEndpoint) {
-            console.log(`[LOG][IG_STORY]Launch Browser`);
+            console.log(`[LOG][IG_STORY] Launch Browser`);
             const browser = await puppeteer.launch({
                 headless: isHeadless,
                 args: LAUNCH_ARGS
@@ -139,11 +139,11 @@ async function getStories(url, forceUpdate = false) {
         const page = await browser.newPage();
         await page.setCookie(cookie);
         await page.setUserAgent(userAgent);
-        await page.setRequestInterception(true);
-        page.on('request', (request) => {
-            if (request.resourceType() === 'image' || request.resourceType() === 'font' || request.resourceType() === 'media') request.abort();
-            else request.continue();
-        });
+        // await page.setRequestInterception(true);
+        // page.on('request', (request) => {
+        //     if (request.resourceType() === 'image' || request.resourceType() === 'font' || request.resourceType() === 'media') request.abort();
+        //     else request.continue();
+        // });
 
         await page.goto(homeUrl, { waitUntil: waitUntilMain });
         // login
@@ -211,13 +211,14 @@ async function getStories(url, forceUpdate = false) {
         let errFlag = false;
         let cacheArr = [];
         for (let index = 0; index < count; index++) {
+            //console.log(await page.url());
             if (await page.$(WTFStorySelector)) {
                 console.log(`[DEBUG_LOG][IG_STORY] WTF Btn Clicked`)
                 await page.waitForSelector(WTFStorySelector);
                 await page.click(WTFStorySelector);
             }
-            let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => puppeteerError(err));
-            let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => puppeteerError(err));
+            let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
+            let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
             let result = null;
             if (/Error:/.test(video) && /Error:/.test(img)) {
                 result = null;
@@ -237,8 +238,8 @@ async function getStories(url, forceUpdate = false) {
             imgUrls.push(result);
 
             if (await page.$(nextStorySelector) !== null) {
-                page.click(nextStorySelector);
-                await page.waitForNavigation({ waitUntil: waitUntilMain })
+                await page.click(nextStorySelector).catch(e => puppeteerError(e)).then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
+
                 if (await page.url() === baseUrl) {
                     break;
                 }
