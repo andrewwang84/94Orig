@@ -13,7 +13,8 @@ const storyHomeEnterSelector = `#react-root > section > main > div > header > di
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const twitterSelector = 'article:nth-of-type(1) img';
 const twitterShowSensitiveBtn = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div > div:nth-of-type(2) > div > div:nth-of-type(2) div[role=button]';
-const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36';
+const igPauseSelector = '#react-root > section > div > div > section > div > header > div > div > button';
+const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36';
 //const isHeadless = false;
 const isHeadless = true;
 let browserWSEndpoint = null;
@@ -139,11 +140,11 @@ async function getStories(url, forceUpdate = false) {
         const page = await browser.newPage();
         await page.setCookie(cookie);
         await page.setUserAgent(userAgent);
-        // await page.setRequestInterception(true);
-        // page.on('request', (request) => {
-        //     if (request.resourceType() === 'image' || request.resourceType() === 'font' || request.resourceType() === 'media') request.abort();
-        //     else request.continue();
-        // });
+        await page.setRequestInterception(true);
+        page.on('request', (request) => {
+            if (request.resourceType() === 'image' || request.resourceType() === 'font' || request.resourceType() === 'media') request.abort();
+            else request.continue();
+        });
 
         await page.goto(homeUrl, { waitUntil: waitUntilMain });
         // login
@@ -211,11 +212,13 @@ async function getStories(url, forceUpdate = false) {
         let errFlag = false;
         let cacheArr = [];
         for (let index = 0; index < count; index++) {
-            //console.log(await page.url());
             if (await page.$(WTFStorySelector)) {
                 console.log(`[DEBUG_LOG][IG_STORY] WTF Btn Clicked`)
                 await page.waitForSelector(WTFStorySelector);
                 await page.click(WTFStorySelector);
+            }
+            if (index === 0) {
+                await page.click(igPauseSelector).catch(e => puppeteerError(e))
             }
             let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
             let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
@@ -238,7 +241,10 @@ async function getStories(url, forceUpdate = false) {
             imgUrls.push(result);
 
             if (await page.$(nextStorySelector) !== null) {
-                await page.click(nextStorySelector).catch(e => puppeteerError(e)).then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
+                await Promise.all([
+                    page.click(nextStorySelector).catch(e => puppeteerError(e)),
+                    waitForNetworkIdle(page, 500, 0),
+                ]);
 
                 if (await page.url() === baseUrl) {
                     break;
@@ -434,6 +440,39 @@ async function twitterUrl(url) {
 
 function puppeteerError(e) {
     console.log(`[ERROR][Puppeteer] ${e}`);
+}
+
+function waitForNetworkIdle(page, timeout, maxInflightRequests = 0) {
+    page.on('request', onRequestStarted);
+    page.on('requestfinished', onRequestFinished);
+    page.on('requestfailed', onRequestFinished);
+
+    let inflight = 0;
+    let fulfill;
+    let promise = new Promise(x => fulfill = x);
+    let timeoutId = setTimeout(onTimeoutDone, timeout);
+    return promise;
+
+    function onTimeoutDone() {
+        page.removeListener('request', onRequestStarted);
+        page.removeListener('requestfinished', onRequestFinished);
+        page.removeListener('requestfailed', onRequestFinished);
+        fulfill();
+    }
+
+    function onRequestStarted() {
+        ++inflight;
+        if (inflight > maxInflightRequests)
+            clearTimeout(timeoutId);
+    }
+
+    function onRequestFinished() {
+        if (inflight === 0)
+            return;
+        --inflight;
+        if (inflight === maxInflightRequests)
+            timeoutId = setTimeout(onTimeoutDone, timeout);
+    }
 }
 
 module.exports = {
