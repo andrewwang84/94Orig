@@ -74,14 +74,7 @@ async function getStories(url, forceUpdate = false) {
         let storiesUrl = (storyId == null) ? null : `https://www.instagram.com/stories/${username}/${storyId}/`;
         let homeUrl = `https://www.instagram.com/${username}/`;
 
-        if (!browserWSEndpoint) {
-            console.log(`[LOG][IG_STORY] Launch Browser`);
-            const browser = await puppeteer.launch({
-                headless: isHeadless,
-                args: LAUNCH_ARGS
-            });
-            browserWSEndpoint = await browser.wsEndpoint();
-        }
+        await getBrowser();
 
         if (blackList.includes(username)) {
             return new Promise(function (resolve, reject) {
@@ -285,14 +278,7 @@ async function igUrl(url) {
     try {
         let imgUrls = [];
 
-        if (!browserWSEndpoint) {
-            console.log(`[LOG] Launch Browser`);
-            const browser = await puppeteer.launch({
-                headless: isHeadless,
-                args: LAUNCH_ARGS
-            });
-            browserWSEndpoint = await browser.wsEndpoint();
-        }
+        await getBrowser('IG');
         const browser = await puppeteer.connect({ browserWSEndpoint });
 
         const cookie = {
@@ -475,8 +461,24 @@ function waitForNetworkIdle(page, timeout, maxInflightRequests = 0) {
     }
 }
 
+async function getBrowser(source = 'IG_STORY') {
+    if (!browserWSEndpoint) {
+        console.log(`[LOG][${source}] Launch Browser`);
+        const browser = await puppeteer.launch({
+            headless: isHeadless,
+            args: LAUNCH_ARGS
+        });
+        browserWSEndpoint = await browser.wsEndpoint();
+    }
+
+    return new Promise(function (resolve, reject) {
+        resolve(browserWSEndpoint);
+    });
+}
+
 module.exports = {
     getStories: getStories,
     igUrl: igUrl,
-    twitterUrl: twitterUrl
+    twitterUrl: twitterUrl,
+    getBrowser: getBrowser
 };

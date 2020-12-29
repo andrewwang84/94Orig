@@ -8,6 +8,7 @@ var app = require('../app');
 var debug = require('debug')('94orig:server');
 var http = require('http');
 var config = require('../config.js')[app.get('env')];
+var puppeteer = require('../puppeteer.js');
 
 /**
  * Get port from environment and store in Express.
@@ -33,6 +34,7 @@ server.on('listening', onListening);
 // heroku self piing
 setInterval(function () {
   http.get("http://origin94origin.herokuapp.com/");
+  puppeteer.getBrowser('WEB_PING');
 }, 1500000);
 
 /**
