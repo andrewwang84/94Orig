@@ -9,7 +9,6 @@ const crawler = require('./crawler.js');
 bot.onText(/https:\/\//, async (msg, match) => {
     const chatId = msg.chat.id;
     let logName = msg.from.username || msg.from.first_name || msg.from.id;
-    console.log(`[LOG][Telegram] ${logName}`);
     let chatMsg = match.input;
 
     try {
@@ -20,6 +19,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
         if (target == null) {
             throw new Error(`目前不支援該網址`);
         }
+        console.log(`[LOG][Telegram] ${logName}`);
         let resp = await crawler.getImage(target, isPup, forceUpdate);;
 
         if (resp.length !== 0) {
