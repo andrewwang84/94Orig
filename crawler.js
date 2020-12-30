@@ -73,8 +73,6 @@ async function prepareData(urls, isPup = false, forceUpdate = false) {
                 } else {
                     let res = await igUrl(urls[i]);
                     imageUrls.push(res);
-                    end = Date.now();
-                    console.log(`[LOG][IG][${urls[i]}][${(end - start) / 1000}s][${res.length}] Done`);
                 }
             } catch (error) {
                 console.log(`[ERROR][IG][${urls[i]}]`);
@@ -130,6 +128,7 @@ function igUrl(url) {
     var result = [];
     var target = '';
     return new Promise(function (resolve, reject) {
+        start = Date.now();
         const j = request.jar();
         const cookie = request.cookie(`sessionid=${insCookies}`);
         j.setCookie(cookie, url);
@@ -139,7 +138,6 @@ function igUrl(url) {
             var $ = cheerio.load(body);
             target = $(`body > script:contains("window.__additionalDataLoaded")`)[0].children[0].data;
             let userName = target.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/)[1];
-            console.log(`[LOG][IG][${userName}]`);
             if (blackList.includes(userName)) {
                 console.log(`[LOG][IG][Blink_Block]`);
                 resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
@@ -166,6 +164,8 @@ function igUrl(url) {
             if (result.length > 1) {
                 result.shift();
             }
+            end = Date.now();
+            console.log(`[LOG][IG][${userName}][${url}][${(end - start) / 1000}s][${result.length}] Done`);
 
             resolve(result);
         });
