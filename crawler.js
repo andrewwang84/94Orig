@@ -180,16 +180,48 @@ function twitterUrl (url) {
             'auth': {
                 'bearer': twitterToken
             }
-        }, function (error, response, body) {
+        }, async function (error, response, body) {
             let data = JSON.parse(body);
             let media = data.includes.media;
             let result = [];
             for (let i = 0; i < media.length; i++) {
                 let data = media[i];
-                result.push(`${data.url}:orig`);
+                if (data.url == undefined) {
+                    let vid = await twitterVid(id);
+                    result.push(vid);
+                } else {
+                    result.push(`${data.url}:orig`);
+                }
             }
 
             resolve(result);
+        });
+    });
+}
+
+function twitterVid (id) {
+    return new Promise(function (resolve, reject) {
+        request.get(`https://api.twitter.com/1.1/statuses/show.json?id=${id}`, {
+            'auth': {
+                'bearer': twitterToken
+            }
+        }, function (error, response, body) {
+            let data = JSON.parse(body);
+            let video = data.extended_entities.media[0].video_info.variants;
+            let bitrate = 0;
+            let vidUrl = '';
+            for (const key in video) {
+                let elem = video[key];
+                if (elem.bitrate == undefined) {
+                    continue;
+                }
+                if (elem.bitrate > bitrate) {
+                    vidUrl = elem.url;
+                    bitrate = elem.bitrate;
+                }
+            }
+
+            resolve(vidUrl);
         });
     });
 }
