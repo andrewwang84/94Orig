@@ -238,14 +238,19 @@ let getApk = async () => {
 
 async function prepareApk() {
     const jypnationUrl = 'https://apkpure.com/superstar-jypnation/com.dalcomsoft.ss.jyp';
-
+    const twicegogofightinUrl = 'https://apkpure.com/twice-go-go-fightin%E2%80%99/jp.co.tenantz.twicegogofightin';\
+    let urlObj = {
+        'JYPNATION': jypnationUrl,
+        'TWICEgogoFightin': twicegogofightinUrl
+    };
     let result = {};
-    result['JYPNATION'] = await apkpure(jypnationUrl);
-    result['JYPNATION']['downloadLink'] = `https://apkpure.com${result['JYPNATION']['downloadLink']}`
 
-    result['TWICEgogoFightin']['downloadLink'] = `https://apkpure.com/twice-go-go-fightin%E2%80%99/jp.co.tenantz.twicegogofightin/download?from=details`;
-    result['TWICEgogoFightin']['version'] = '2.2.9';
-    result['TWICEgogoFightin']['date'] = '已停止營運';
+    for (const key in urlObj) {
+        let url = urlObj[key];
+
+        result[key] = await apkpure(url);
+        result[key]['downloadLink'] = `https://apkpure.com${result[key]['downloadLink']}`
+    }
 
     return new Promise(function (resolve, reject) {
         resolve(result);
