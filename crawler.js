@@ -238,22 +238,14 @@ let getApk = async () => {
 
 async function prepareApk() {
     const jypnationUrl = 'https://apkpure.com/superstar-jypnation/com.dalcomsoft.ss.jyp';
-    const twicegogofightinUrl = 'https://apkpure.com/twice-go-go-fightin%E2%80%99/jp.co.tenantz.twicegogofightin';
-    const twicegogofightinUrl2 = 'https://apkcombo.com/tw-tw/twice-go-go-fightin%E2%80%99/jp.co.tenantz.twicegogofightin/download/apk';
-    let urlObj = {
-        'JYPNATION': jypnationUrl,
-        'TWICEgogoFightin': twicegogofightinUrl
-    };
+
     let result = {};
+    result['JYPNATION'] = await apkpure(jypnationUrl);
+    result['JYPNATION']['downloadLink'] = `https://apkpure.com${result['JYPNATION']['downloadLink']}`
 
-    for (const key in urlObj) {
-        let url = urlObj[key];
-
-        result[key] = await apkpure(url);
-        result[key]['downloadLink'] = `https://apkpure.com${result[key]['downloadLink']}`
-    }
-
-    result['TWICEgogoFightin_2'] = await apkcombo(twicegogofightinUrl2);
+    result['TWICEgogoFightin']['downloadLink'] = `https://apkpure.com/twice-go-go-fightin%E2%80%99/jp.co.tenantz.twicegogofightin/download?from=details`;
+    result['TWICEgogoFightin']['version'] = '2.2.9';
+    result['TWICEgogoFightin']['date'] = '已停止營運';
 
     return new Promise(function (resolve, reject) {
         resolve(result);
@@ -270,24 +262,6 @@ function apkpure(url) {
             result['version'] = $(`.details-sdk > span`).text();
             result['date'] = $(`div.additional > ul > li:nth-child(3) > p:nth-child(2)`).text();
             result['downloadLink'] = $(`.ny-down > a.da`).attr('href');
-
-            resolve(result);
-        });
-    });
-}
-
-function apkcombo(url) {
-    let result = {};
-
-    return new Promise(function (resolve, reject) {
-        request(url, function (error, response, body) {
-            const $ = cheerio.load(body);
-
-            let version = $(`#download-result > div:nth-child(1) > div > div:nth-child(6) > a > div:nth-child(2) > b`).text();
-            result['version'] = '最新版';
-            let date = $(`#download-result > div:nth-child(1) > div > div:nth-child(6) > a > div:nth-child(2) > p`).text();
-            result['date'] = '馬的網站更新的比遊戲還頻繁，還每次都變結構';
-            result['downloadLink'] = 'https://apkcombo.com/tw-tw/twice-go-go-fightin%E2%80%99/jp.co.tenantz.twicegogofightin/download/apk';
 
             resolve(result);
         });
