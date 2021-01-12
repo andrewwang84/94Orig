@@ -238,7 +238,7 @@ let getApk = async () => {
 
 async function prepareApk() {
     const jypnationUrl = 'https://apkpure.com/superstar-jypnation/com.dalcomsoft.ss.jyp';
-    const twicegogofightinUrl = 'https://apkpure.com/twice-go-go-fightin%E2%80%99/jp.co.tenantz.twicegogofightin';\
+    const twicegogofightinUrl = 'https://apkpure.com/twice-go-go-fightin%E2%80%99/jp.co.tenantz.twicegogofightin';
     let urlObj = {
         'JYPNATION': jypnationUrl,
         'TWICEgogoFightin': twicegogofightinUrl
@@ -249,7 +249,7 @@ async function prepareApk() {
         let url = urlObj[key];
 
         result[key] = await apkpure(url);
-        result[key]['downloadLink'] = `https://apkpure.com${result[key]['downloadLink']}`
+        result[key]['downloadLink'] = `https://apkpure.com${result[key]['downloadLink']}`;
     }
 
     return new Promise(function (resolve, reject) {
