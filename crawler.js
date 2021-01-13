@@ -207,17 +207,19 @@ function twitterVid (id) {
             }
         }, function (error, response, body) {
             let data = JSON.parse(body);
-            let video = data.extended_entities.media[0].video_info.variants;
-            let bitrate = 0;
             let vidUrl = '';
-            for (const key in video) {
-                let elem = video[key];
-                if (elem.bitrate == undefined) {
-                    continue;
-                }
-                if (elem.bitrate > bitrate) {
-                    vidUrl = elem.url;
-                    bitrate = elem.bitrate;
+            if (data.extended_entities !== undefined) {
+                let video = data.extended_entities.media[0].video_info.variants;
+                let bitrate = 0;
+                for (const key in video) {
+                    let elem = video[key];
+                    if (elem.bitrate == undefined) {
+                        continue;
+                    }
+                    if (elem.bitrate > bitrate) {
+                        vidUrl = elem.url;
+                        bitrate = elem.bitrate;
+                    }
                 }
             }
 
