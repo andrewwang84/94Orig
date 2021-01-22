@@ -40,14 +40,4 @@ router.get('/apk/', async function (req, res) {
     }
 });
 
-router.get('/deep/', async function (req, res) {
-    try {
-        let result = await crawler.checkDeep();
-        res.status(200).json({ result });
-    } catch (error) {
-        res.status(500).json({ message: `${error}` });
-        return error;
-    }
-});
-
 module.exports = router;
