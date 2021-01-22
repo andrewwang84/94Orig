@@ -82,44 +82,6 @@ bot.onText(/\/apk/, async (msg) => {
 });
 
 var list = [];
-bot.onText(/\/deep/, async (msg) => {
-    const chatId = msg.chat.id;
-    let logName = msg.from.username || msg.from.first_name || msg.from.id;
-    console.log(`[LOG][Telegram][/deep] ${logName}`);
-
-    try {
-        let resp = await checkDeep();
-
-        let msg = '';
-        let links = '';
-        for (const key in resp) {
-            let element = resp[key];
-            if (list.includes(key) === false) {
-                msg += `${element.updateTime}  ${element.name}  ${element.title}\n`;
-                links += `${element.link}\n`;
-                list.push(`${element.name}_${element.title}`);
-            }
-        }
-
-        if (list.length !== 0) {
-            list.forEach((element,index) => {
-                if (!(element in resp)) {
-                    list.splice(index, 1);
-                }
-            });
-        }
-
-        if (msg === '') {
-            msg = 'No Updates';
-        } else {
-            //msg += `\n${links}`;
-        }
-
-        bot.sendMessage(chatId, msg);
-    } catch (error) {
-        bot.sendMessage(chatId, `出錯了: ${error}}`);
-    }
-});
 
 // Deprecated, switch to direct function call
 async function callApi(urls, route) {
@@ -145,24 +107,6 @@ async function getApk() {
     return new Promise(function (resolve, reject) {
         try {
             request.get(`${apiUrl}api/apk`, function (error, response, body) {
-                if (error) reject(error);
-                if (response.statusCode !== 200) {
-                    reject(body);
-                } else {
-                    let data = JSON.parse(body);
-                    resolve(data.result);
-                }
-            });
-        } catch (error) {
-            reject(error);
-        }
-    });
-}
-
-async function checkDeep() {
-    return new Promise(function (resolve, reject) {
-        try {
-            request.get(`${apiUrl}api/deep`, function (error, response, body) {
                 if (error) reject(error);
                 if (response.statusCode !== 200) {
                     reject(body);

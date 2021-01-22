@@ -275,50 +275,7 @@ function apkpure(url) {
     });
 }
 
-let checkDeep = async (url) => {
-    try {
-        const data = await prepareDeep(url);
-        return data;
-    } catch (error) {
-        console.log(error);
-        return error;
-    }
-}
-
-function prepareDeep() {
-    let result = {};
-
-    const videoBlockSelector = '.kd-video-list-item';
-    const videoSelector = '.video-link-container';
-    const titleSelector = '.video-title';
-    const nameSelector = 'div.idol-info > a:nth-child(3)';
-    const timeSelector = 'div.meta-info:nth-child(2) > span';
-
-    return new Promise(function (resolve, reject) {
-        request(deepSite, function (error, response, body) {
-            const $ = cheerio.load(body);
-
-            let vidList = $(videoBlockSelector);
-
-            vidList.each((index, element) => {
-                let title = $(element).find(titleSelector).text();
-                let name = $(element).find(nameSelector).text().split(' ')[0];
-
-                result[`${name}_${title}`] = {
-                    'title': title,
-                    'name': name,
-                    'updateTime': $(element).find(timeSelector).text(),
-                    'link': $(element).find(videoSelector).attr('href')
-                }
-            })
-
-            resolve(result);
-        });
-    });
-}
-
 module.exports = {
     getImage: getImage,
-    getApk: getApk,
-    checkDeep: checkDeep
+    getApk: getApk
 };
