@@ -5,6 +5,7 @@ const token = require('./config.js')[app.get('env')].telegramToken;
 const bot = new TelegramBot(token, { polling: true });
 const apiUrl = require('./config.js')[app.get('env')].url;
 const crawler = require('./crawler.js');
+const ydl = require('./ydl.js');
 
 bot.onText(/https:\/\//, async (msg, match) => {
     const chatId = msg.chat.id;
@@ -16,7 +17,12 @@ bot.onText(/https:\/\//, async (msg, match) => {
         let isPup = (chatMsg.match(/-pup/i) !== null) ? true : false;
         let forceUpdate = (chatMsg.match(/--f/i) !== null) ? true : false;
 
-        if (target == null) {
+        let ydlTarget = chatMsg.match(/(?:https?:\/\/www\.youtube\.com\/watch\?v=\S{11})|(?:https?:\/\/youtu\.be\/\S+)/g);
+        if (ydlTarget !== null) {
+            ydl(ydlTarget);
+        }
+
+        if (target == null && ydlTarget == null) {
             throw new Error(`目前不支援該網址 ${chatMsg}`);
         }
         console.log(`[LOG][Telegram] ${logName}`);
