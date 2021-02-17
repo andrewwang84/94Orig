@@ -1,23 +1,24 @@
 const spawn = require('child_process').spawn;
 
-function ydl(urls) {
-    let urls = urls.split('\n');
-    urls.forEach(url => {
+function ydl(url) {
+    return new Promise(function (resolve, reject) {
         let cmd = `youtube-dl`;
         let args = [url];
         let proc = spawn(cmd, args);
 
-        proc.stdout.on('data', function (data) {
-            console.log(`stdout: ${data}`);
-        });
+        // proc.stdout.on('data', function (data) {
+        //     console.log(`stdout: ${data}`);
+        // });
 
         proc.stderr.setEncoding("utf8")
         proc.stderr.on('data', function (data) {
-            console.log(`stderr: ${data}`);
+            console.log(`${url} stderr: ${data}`);
+            reject(`${url} Error: ${data}`);
         });
 
         proc.on('close', function () {
-            console.log('Done');
+            console.log(`${url} Done`);
+            resolve(`${url} Done`);
         });
     });
 }

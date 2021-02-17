@@ -19,7 +19,12 @@ bot.onText(/https:\/\//, async (msg, match) => {
 
         let ydlTarget = chatMsg.match(/(?:https?:\/\/www\.youtube\.com\/watch\?v=\S{11})|(?:https?:\/\/youtu\.be\/\S+)/g);
         if (ydlTarget !== null) {
-            ydl(ydlTarget);
+            ydlTarget.forEach(async(url) => {
+                await bot.sendMessage(chatId, `${url} 下載中`);
+                await ydl.ydl(url);
+            });
+
+            return;
         }
 
         if (target == null && ydlTarget == null) {
