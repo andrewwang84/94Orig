@@ -17,7 +17,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
         let isPup = (chatMsg.match(/-pup/i) !== null) ? true : false;
         let forceUpdate = (chatMsg.match(/--f/i) !== null) ? true : false;
 
-        let ydlTarget = chatMsg.match(/(?:https?:\/\/www\.youtube\.com\/watch\?v=\S{11})|(?:https?:\/\/youtu\.be\/\S+)/g);
+        let ydlTarget = chatMsg.match(/(?:https?:\/\/www\.youtube\.com\/watch\?v=\S{11})|(?:https?:\/\/youtu\.be\/\S+)|(?:https?:\/\/vlive\.tv\/video\/\S{6})/g);
         if (ydlTarget !== null) {
             ydlTarget.forEach(async(url) => {
                 await bot.sendMessage(chatId, `${url} 下載中`);
