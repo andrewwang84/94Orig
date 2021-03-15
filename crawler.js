@@ -134,6 +134,10 @@ function igUrl(url) {
             end = Date.now();
             console.log(`[LOG][IG][${userName}][${url}][${(end - start) / 1000}s][${result.length}] Done`);
 
+            if (score >= 75) {
+                result.push(`[ADMIN][${score}][${userName}][${url}]`);
+            }
+
             resolve(result);
         });
     });
@@ -141,8 +145,21 @@ function igUrl(url) {
 
 function twitterUrl (url) {
     let id = url.match(/https:\/\/twitter\.com\/\S+\/status\/([0-9]+)/)[1];
+    let userName = url.match(/https:\/\/twitter\.com\/(\S+)\/status\//)[1];
+    userName = userName.toLowerCase();
 
     return new Promise(function (resolve, reject) {
+        for (const key in block.greyList) {
+            if (userName.search(key) !== -1) {
+                score += parseInt(block.greyList[key]);
+            }
+        }
+        if (score >= 150) {
+            console.log(`[LOG][IG][Blink_Block][${score}]`);
+            resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+            return;
+        }
+
         request.get(`https://api.twitter.com/2/tweets?ids=${id}&media.fields=type,url&expansions=attachments.media_keys`, {
             'auth': {
                 'bearer': twitterToken
@@ -159,6 +176,10 @@ function twitterUrl (url) {
                 } else {
                     result.push(`${data.url}:orig`);
                 }
+            }
+
+            if (score >= 75) {
+                result.push(`[ADMIN][${score}][${userName}][${url}]`);
             }
 
             resolve(result);
