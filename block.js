@@ -4,7 +4,8 @@ const blackList = [
     'roses_are_rosie',
     'lalalalisa_m',
     'blackpinkofficial',
-    'lesyeuxdenini'
+    'lesyeuxdenini',
+    'blackpink'
 ];
 const greyList = {
     'chae': 20,
