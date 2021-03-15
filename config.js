@@ -9,7 +9,8 @@ var config = {
         deepSite: null,
         lineAccessToken: null,
         lineSecret: null,
-        twitterToken: null
+        twitterToken: null,
+        adminId: null
     },
     production: {
         telegramToken: process.env.telegramToken,
@@ -21,7 +22,8 @@ var config = {
         deepSite: process.env.deepSite,
         lineAccessToken: process.env.lineAccessToken,
         lineSecret: process.env.lineSecret,
-        twitterToken: process.env.twitterToken
+        twitterToken: process.env.twitterToken,
+        adminId: process.env.adminId
     }
 }
 
@@ -34,6 +36,7 @@ if (process.env.NODE_ENV != 'production') {
     config.development['lineAccessToken'] = require('./cred.js').lineAccessToken;
     config.development['lineSecret'] = require('./cred.js').lineSecret;
     config.development['twitterToken'] = require('./cred.js').twitterToken;
+    config.development['adminId'] = require('./cred.js').adminId;
 }
 
 module.exports = config;

@@ -223,6 +223,9 @@ async function getStories(url, forceUpdate = false) {
 
         //await browser.close();
         await page.close();
+        if (score >= 75) {
+            result.push(`[ADMIN][${score}][${userName}][${url}]`);
+        }
 
         return new Promise(function (resolve, reject) {
             if (storiesUrl !== null) {

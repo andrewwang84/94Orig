@@ -4,6 +4,7 @@ var app = require('./app');
 const token = require('./config.js')[app.get('env')].telegramToken;
 const bot = new TelegramBot(token, { polling: true });
 const apiUrl = require('./config.js')[app.get('env')].url;
+const adminId = require('./config.js')[app.get('env')].adminId;
 const crawler = require('./crawler.js');
 
 bot.onText(/https:\/\//, async (msg, match) => {
@@ -37,7 +38,8 @@ bot.onText(/https:\/\//, async (msg, match) => {
                             console.log(`[ERROR] sendDocument error: ${error}`);
                             await bot.sendMessage(chatId, resArr[i]);
                         }
-
+                    } else if (/\[ADMIN\]/.test(resArr[i])) {
+                        await bot.sendMessage(adminId, resArr[i]);
                     } else {
                         await bot.sendMessage(chatId, resArr[i]);
                     }

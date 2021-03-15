@@ -134,6 +134,10 @@ function igUrl(url) {
             end = Date.now();
             console.log(`[LOG][IG][${userName}][${url}][${(end - start) / 1000}s][${result.length}] Done`);
 
+            if (score >= 75) {
+                result.push(`[ADMIN][${score}][${userName}][${url}]`);
+            }
+
             resolve(result);
         });
     });
