@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 var app = require('express')();
+const block = require('./block.js');
 const insEmail = require('./config.js')[app.get('env')].insEmail;
 const insPass = require('./config.js')[app.get('env')].insPass;
 const insCookies = require('./config.js')[app.get('env')].insCookies;
@@ -9,15 +10,16 @@ const loginBtn = 'button[type="submit"]';
 const storiesCountClassSelector = '#react-root > section > div > div > section > div > header > div:first-of-type > div';
 const nextStorySelector = '.coreSpriteRightChevron';
 const WTFStorySelector = '#react-root > section > div > div > section > div.GHEPc > div.Igw0E.IwRSH.eGOV_._4EzTm.NUiEW > div > div > button > div';
-const storyHomeEnterSelector = `#react-root > section > main > div > header > div > div > canvas`;
+const storyHomeEnterSelector = `#react-root > section > main > div > header > div > div`;
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const twitterSelector = 'article:nth-of-type(1) img';
 const twitterShowSensitiveBtn = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div > div:nth-of-type(2) > div > div:nth-of-type(2) div[role=button]';
-const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.125 Safari/537.36';
+const igPauseSelector = '#react-root > section > div > div > section > div > header > div > div > button';
+const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36';
 //const isHeadless = false;
 const isHeadless = true;
 let browserWSEndpoint = null;
-const waitUntilMain = 'networkidle2';
+const waitUntilMain = 'networkidle0';
 const waitUntilMinor = 'domcontentloaded';
 const CACHE = new Map();
 const LAUNCH_ARGS = [
@@ -28,40 +30,6 @@ const LAUNCH_ARGS = [
     '--disable-dev-shm-usage',
     '--no-zygote'
 ];
-const blackList = [
-    'sooyaaa__',
-    'jennierubyjane',
-    'roses_are_rosie',
-    'lalalalisa_m',
-    'blackpinkofficial'
-];
-const greyList = {
-    'chae': 20,
-    'rose': 75,
-    'rosepark': 500,
-    'chaeyoungpark': 500,
-    'chaeyoung': 20,
-    'jennie': 75,
-    'jen': 20,
-    'kim': 30,
-    'park': 30,
-    'jenniekim': 500,
-    'rosie': 80,
-    'lalisa': 500,
-    'lisa': 75,
-    'jisookim': 500,
-    'jisoo': 75,
-    'blink': 500,
-    'black': 80,
-    'pink': 80,
-    'ink': 20,
-    'bp': 50,
-    'blackpink': 500,
-    'inyourarea': 100,
-    'in': 35,
-    'your': 35,
-    'area': 35
-};
 
 async function getStories(url, forceUpdate = false) {
     try {
@@ -73,16 +41,9 @@ async function getStories(url, forceUpdate = false) {
         let storiesUrl = (storyId == null) ? null : `https://www.instagram.com/stories/${username}/${storyId}/`;
         let homeUrl = `https://www.instagram.com/${username}/`;
 
-        if (!browserWSEndpoint) {
-            console.log(`[LOG][IG_STORY]Launch Browser`);
-            const browser = await puppeteer.launch({
-                headless: isHeadless,
-                args: LAUNCH_ARGS
-            });
-            browserWSEndpoint = await browser.wsEndpoint();
-        }
+        await getBrowser();
 
-        if (blackList.includes(username)) {
+        if (block.blackList.includes(username) || block.knownIds.includes(username)) {
             return new Promise(function (resolve, reject) {
                 console.log(`[LOG][IG_Story][Blink_Block]`);
                 resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
@@ -90,9 +51,9 @@ async function getStories(url, forceUpdate = false) {
         }
         let score = 0;
         username = username.toLowerCase();
-        for (const key in greyList) {
+        for (const key in block.greyList) {
             if (username.search(key) !== -1) {
-                score += parseInt(greyList[key]);
+                score += parseInt(block.greyList[key]);
             }
         }
         if (score >= 150) {
@@ -216,8 +177,11 @@ async function getStories(url, forceUpdate = false) {
                 await page.waitForSelector(WTFStorySelector);
                 await page.click(WTFStorySelector);
             }
-            let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => puppeteerError(err));
-            let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => puppeteerError(err));
+            if (index === 0) {
+                await page.click(igPauseSelector).catch(e => puppeteerError(e))
+            }
+            let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
+            let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
             let result = null;
             if (/Error:/.test(video) && /Error:/.test(img)) {
                 result = null;
@@ -237,8 +201,11 @@ async function getStories(url, forceUpdate = false) {
             imgUrls.push(result);
 
             if (await page.$(nextStorySelector) !== null) {
-                page.click(nextStorySelector);
-                await page.waitForNavigation({ waitUntil: waitUntilMain })
+                await Promise.all([
+                    page.click(nextStorySelector).catch(e => puppeteerError(e)),
+                    waitForNetworkIdle(page, 500, 0),
+                ]);
+
                 if (await page.url() === baseUrl) {
                     break;
                 }
@@ -256,6 +223,9 @@ async function getStories(url, forceUpdate = false) {
 
         //await browser.close();
         await page.close();
+        if (score >= 75) {
+            result.push(`[ADMIN][${score}][${username}][${url}]`);
+        }
 
         return new Promise(function (resolve, reject) {
             if (storiesUrl !== null) {
@@ -278,14 +248,7 @@ async function igUrl(url) {
     try {
         let imgUrls = [];
 
-        if (!browserWSEndpoint) {
-            console.log(`[LOG] Launch Browser`);
-            const browser = await puppeteer.launch({
-                headless: isHeadless,
-                args: LAUNCH_ARGS
-            });
-            browserWSEndpoint = await browser.wsEndpoint();
-        }
+        await getBrowser('IG');
         const browser = await puppeteer.connect({ browserWSEndpoint });
 
         const cookie = {
@@ -321,7 +284,7 @@ async function igUrl(url) {
 
         const html = await page.content();
         let userName = html.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/)[1];
-        if (blackList.includes(userName)) {
+        if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
             return new Promise(function (resolve, reject) {
                 console.log(`[LOG][IG][Puppeteer][Blink_Block]`);
                 resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
@@ -329,9 +292,9 @@ async function igUrl(url) {
         }
         let score = 0;
         userName = userName.toLowerCase();
-        for (const key in greyList) {
+        for (const key in block.greyList) {
             if (userName.search(key) !== -1) {
-                score += parseInt(greyList[key]);
+                score += parseInt(block.greyList[key]);
             }
         }
         if (score >= 150) {
@@ -435,8 +398,57 @@ function puppeteerError(e) {
     console.log(`[ERROR][Puppeteer] ${e}`);
 }
 
+function waitForNetworkIdle(page, timeout, maxInflightRequests = 0) {
+    page.on('request', onRequestStarted);
+    page.on('requestfinished', onRequestFinished);
+    page.on('requestfailed', onRequestFinished);
+
+    let inflight = 0;
+    let fulfill;
+    let promise = new Promise(x => fulfill = x);
+    let timeoutId = setTimeout(onTimeoutDone, timeout);
+    return promise;
+
+    function onTimeoutDone() {
+        page.removeListener('request', onRequestStarted);
+        page.removeListener('requestfinished', onRequestFinished);
+        page.removeListener('requestfailed', onRequestFinished);
+        fulfill();
+    }
+
+    function onRequestStarted() {
+        ++inflight;
+        if (inflight > maxInflightRequests)
+            clearTimeout(timeoutId);
+    }
+
+    function onRequestFinished() {
+        if (inflight === 0)
+            return;
+        --inflight;
+        if (inflight === maxInflightRequests)
+            timeoutId = setTimeout(onTimeoutDone, timeout);
+    }
+}
+
+async function getBrowser(source = 'IG_STORY') {
+    if (!browserWSEndpoint) {
+        console.log(`[LOG][${source}] Launch Browser`);
+        const browser = await puppeteer.launch({
+            headless: isHeadless,
+            args: LAUNCH_ARGS
+        });
+        browserWSEndpoint = await browser.wsEndpoint();
+    }
+
+    return new Promise(function (resolve, reject) {
+        resolve(browserWSEndpoint);
+    });
+}
+
 module.exports = {
     getStories: getStories,
     igUrl: igUrl,
-    twitterUrl: twitterUrl
+    twitterUrl: twitterUrl,
+    getBrowser: getBrowser
 };

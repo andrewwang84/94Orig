@@ -15,6 +15,7 @@
 - [X] IG Story image
 - [X] IG Story video
 - [X] Twitter image
+- [X] Twitter video
 - [X] Error handling
 - [X] Web
 - [X] Line

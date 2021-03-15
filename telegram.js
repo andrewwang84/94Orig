@@ -4,12 +4,13 @@ var app = require('./app');
 const token = require('./config.js')[app.get('env')].telegramToken;
 const bot = new TelegramBot(token, { polling: true });
 const apiUrl = require('./config.js')[app.get('env')].url;
+const adminId = require('./config.js')[app.get('env')].adminId;
 const crawler = require('./crawler.js');
+const ydl = require('./ydl.js');
 
 bot.onText(/https:\/\//, async (msg, match) => {
     const chatId = msg.chat.id;
     let logName = msg.from.username || msg.from.first_name || msg.from.id;
-    console.log(`[LOG][Telegram] ${logName}`);
     let chatMsg = match.input;
 
     try {
@@ -17,9 +18,20 @@ bot.onText(/https:\/\//, async (msg, match) => {
         let isPup = (chatMsg.match(/-pup/i) !== null) ? true : false;
         let forceUpdate = (chatMsg.match(/--f/i) !== null) ? true : false;
 
-        if (target == null) {
-            throw new Error(`目前不支援該網址`);
+        let ydlTarget = chatMsg.match(/(?:https?:\/\/www\.youtube\.com\/watch\?v=\S{11})|(?:https?:\/\/youtu\.be\/\S+)|(?:https?:\/\/vlive\.tv\/video\/\S{6})/g);
+        if (ydlTarget !== null) {
+            ydlTarget.forEach(async(url) => {
+                await bot.sendMessage(chatId, `${url} 下載中`);
+                await ydl.ydl(url);
+            });
+
+            return;
         }
+
+        if (target == null && ydlTarget == null) {
+            throw new Error(`目前不支援該網址 ${chatMsg}`);
+        }
+        console.log(`[LOG][Telegram] ${logName}`);
         let resp = await crawler.getImage(target, isPup, forceUpdate);;
 
         if (resp.length !== 0) {
@@ -37,7 +49,8 @@ bot.onText(/https:\/\//, async (msg, match) => {
                             console.log(`[ERROR] sendDocument error: ${error}`);
                             await bot.sendMessage(chatId, resArr[i]);
                         }
-
+                    } else if (/\[ADMIN\]/.test(resArr[i])) {
+                        await bot.sendMessage(adminId, resArr[i]);
                     } else {
                         await bot.sendMessage(chatId, resArr[i]);
                     }
@@ -82,44 +95,6 @@ bot.onText(/\/apk/, async (msg) => {
 });
 
 var list = [];
-bot.onText(/\/deep/, async (msg) => {
-    const chatId = msg.chat.id;
-    let logName = msg.from.username || msg.from.first_name || msg.from.id;
-    console.log(`[LOG][Telegram][/deep] ${logName}`);
-
-    try {
-        let resp = await checkDeep();
-
-        let msg = '';
-        let links = '';
-        for (const key in resp) {
-            let element = resp[key];
-            if (list.includes(key) === false) {
-                msg += `${element.updateTime}  ${element.name}  ${element.title}\n`;
-                links += `${element.link}\n`;
-                list.push(`${element.name}_${element.title}`);
-            }
-        }
-
-        if (list.length !== 0) {
-            list.forEach((element,index) => {
-                if (!(element in resp)) {
-                    list.splice(index, 1);
-                }
-            });
-        }
-
-        if (msg === '') {
-            msg = 'No Updates';
-        } else {
-            //msg += `\n${links}`;
-        }
-
-        bot.sendMessage(chatId, msg);
-    } catch (error) {
-        bot.sendMessage(chatId, `出錯了: ${error}}`);
-    }
-});
 
 // Deprecated, switch to direct function call
 async function callApi(urls, route) {
@@ -145,24 +120,6 @@ async function getApk() {
     return new Promise(function (resolve, reject) {
         try {
             request.get(`${apiUrl}api/apk`, function (error, response, body) {
-                if (error) reject(error);
-                if (response.statusCode !== 200) {
-                    reject(body);
-                } else {
-                    let data = JSON.parse(body);
-                    resolve(data.result);
-                }
-            });
-        } catch (error) {
-            reject(error);
-        }
-    });
-}
-
-async function checkDeep() {
-    return new Promise(function (resolve, reject) {
-        try {
-            request.get(`${apiUrl}api/deep`, function (error, response, body) {
                 if (error) reject(error);
                 if (response.statusCode !== 200) {
                     reject(body);

@@ -10,7 +10,7 @@
     "node": "12.x"
   },
   "dependencies": {
-    "@line/bot-sdk": "^7.0.0",
+    "@line/bot-sdk": "^2.0.0",
     "cheerio": "^1.0.0-rc.3",
     "cookie-parser": "^1.4.4",
     "debug": "^4.1.1",
