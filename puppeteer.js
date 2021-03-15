@@ -43,7 +43,7 @@ async function getStories(url, forceUpdate = false) {
 
         await getBrowser();
 
-        if (block.blackList.includes(username) || block.knownIds.includes(userName)) {
+        if (block.blackList.includes(username) || block.knownIds.includes(username)) {
             return new Promise(function (resolve, reject) {
                 console.log(`[LOG][IG_Story][Blink_Block]`);
                 resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
@@ -224,7 +224,7 @@ async function getStories(url, forceUpdate = false) {
         //await browser.close();
         await page.close();
         if (score >= 75) {
-            result.push(`[ADMIN][${score}][${userName}][${url}]`);
+            result.push(`[ADMIN][${score}][${username}][${url}]`);
         }
 
         return new Promise(function (resolve, reject) {
