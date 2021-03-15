@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 var app = require('express')();
+const block = require('./block.js');
 const insEmail = require('./config.js')[app.get('env')].insEmail;
 const insPass = require('./config.js')[app.get('env')].insPass;
 const insCookies = require('./config.js')[app.get('env')].insCookies;
@@ -29,40 +30,6 @@ const LAUNCH_ARGS = [
     '--disable-dev-shm-usage',
     '--no-zygote'
 ];
-const blackList = [
-    'sooyaaa__',
-    'jennierubyjane',
-    'roses_are_rosie',
-    'lalalalisa_m',
-    'blackpinkofficial'
-];
-const greyList = {
-    'chae': 20,
-    'rose': 75,
-    'rosepark': 500,
-    'chaeyoungpark': 500,
-    'chaeyoung': 20,
-    'jennie': 75,
-    'jen': 20,
-    'kim': 30,
-    'park': 30,
-    'jenniekim': 500,
-    'rosie': 80,
-    'lalisa': 500,
-    'lisa': 75,
-    'jisookim': 500,
-    'jisoo': 75,
-    'blink': 500,
-    'black': 80,
-    'pink': 80,
-    'ink': 20,
-    'bp': 50,
-    'blackpink': 500,
-    'inyourarea': 100,
-    'in': 35,
-    'your': 35,
-    'area': 35
-};
 
 async function getStories(url, forceUpdate = false) {
     try {
@@ -76,7 +43,7 @@ async function getStories(url, forceUpdate = false) {
 
         await getBrowser();
 
-        if (blackList.includes(username)) {
+        if (block.blackList.includes(username) || block.knownIds.includes(userName)) {
             return new Promise(function (resolve, reject) {
                 console.log(`[LOG][IG_Story][Blink_Block]`);
                 resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
@@ -84,9 +51,9 @@ async function getStories(url, forceUpdate = false) {
         }
         let score = 0;
         username = username.toLowerCase();
-        for (const key in greyList) {
+        for (const key in block.greyList) {
             if (username.search(key) !== -1) {
-                score += parseInt(greyList[key]);
+                score += parseInt(block.greyList[key]);
             }
         }
         if (score >= 150) {
@@ -314,7 +281,7 @@ async function igUrl(url) {
 
         const html = await page.content();
         let userName = html.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/)[1];
-        if (blackList.includes(userName)) {
+        if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
             return new Promise(function (resolve, reject) {
                 console.log(`[LOG][IG][Puppeteer][Blink_Block]`);
                 resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
@@ -322,9 +289,9 @@ async function igUrl(url) {
         }
         let score = 0;
         userName = userName.toLowerCase();
-        for (const key in greyList) {
+        for (const key in block.greyList) {
             if (userName.search(key) !== -1) {
-                score += parseInt(greyList[key]);
+                score += parseInt(block.greyList[key]);
             }
         }
         if (score >= 150) {

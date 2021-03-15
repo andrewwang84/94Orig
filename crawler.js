@@ -1,6 +1,7 @@
 var request = require('request');
 var cheerio = require('cheerio');
 const puppeteer = require('./puppeteer.js');
+const block = require('./block.js');
 var app = require('express')();
 const deepSite = require('./config.js')[app.get('env')].deepSite;
 const twitterToken = require('./config.js')[app.get('env')].twitterToken;
@@ -13,42 +14,6 @@ var request = require('request').defaults({
 });
 var start = '';
 var end = '';
-const blackList = [
-    'sooyaaa__',
-    'jennierubyjane',
-    'roses_are_rosie',
-    'lalalalisa_m',
-    'blackpinkofficial',
-    'lesyeuxdenini'
-];
-const greyList = {
-    'chae': 20,
-    'rose': 75,
-    'rosepark': 500,
-    'chaeyoungpark': 500,
-    'chaeyoung': 20,
-    'jennie': 75,
-    'jen': 20,
-    'kim': 30,
-    'park': 30,
-    'jenniekim': 500,
-    'rosie': 80,
-    'lalisa': 500,
-    'lisa': 75,
-    'jisookim': 500,
-    'jisoo': 75,
-    'blink': 500,
-    'black': 80,
-    'pink': 80,
-    'ink': 20,
-    'bp': 50,
-    'area': 40,
-    'blackpink': 500,
-    'inyourarea': 100,
-    'in': 35,
-    'your': 35,
-    'area': 35
-};
 
 let getImage = async (urls, isPup = false, forceUpdate = false) => {
     try {
@@ -62,7 +27,7 @@ let getImage = async (urls, isPup = false, forceUpdate = false) => {
 async function prepareData(urls, isPup = false, forceUpdate = false) {
     var imageUrls = [];
     for (var i = 0; i < urls.length; i++) {
-        if (/instagram\.com\/(?:p|tv)\//.test(urls[i])) {
+        if (/instagram\.com\/(?:p|tv|reel)\//.test(urls[i])) {
             try {
                 start = Date.now();
                 if (isPup == true) {
@@ -138,20 +103,22 @@ function igUrl(url) {
             var $ = cheerio.load(body);
             target = $(`body > script:contains("window.__additionalDataLoaded")`)[0].children[0].data;
             let userName = target.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/)[1];
-            if (blackList.includes(userName)) {
+            if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
                 console.log(`[LOG][IG][Blink_Block]`);
                 resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+                return;
             }
             let score = 0;
             userName = userName.toLowerCase();
-            for (const key in greyList) {
+            for (const key in block.greyList) {
                 if (userName.search(key) !== -1) {
-                    score += parseInt(greyList[key]);
+                    score += parseInt(block.greyList[key]);
                 }
             }
             if (score >= 150) {
                 console.log(`[LOG][IG][Blink_Block][${score}]`);
                 resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+                return;
             }
 
             let results = target.matchAll(/"(?:display_url|video_url)":"([^"]+)",/gi);
