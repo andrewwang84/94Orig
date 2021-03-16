@@ -18,11 +18,21 @@ bot.onText(/https:\/\//, async (msg, match) => {
         let isPup = (chatMsg.match(/-pup/i) !== null) ? true : false;
         let forceUpdate = (chatMsg.match(/--f/i) !== null) ? true : false;
 
-        let ydlTarget = chatMsg.match(/(?:https?:\/\/www\.youtube\.com\/watch\?v=\S{11})|(?:https?:\/\/youtu\.be\/\S+)|(?:https?:\/\/vlive\.tv\/video\/\S{6})/g);
+        let ydlTarget = chatMsg.match(/(?:https?:\/\/www\.youtube\.com\/watch\?v=\S{11})|(?:https?:\/\/youtu\.be\/\S+)|(?:https?:\/\/(?:www\.)?vlive\.tv\/video\/\S{6,9})/g);
         if (ydlTarget !== null) {
             ydlTarget.forEach(async(url) => {
-                await bot.sendMessage(chatId, `${url} 下載中`);
-                await ydl.ydl(url);
+                try {
+                    if (/https?:\/\/(?:www\.)?vlive\.tv\/video\/\S{6,9}/.test(url)) {
+                        let match = url.match(/https?:\/\/(?:www\.)?vlive\.tv\/video\/(\S{6,9})/);
+                        url = `https://vlive.tv/video/${match[1]}`;
+                    }
+                    await bot.sendMessage(chatId, `${url} 下載中`);
+                    await ydl.ydl(url);
+                } catch (error) {
+                    console.log(`[ERROR] ${error}`);
+                    bot.sendMessage(chatId, `出錯了: ${error}`);
+                    return;
+                }
             });
 
             return;
