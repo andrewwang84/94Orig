@@ -46,11 +46,11 @@ bot.onText(/https:\/\//, async (msg, match) => {
                 }
             }
         } else {
-            bot.sendMessage(chatId, '沒東西啦 !!');
+            bot.sendMessage(chatId, '沒東西啦 !!', { reply_to_message_id: msg.message_id });
         }
     } catch (error) {
         console.log(`[ERROR] ${error}`);
-        bot.sendMessage(chatId, `出錯了: ${error}`);
+        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id });
     }
 });
 
@@ -79,7 +79,7 @@ bot.onText(/\/apk/, async (msg) => {
 
         bot.sendMessage(chatId, msg);
     } catch (error) {
-        bot.sendMessage(chatId, `出錯了: ${error}}`);
+        bot.sendMessage(chatId, `出錯了: ${error}}`, { reply_to_message_id: msg.message_id });
     }
 });
 
