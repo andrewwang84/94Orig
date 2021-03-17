@@ -26,11 +26,11 @@ bot.onText(/https:\/\//, async (msg, match) => {
                         let match = url.match(/https?:\/\/(?:www\.)?vlive\.tv\/video\/(\S{6,9})/);
                         url = `https://vlive.tv/video/${match[1]}`;
                     }
-                    await bot.sendMessage(chatId, `${url} 下載中`);
+                    await bot.sendMessage(chatId, `下載中`, {reply_to_message_id: msg.message_id});
                     await ydl.ydl(url);
                 } catch (error) {
                     console.log(`[ERROR] ${error}`);
-                    bot.sendMessage(chatId, `出錯了: ${error}`);
+                    bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id });
                     return;
                 }
             });
