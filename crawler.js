@@ -145,17 +145,23 @@ function igUrl(url) {
 
 function twitterUrl (url) {
     let id = url.match(/https:\/\/twitter\.com\/\S+\/status\/([0-9]+)/)[1];
-    let userName = url.match(/https:\/\/twitter\.com\/(\S+)\/status\//)[1];
+    let userName = url.match(/https:\/\/twitter\.com\/(\S+)\/status\/[0-9]+/)[1];
     userName = userName.toLowerCase();
 
     return new Promise(function (resolve, reject) {
+        if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
+            console.log(`[LOG][TWITTER][Blink_Block]`);
+            resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+            return;
+        }
+        let score = 0;
         for (const key in block.greyList) {
             if (userName.search(key) !== -1) {
                 score += parseInt(block.greyList[key]);
             }
         }
         if (score >= 150) {
-            console.log(`[LOG][IG][Blink_Block][${score}]`);
+            console.log(`[LOG][TWITTER][Blink_Block][${score}]`);
             resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
             return;
         }

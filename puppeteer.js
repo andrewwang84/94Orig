@@ -47,6 +47,7 @@ async function getStories(url, forceUpdate = false) {
             return new Promise(function (resolve, reject) {
                 console.log(`[LOG][IG_Story][Blink_Block]`);
                 resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+                return;
             });
         }
         let score = 0;
@@ -59,6 +60,7 @@ async function getStories(url, forceUpdate = false) {
         if (score >= 150) {
             console.log(`[LOG][IG_Story][Blink_Block][${score}]`);
             resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+            return;
         }
 
         // get Cache
