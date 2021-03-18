@@ -14,7 +14,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
     let chatMsg = match.input;
 
     try {
-        let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11}\/)|(?:https:\/\/(?:www\.)?instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
+        let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11})|(?:https:\/\/(?:www\.)?instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
         let isPup = (chatMsg.match(/-pup/i) !== null) ? true : false;
         let forceUpdate = (chatMsg.match(/--f/i) !== null) ? true : false;
 
@@ -62,7 +62,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
                     } else if (/\[ADMIN\]/.test(resArr[i])) {
                         await bot.sendMessage(adminId, resArr[i]);
                     } else {
-                        await bot.sendMessage(chatId, resArr[i]);
+                        await bot.sendMessage(chatId, resArr[i], { reply_to_message_id: msg.message_id });
                     }
                 }
             }
@@ -105,26 +105,6 @@ bot.onText(/\/apk/, async (msg) => {
 });
 
 var list = [];
-
-// Deprecated, switch to direct function call
-async function callApi(urls, route) {
-    return new Promise(function (resolve, reject) {
-        try {
-            request.post(`${apiUrl}${route}`, { form: { url: urls } }, function (error, response, body) {
-                if (error) reject(error);
-                if (response.statusCode !== 200) {
-                    reject(body);
-                } else {
-                    let data = JSON.parse(body);
-                    data = data.url;
-                    resolve(data.split(","));
-                }
-            });
-        } catch (error) {
-            reject(error);
-        }
-    });
-}
 
 async function getApk() {
     return new Promise(function (resolve, reject) {

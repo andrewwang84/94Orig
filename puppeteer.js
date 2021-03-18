@@ -12,12 +12,12 @@ const nextStorySelector = '.coreSpriteRightChevron';
 const WTFStorySelector = '#react-root > section > div > div > section > div.GHEPc > div.Igw0E.IwRSH.eGOV_._4EzTm.NUiEW > div > div > button > div';
 const storyHomeEnterSelector = `#react-root > section > main > div > header > div > div`;
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
-const twitterSelector = 'article:nth-of-type(1) img';
-const twitterShowSensitiveBtn = 'section > div > div > div > div:nth-of-type(2) article:first-of-type div[data-testid=tweet] > div > div:nth-of-type(2) > div > div:nth-of-type(2) div[role=button]';
 const igPauseSelector = '#react-root > section > div > div > section > div > header > div > div > button';
+const igMetaTitle = "head > meta[property='og:title']";
+const igConfirmCheckStoryBtn = '#react-root > section > div > div > section > div > div > div > div > div > div > button';
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36';
-//const isHeadless = false;
-const isHeadless = true;
+const isHeadless = false;
+// const isHeadless = true;
 let browserWSEndpoint = null;
 const waitUntilMain = 'networkidle0';
 const waitUntilMinor = 'domcontentloaded';
@@ -35,15 +35,13 @@ async function getStories(url, forceUpdate = false) {
     try {
         let baseUrl = 'https://www.instagram.com/';
         let imgUrls = [];
-        let username = url.match(/https:\/\/(?:www\.)?instagram\.com\/(?:stories\/)?([a-zA-Z0-9\.\_]+)/)[1];
-        let loginUrl = `https://www.instagram.com/accounts/login/?next=%2F${username}%2F`;
+        let userName = url.match(/https:\/\/(?:www\.)?instagram\.com\/(?:stories\/)?([a-zA-Z0-9\.\_]+)/)[1];
+        let loginUrl = `https://www.instagram.com/accounts/login/?next=%2F${userName}%2F`;
         let storyId = (url.match(/https:\/\/(?:www\.)?instagram.com\/stories\/[a-zA-Z0-9\.\_]+\/([0-9]+)/) == null) ? null : url.match(/https:\/\/(?:www\.)?instagram.com\/stories\/[a-zA-Z0-9\.\_]+\/([0-9]+)/)[1];
-        let storiesUrl = (storyId == null) ? null : `https://www.instagram.com/stories/${username}/${storyId}/`;
-        let homeUrl = `https://www.instagram.com/${username}/`;
+        let storiesUrl = (storyId == null) ? null : `https://www.instagram.com/stories/${userName}/${storyId}/`;
+        let homeUrl = `https://www.instagram.com/${userName}/`;
 
-        await getBrowser();
-
-        if (block.blackList.includes(username) || block.knownIds.includes(username)) {
+        if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
             return new Promise(function (resolve, reject) {
                 console.log(`[LOG][IG_Story][Blink_Block][${url}]`);
                 resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
@@ -51,9 +49,9 @@ async function getStories(url, forceUpdate = false) {
             });
         }
         let score = 0;
-        username = username.toLowerCase();
+        userName = userName.toLowerCase();
         for (const key in block.greyList) {
-            if (username.search(key) !== -1) {
+            if (userName.search(key) !== -1) {
                 score += parseInt(block.greyList[key]);
             }
         }
@@ -90,6 +88,7 @@ async function getStories(url, forceUpdate = false) {
             }
         }
 
+        await getBrowser();
         const browser = await puppeteer.connect({ browserWSEndpoint });
 
         const cookie = {
@@ -134,13 +133,13 @@ async function getStories(url, forceUpdate = false) {
             return new Promise(function (resolve, reject) {
                 let timestamp = Date.now();
                 let cacheArr = [];
-                cacheArr[url] = `@${username} 是私人帳號`;
+                cacheArr[url] = `@${userName} 是私人帳號`;
                 CACHE.set(homeUrl, {
                     'time': timestamp,
                     'data': cacheArr
                 });
 
-                imgUrls.push(`@${username} 是私人帳號`);
+                imgUrls.push(`@${userName} 是私人帳號`);
                 resolve(imgUrls);
             });
         }
@@ -150,23 +149,17 @@ async function getStories(url, forceUpdate = false) {
         } catch (error) {
             await page.close();
             return new Promise(function (resolve, reject) {
-                console.log(`[ERROR][IG_STORY][${username}] Not Found`);
+                console.log(`[ERROR][IG_STORY][${userName}] Not Found`);
                 let timestamp = Date.now();
                 let cacheArr = [];
-                cacheArr[url] = `@${username} 目前沒有限時動態`;
+                cacheArr[url] = `@${userName} 目前沒有限時動態`;
                 CACHE.set(homeUrl, {
                     'time': timestamp,
                     'data': cacheArr
                 });
-                imgUrls.push(`@${username} 目前沒有限時動態`);
+                imgUrls.push(`@${userName} 目前沒有限時動態`);
                 resolve(imgUrls);
             });
-        }
-
-        if (await page.$(WTFStorySelector)) {
-            console.log(`[DEBUG_LOG][IG_STORY] WTF Btn Clicked`)
-            await page.waitForSelector(WTFStorySelector);
-            await page.click(WTFStorySelector);
         }
 
         await page.waitForSelector(storiesCountClassSelector).catch(e => puppeteerError(e));
@@ -174,11 +167,6 @@ async function getStories(url, forceUpdate = false) {
         let errFlag = false;
         let cacheArr = [];
         for (let index = 0; index < count; index++) {
-            if (await page.$(WTFStorySelector)) {
-                console.log(`[DEBUG_LOG][IG_STORY] WTF Btn Clicked`)
-                await page.waitForSelector(WTFStorySelector);
-                await page.click(WTFStorySelector);
-            }
             if (index === 0) {
                 await page.click(igPauseSelector).catch(e => puppeteerError(e))
             }
@@ -226,7 +214,7 @@ async function getStories(url, forceUpdate = false) {
         //await browser.close();
         await page.close();
         if (score >= 75) {
-            result.push(`[ADMIN][${score}][${username}][${url}]`);
+            result.push(`[ADMIN][${score}][${userName}][${url}]`);
         }
 
         return new Promise(function (resolve, reject) {
@@ -241,6 +229,169 @@ async function getStories(url, forceUpdate = false) {
         await page.close();
         return new Promise(function (resolve, reject) {
             resolve([`${homeUrl} 發生錯誤，請再試一次`]);
+        });
+    }
+}
+
+async function getStoriesHighlight(url, forceUpdate = false) {
+    try {
+        await getBrowser('IG_STORY_Highlight');
+        const browser = await puppeteer.connect({ browserWSEndpoint });
+
+        const cookie = {
+            name: "sessionid",
+            value: insCookies,
+            path: "/",
+            domain: ".instagram.com",
+        };
+
+        const page = await browser.newPage();
+        await page.setCookie(cookie);
+        await page.setUserAgent(userAgent);
+        await page.setRequestInterception(true);
+        page.on('request', (request) => {
+            if (request.resourceType() === 'image' || request.resourceType() === 'font' || request.resourceType() === 'media') request.abort();
+            else request.continue();
+        });
+
+        await page.goto(url, { waitUntil: waitUntilMain });
+
+        let ogTitle = await page.$eval(igMetaTitle, element => element.content);
+        let userName = ogTitle.slice(ogTitle.lastIndexOf('@') + 1);
+        let storyBaseUrl = await page.url();
+        let loginUrl = `https://www.instagram.com/accounts/login/?next=%2F${userName}%2F`;
+        let imgUrls = [];
+
+        if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
+            return new Promise(function (resolve, reject) {
+                console.log(`[LOG][IG_STORY_Highlight][Blink_Block][${url}]`);
+                resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+                return;
+            });
+        }
+        let score = 0;
+        userName = userName.toLowerCase();
+        for (const key in block.greyList) {
+            if (userName.search(key) !== -1) {
+                score += parseInt(block.greyList[key]);
+            }
+        }
+        if (score >= 150) {
+            console.log(`[LOG][IG_STORY_Highlight][Blink_Block][${score}][${url}]`);
+            resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+            return;
+        }
+
+        // get Cache
+        if (CACHE.has(storyBaseUrl) && !forceUpdate) {
+            console.info(`[LOG][IG_STORY_Highlight][${userName}]Get Story From Cache`);
+            let timestamp = Date.now();
+            let cache = CACHE.get(storyBaseUrl);
+            if (timestamp - cache.time > 30 * 60 * 1000) {
+                console.info(`[LOG][IG_STORY_Highlight]Cache Outdated, Delete Cache`);
+                CACHE.delete(storyBaseUrl);
+            } else {
+                let result = [];
+                result.push(cache.data);
+                return new Promise(function (resolve, reject) {
+                    resolve(result);
+                });
+            }
+        }
+
+        console.info(`[LOG][IG_STORY_Highlight][${userName}]Start`);
+        // login
+        if (await page.$(usernameSelector)) {
+            await page.goto(loginUrl, { waitUntil: waitUntilMain });
+
+            console.log(`[LOG] Start Login`);
+            await page.click(usernameSelector);
+            await page.keyboard.type(insEmail);
+            await page.click(passwordSelector);
+            await page.keyboard.type(insPass);
+            await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntilMinor }));
+
+            currentPage = await page.url();
+            if (currentPage.search(/\/challenge\//) !== -1) {
+                await page.close();
+                return new Promise(function (resolve, reject) {
+                    imgUrls.push(`請重新驗證帳號喔QQ`);
+                    resolve(imgUrls);
+                });
+            }
+        }
+        if (await page.$(privateAccSelector)) {
+            await page.close();
+            return new Promise(function (resolve, reject) {
+                let timestamp = Date.now();
+                let cacheArr = [];
+                cacheArr[storyBaseUrl] = `@${userName} 是私人帳號`;
+                CACHE.set(homeUrl, {
+                    'time': timestamp,
+                    'data': cacheArr
+                });
+
+                imgUrls.push(`@${userName} 是私人帳號`);
+                resolve(imgUrls);
+            });
+        }
+
+        await page.goto(storyBaseUrl, { waitUntil: waitUntilMain });
+
+        if (await page.$(igConfirmCheckStoryBtn) !== null) {
+            await Promise.all([
+                page.click(igConfirmCheckStoryBtn).catch(e => puppeteerError(e)),
+                waitForNetworkIdle(page, 500, 0),
+            ]);
+        }
+
+        let errFlag = false;
+        let cacheData = [];
+
+        await page.click(igPauseSelector).catch(e => puppeteerError(e));
+
+        let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
+        let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
+        let result = null;
+        if (/Error:/.test(video) && /Error:/.test(img)) {
+            result = null;
+        } else if (/Error:/.test(video)) {
+            result = img;
+        } else {
+            result = video;
+        }
+        if (result == null) {
+            result = `${storyBaseUrl} 限時下載錯誤，請稍後再試一次`;
+            // const html = await page.content();
+            // console.log(html);
+            errFlag = true;
+        }
+
+        cacheData = result;
+        imgUrls.push(result);
+
+        if (!errFlag) {
+            let timestamp = Date.now();
+
+            CACHE.set(storyBaseUrl, {
+                'time': timestamp,
+                'data': cacheData
+            });
+        }
+
+        // await page.close();
+        if (score >= 75) {
+            result.push(`[ADMIN][${score}][${userName}][${storyBaseUrl}]`);
+        }
+
+        return new Promise(function (resolve, reject) {
+            resolve(imgUrls);
+        });
+    } catch (error) {
+        console.log(error);
+        await page.close();
+        return new Promise(function (resolve, reject) {
+            resolve([`${storyBaseUrl} 發生錯誤，請再試一次`]);
         });
     }
 }
@@ -334,68 +485,6 @@ async function igUrl(url) {
     }
 }
 
-// Deprecated due to twitter's blocking of headless chrome
-async function twitterUrl(url) {
-    try {
-        let imgUrls = [];
-
-        if (!browserWSEndpoint) {
-            console.log(`[LOG] Launch Browser`);
-            const browser = await puppeteer.launch({
-                headless: isHeadless,
-                args: LAUNCH_ARGS
-            });
-            browserWSEndpoint = await browser.wsEndpoint();
-        }
-        const browser = await puppeteer.connect({ browserWSEndpoint });
-
-        const page = await browser.newPage();
-        await page.setUserAgent(userAgent);
-
-        await page.goto(url, { waitUntil: waitUntilMain });
-
-        // for twitter sensitive content block
-        if (await page.$(twitterShowSensitiveBtn)) {
-            await page.click(twitterShowSensitiveBtn);
-        }
-
-        let img = await page.$$eval(twitterSelector, e => e.map((img) => {
-            let rawImg = img.getAttribute('src');
-            let result = '';
-            if (/https:\/\/pbs\.twimg\.com\/media\//.test(rawImg)) {
-                if (/\?format=/.test(rawImg)) {
-                    let ext = rawImg.match(/\?format=([^\&]*)\&/)[1];
-                    result = `${rawImg.slice(0, rawImg.lastIndexOf('?'))}?format=${ext}&name=orig`;
-                } else {
-                    result = `${rawImg.slice(0, rawImg.lastIndexOf(':'))}:orig`;
-                }
-            }
-
-            return result;
-        })).catch(e => e);
-
-        img = img.filter(url => url !== '');
-        if (img.length !== 0) {
-            imgUrls = [].concat(img);
-        } else {
-            const html = await page.content();
-            console.log(html);
-            imgUrls.push(`${url} 找不到圖片`);
-        }
-
-        await page.close();
-
-        return new Promise(function (resolve, reject) {
-            resolve(imgUrls);
-        });
-    } catch (error) {
-        console.log(error);
-        return new Promise(function (resolve, reject) {
-            resolve([`${url} 發生錯誤，請再試一次`]);
-        });
-    }
-}
-
 function puppeteerError(e) {
     console.log(`[ERROR][Puppeteer] ${e}`);
 }
@@ -450,7 +539,7 @@ async function getBrowser(source = 'IG_STORY') {
 
 module.exports = {
     getStories: getStories,
+    getStoriesHighlight: getStoriesHighlight,
     igUrl: igUrl,
-    twitterUrl: twitterUrl,
     getBrowser: getBrowser
 };
