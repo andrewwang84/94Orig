@@ -27,6 +27,7 @@ let getImage = async (urls, isPup = false, forceUpdate = false) => {
 async function prepareData(urls, isPup = false, forceUpdate = false) {
     var imageUrls = [];
     for (var i = 0; i < urls.length; i++) {
+        let storyType = 'IG_STORY';
         if (/instagram\.com\/(?:p|tv|reel)\//.test(urls[i])) {
             try {
                 start = Date.now();
@@ -49,13 +50,19 @@ async function prepareData(urls, isPup = false, forceUpdate = false) {
                 if (urls[i].indexOf('?') !== -1) {
                     url = urls[i].slice(0, urls[i].indexOf('?'));
                 }
+                let res = [];
                 start = Date.now();
-                let res = await puppeteer.getStories(url, forceUpdate);
+                if (/instagram\.com\/s\//.test(url) || /instagram\.com\/stories\/highlights\/S+/.test(url)) {
+                    storyType = 'IG_STORY_Highlight';
+                    res = await puppeteer.getStoriesHighlight(url, forceUpdate);
+                } else {
+                    res = await puppeteer.getStories(url, forceUpdate);
+                }
                 imageUrls.push(res);
                 end = Date.now();
-                console.log(`[LOG][IG_STORY][${url}][${(end - start) / 1000}s][${res.length}] Puppeteer Done`);
+                console.log(`[LOG][${storyType}][${url}][${(end - start) / 1000}s][${res.length}] Puppeteer Done`);
             } catch (error) {
-                console.log(`[ERROR][IG_STORY][${urls[i]}]`);
+                console.log(`[ERROR][${storyType}][${urls[i]}]`);
                 return error;
             }
         } else if (/https:\/\/twitter\.com/.test(urls[i])) {
