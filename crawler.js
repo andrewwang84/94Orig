@@ -104,7 +104,7 @@ function igUrl(url) {
             target = $(`body > script:contains("window.__additionalDataLoaded")`)[0].children[0].data;
             let userName = target.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/)[1];
             if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
-                console.log(`[LOG][IG][Blink_Block]`);
+                console.log(`[LOG][IG][Blink_Block][${url}]`);
                 resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
                 return;
             }
@@ -116,7 +116,7 @@ function igUrl(url) {
                 }
             }
             if (score >= 150) {
-                console.log(`[LOG][IG][Blink_Block][${score}]`);
+                console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
                 resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
                 return;
             }
@@ -150,7 +150,7 @@ function twitterUrl (url) {
 
     return new Promise(function (resolve, reject) {
         if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
-            console.log(`[LOG][TWITTER][Blink_Block]`);
+            console.log(`[LOG][TWITTER][Blink_Block][${url}]`);
             resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
             return;
         }
@@ -161,7 +161,7 @@ function twitterUrl (url) {
             }
         }
         if (score >= 150) {
-            console.log(`[LOG][TWITTER][Blink_Block][${score}]`);
+            console.log(`[LOG][TWITTER][Blink_Block][${score}][${url}]`);
             resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
             return;
         }
