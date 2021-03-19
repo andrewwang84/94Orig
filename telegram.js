@@ -18,7 +18,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
         let forceUpdate = (chatMsg.match(/--f/i) !== null) ? true : false;
 
         if (target == null) {
-            throw new Error(`目前不支援該網址 ${chatMsg}`);
+            throw new Error(`[${logName}] 目前不支援該網址 ${chatMsg}`);
         }
         console.log(`[LOG][Telegram] ${logName}`);
         let resp = await crawler.getImage(target, isPup, forceUpdate);;
