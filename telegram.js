@@ -39,7 +39,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
         }
 
         if (target == null && ydlTarget == null) {
-            throw new Error(`目前不支援該網址 ${chatMsg}`);
+            throw new Error(`[${logName}] 目前不支援該網址 ${chatMsg}`);
         }
         console.log(`[LOG][Telegram] ${logName}`);
         let resp = await crawler.getImage(target, isPup, forceUpdate);;
@@ -70,8 +70,8 @@ bot.onText(/https:\/\//, async (msg, match) => {
             bot.sendMessage(chatId, '沒東西啦 !!', { reply_to_message_id: msg.message_id });
         }
     } catch (error) {
-        console.log(`[ERROR] ${error}`);
-        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id });
+        console.log(`[ERROR] ${error.message}`);
+        bot.sendMessage(chatId, `出錯了: ${error.message}`, { reply_to_message_id: msg.message_id });
     }
 });
 
@@ -100,11 +100,9 @@ bot.onText(/\/apk/, async (msg) => {
 
         bot.sendMessage(chatId, msg);
     } catch (error) {
-        bot.sendMessage(chatId, `出錯了: ${error}}`, { reply_to_message_id: msg.message_id });
+        bot.sendMessage(chatId, `出錯了: ${error.message}}`, { reply_to_message_id: msg.message_id });
     }
 });
-
-var list = [];
 
 async function getApk() {
     return new Promise(function (resolve, reject) {
