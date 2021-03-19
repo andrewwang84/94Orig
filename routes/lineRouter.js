@@ -171,8 +171,8 @@ async function handleEvent(event) {
                 }
             }
         } catch (error) {
-            console.error(error);
-            return Promise.reject(error);
+            console.error(error.message);
+            return Promise.reject(error.message);
         }
     } else {
         if (/https:\/\/www\.instagram\.com\/tv\//.test(msg)) {
