@@ -62,22 +62,33 @@ bot.onText(/https:\/\//, async (msg, match) => {
                     } else if (/\[ADMIN\]/.test(resArr[i])) {
                         await bot.sendMessage(adminId, resArr[i]);
                     } else {
-                        await bot.sendMessage(chatId, resArr[i], { reply_to_message_id: msg.message_id });
+                        await bot.sendMessage(chatId, resArr[i], { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
                     }
                 }
             }
         } else {
-            bot.sendMessage(chatId, '沒東西啦 !!', { reply_to_message_id: msg.message_id });
+            bot.sendMessage(chatId, '沒東西啦 !!', { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
         }
     } catch (error) {
         console.log(`[ERROR] ${error.message}`);
-        bot.sendMessage(chatId, `出錯了: ${error.message}`, { reply_to_message_id: msg.message_id });
+        bot.sendMessage(chatId, `出錯了: ${error.message}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
     }
 });
 
 bot.onText(/\/help/, (msg) => {
     const chatId = msg.chat.id;
-    bot.sendMessage(chatId, '請輸入Instagram 或 Twitter 連結\n多個連結請以"換行"隔開');
+    bot.sendMessage(chatId, `
+\- 保存 Instagram 照片、影片：傳入該則貼文連結
+
+\- 保存 Instagram 限動：傳入該用戶\*帳號\*連結 or 單則限動連結
+    限動撈取比較費時，請耐心等候
+    撈取不完全可嘗試在網址後面空一格加上 \`\-\-f\` 強制重整
+
+\- 保存 Twitter 原圖\(orig\)、影片：傳入單篇推文
+
+\- 一次傳入多個連結請用「\*換行\*」分開
+
+\- LINE 版本\(受限於平台，我個人還是推薦 Telegram 版本\) \-\> 搜尋 id \@bch6035i`, { parse_mode: 'Markdown'});
 });
 
 bot.onText(/\/apk/, async (msg) => {
