@@ -17,12 +17,10 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-8 offset-md-2 mb-3 text-center">
-                    <h1>MHR - 找找我在哪張表</h1>
+                    <h1>歡迎來到 94Orig</h1>
                     <div class="app_btn">
+                        <p>其他平台版本：</p>
                         <ul class="list-inline">
-                            <li class="list-inline-item">
-                                <span>原抓 ig 機器人：</span>
-                            </li>
                             <li class="line-btn list-inline-item">
                                 <a href="javascript:;" data-toggle="modal" data-target="#lineModel">
                                     <img src="img/LINE_logo.png">
@@ -37,291 +35,26 @@
                             </li>
                         </ul>
                     </div>
-                    <h5>輸入最新產生的五顆「幽玄」護石，來看看你有沒有在已知的護石表內</h5>
+                    <h5>限時動態請輸入帳號網址，並稍候 5~10 秒（限公開帳號）</h5>
                 </div>
             </div>
-            <div class="input-area">
-                <div class="row">
-                    <form class="col-md-12">
-                        <h6>護石 1</h6>
-                        <div class="form-row" id="s1">
-                            <div class="form-group col-md-3">
-                                <label for="s1-1">技能 1</label>
-                                <select class="form-control" id="s1-1">
-                                    <option value="0">無</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-1">
-                                <label for="s1-1-lv">等級</label>
-                                <select class="form-control" id="s1-1-lv">
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-3">
-                                <label for="s1-2">技能 2</label>
-                                <select class="form-control" id="s1-2">
-                                    <option value="0">無</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-1">
-                                <label for="s1-2-lv">等級</label>
-                                <select class="form-control" id="s1-2-lv">
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-4">
-                                <label for="s1-3">鑲崁槽</label>
-                                <select class="form-control" id="s1-3">
-                                    <option value="0-0-0">LV0-0-0</option>
-                                    <option value="1-0-0">LV1-0-0</option>
-                                    <option value="1-1-0">LV1-1-0</option>
-                                    <option value="1-1-1">LV1-1-1</option>
-                                    <option value="2-0-0">LV2-0-0</option>
-                                    <option value="2-1-0">LV2-1-0</option>
-                                    <option value="2-1-1">LV2-1-1</option>
-                                    <option value="2-2-0">LV2-2-0</option>
-                                    <option value="2-2-1">LV2-2-1</option>
-                                    <option value="3-0-0">LV3-0-0</option>
-                                    <option value="3-1-0">LV3-1-0</option>
-                                    <option value="3-1-1">LV3-1-1</option>
-                                    <option value="3-2-0">LV3-2-0</option>
-                                    <option value="3-2-1">LV3-2-1</option>
-                                </select>
-                            </div>
-                        </div>
-                        <h6>護石 2</h6>
-                        <div class="form-row" id="s2">
-                            <div class="form-group col-md-3">
-                                <label for="s2-1">技能 1</label>
-                                <select class="form-control" id="s2-1">
-                                    <option value="0">無</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-1">
-                                <label for="s2-1-lv">等級</label>
-                                <select class="form-control" id="s2-1-lv">
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-3">
-                                <label for="s2-2">技能 2</label>
-                                <select class="form-control" id="s2-2">
-                                    <option value="0">無</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-1">
-                                <label for="s2-2-lv">等級</label>
-                                <select class="form-control" id="s2-2-lv">
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-4">
-                                <label for="s2-3">鑲崁槽</label>
-                                <select class="form-control" id="s2-3">
-                                    <option value="0-0-0">LV0-0-0</option>
-                                    <option value="1-0-0">LV1-0-0</option>
-                                    <option value="1-1-0">LV1-1-0</option>
-                                    <option value="1-1-1">LV1-1-1</option>
-                                    <option value="2-0-0">LV2-0-0</option>
-                                    <option value="2-1-0">LV2-1-0</option>
-                                    <option value="2-1-1">LV2-1-1</option>
-                                    <option value="2-2-0">LV2-2-0</option>
-                                    <option value="2-2-1">LV2-2-1</option>
-                                    <option value="3-0-0">LV3-0-0</option>
-                                    <option value="3-1-0">LV3-1-0</option>
-                                    <option value="3-1-1">LV3-1-1</option>
-                                    <option value="3-2-0">LV3-2-0</option>
-                                    <option value="3-2-1">LV3-2-1</option>
-                                </select>
-                            </div>
-                        </div>
-                        <h6>護石 3</h6>
-                        <div class="form-row" id="s3">
-                            <div class="form-group col-md-3">
-                                <label for="s3-1">技能 1</label>
-                                <select class="form-control" id="s3-1">
-                                    <option value="0">無</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-1">
-                                <label for="s3-1-lv">等級</label>
-                                <select class="form-control" id="s3-1-lv">
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-3">
-                                <label for="s3-2">技能 2</label>
-                                <select class="form-control" id="s3-2">
-                                    <option value="0">無</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-1">
-                                <label for="s3-2-lv">等級</label>
-                                <select class="form-control" id="s3-2-lv">
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-4">
-                                <label for="s3-3">鑲崁槽</label>
-                                <select class="form-control" id="s3-3">
-                                    <option value="0-0-0">LV0-0-0</option>
-                                    <option value="1-0-0">LV1-0-0</option>
-                                    <option value="1-1-0">LV1-1-0</option>
-                                    <option value="1-1-1">LV1-1-1</option>
-                                    <option value="2-0-0">LV2-0-0</option>
-                                    <option value="2-1-0">LV2-1-0</option>
-                                    <option value="2-1-1">LV2-1-1</option>
-                                    <option value="2-2-0">LV2-2-0</option>
-                                    <option value="2-2-1">LV2-2-1</option>
-                                    <option value="3-0-0">LV3-0-0</option>
-                                    <option value="3-1-0">LV3-1-0</option>
-                                    <option value="3-1-1">LV3-1-1</option>
-                                    <option value="3-2-0">LV3-2-0</option>
-                                    <option value="3-2-1">LV3-2-1</option>
-                                </select>
-                            </div>
-                        </div>
-                        <h6>護石 4</h6>
-                        <div class="form-row" id="s4">
-                            <div class="form-group col-md-3">
-                                <label for="s4-1">技能 1</label>
-                                <select class="form-control" id="s4-1">
-                                    <option value="0">無</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-1">
-                                <label for="s4-1-lv">等級</label>
-                                <select class="form-control" id="s4-1-lv">
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-3">
-                                <label for="s4-2">技能 2</label>
-                                <select class="form-control" id="s4-2">
-                                    <option value="0">無</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-1">
-                                <label for="s4-2-lv">等級</label>
-                                <select class="form-control" id="s4-2-lv">
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-4">
-                                <label for="s4-3">鑲崁槽</label>
-                                <select class="form-control" id="s4-3">
-                                    <option value="0-0-0">LV0-0-0</option>
-                                    <option value="1-0-0">LV1-0-0</option>
-                                    <option value="1-1-0">LV1-1-0</option>
-                                    <option value="1-1-1">LV1-1-1</option>
-                                    <option value="2-0-0">LV2-0-0</option>
-                                    <option value="2-1-0">LV2-1-0</option>
-                                    <option value="2-1-1">LV2-1-1</option>
-                                    <option value="2-2-0">LV2-2-0</option>
-                                    <option value="2-2-1">LV2-2-1</option>
-                                    <option value="3-0-0">LV3-0-0</option>
-                                    <option value="3-1-0">LV3-1-0</option>
-                                    <option value="3-1-1">LV3-1-1</option>
-                                    <option value="3-2-0">LV3-2-0</option>
-                                    <option value="3-2-1">LV3-2-1</option>
-                                </select>
-                            </div>
-                        </div>
-                        <h6>護石 5</h6>
-                        <div class="form-row" id="s5">
-                            <div class="form-group col-md-3">
-                                <label for="s5-1">技能 1</label>
-                                <select class="form-control" id="s5-1">
-                                    <option value="0">無</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-1">
-                                <label for="s5-1-lv">等級</label>
-                                <select class="form-control" id="s5-1-lv">
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-3">
-                                <label for="s5-2">技能 2</label>
-                                <select class="form-control" id="s5-2">
-                                    <option value="0">無</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-1">
-                                <label for="s5-2-lv">等級</label>
-                                <select class="form-control" id="s5-2-lv">
-                                    <option value="0">0</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                </select>
-                            </div>
-                            <div class="form-group col-md-4">
-                                <label for="s5-3">鑲崁槽</label>
-                                <select class="form-control" id="s5-3">
-                                    <option value="0-0-0">LV0-0-0</option>
-                                    <option value="1-0-0">LV1-0-0</option>
-                                    <option value="1-1-0">LV1-1-0</option>
-                                    <option value="1-1-1">LV1-1-1</option>
-                                    <option value="2-0-0">LV2-0-0</option>
-                                    <option value="2-1-0">LV2-1-0</option>
-                                    <option value="2-1-1">LV2-1-1</option>
-                                    <option value="2-2-0">LV2-2-0</option>
-                                    <option value="2-2-1">LV2-2-1</option>
-                                    <option value="3-0-0">LV3-0-0</option>
-                                    <option value="3-1-0">LV3-1-0</option>
-                                    <option value="3-1-1">LV3-1-1</option>
-                                    <option value="3-2-0">LV3-2-0</option>
-                                    <option value="3-2-1">LV3-2-1</option>
-                                </select>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="row">
-                    <div class="col-md-10 offset-md-2 text-right mt-1 mb-2">
-                        <button class="btn btn-outline-success btn-lg" type="button" id="submitBtn">GO</button>
-                    </div>
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <label for="targetUrls">請輸入推特或 Instagram 貼文網址:</label>
+                    <textarea type="text" class="form-control" id="targetUrls" rows="8" cols="100" placeholder="輸入多個網址請換行隔開"></textarea>
                 </div>
             </div>
-
+            <div class="row">
+                <div class="col-md-8 offset-md-2 text-right mt-1 mb-2">
+                    <button class="btn btn-outline-secondary btn-lg" type="button" id="clearBtn">Clear</button>
+                    <button class="btn btn-outline-success btn-lg" type="button" id="submitBtn">GET</button>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md text-center">
+                    <p id="nothing" style="display:none"><strong>沒東西</strong></p>
+                </div>
+            </div>
             <div class="row" id="result">
             </div>
         </div>
