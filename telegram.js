@@ -14,7 +14,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
     let chatMsg = match.input;
 
     try {
-        let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11}\/)|(?:https:\/\/(?:www\.)?instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
+        let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11})|(?:https:\/\/(?:www\.)?instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
         let isPup = (chatMsg.match(/-pup/i) !== null) ? true : false;
         let forceUpdate = (chatMsg.match(/--f/i) !== null) ? true : false;
 
@@ -39,7 +39,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
         }
 
         if (target == null && ydlTarget == null) {
-            throw new Error(`目前不支援該網址 ${chatMsg}`);
+            throw new Error(`[${logName}] 目前不支援該網址 ${chatMsg}`);
         }
         console.log(`[LOG][Telegram] ${logName}`);
         let resp = await crawler.getImage(target, isPup, forceUpdate);;
@@ -62,22 +62,33 @@ bot.onText(/https:\/\//, async (msg, match) => {
                     } else if (/\[ADMIN\]/.test(resArr[i])) {
                         await bot.sendMessage(adminId, resArr[i]);
                     } else {
-                        await bot.sendMessage(chatId, resArr[i]);
+                        await bot.sendMessage(chatId, resArr[i], { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
                     }
                 }
             }
         } else {
-            bot.sendMessage(chatId, '沒東西啦 !!', { reply_to_message_id: msg.message_id });
+            bot.sendMessage(chatId, '沒東西啦 !!', { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
         }
     } catch (error) {
-        console.log(`[ERROR] ${error}`);
-        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id });
+        console.log(`[ERROR] ${error.message}`);
+        bot.sendMessage(chatId, `出錯了: ${error.message}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
     }
 });
 
 bot.onText(/\/help/, (msg) => {
     const chatId = msg.chat.id;
-    bot.sendMessage(chatId, '請輸入Instagram 或 Twitter 連結\n多個連結請以"換行"隔開');
+    bot.sendMessage(chatId, `
+\- 保存 Instagram 照片、影片：傳入該則貼文連結
+
+\- 保存 Instagram 限動：傳入該用戶\*帳號\*連結 or 單則限動連結
+    限動撈取比較費時，請耐心等候
+    撈取不完全可嘗試在網址後面空一格加上 \`\-\-f\` 強制重整
+
+\- 保存 Twitter 原圖\(orig\)、影片：傳入單篇推文
+
+\- 一次傳入多個連結請用「\*換行\*」分開
+
+\- LINE 版本\(受限於平台，我個人還是推薦 Telegram 版本\) \-\> 搜尋 id \@bch6035i`, { parse_mode: 'Markdown'});
 });
 
 bot.onText(/\/apk/, async (msg) => {
@@ -100,31 +111,9 @@ bot.onText(/\/apk/, async (msg) => {
 
         bot.sendMessage(chatId, msg);
     } catch (error) {
-        bot.sendMessage(chatId, `出錯了: ${error}}`, { reply_to_message_id: msg.message_id });
+        bot.sendMessage(chatId, `出錯了: ${error.message}}`, { reply_to_message_id: msg.message_id });
     }
 });
-
-var list = [];
-
-// Deprecated, switch to direct function call
-async function callApi(urls, route) {
-    return new Promise(function (resolve, reject) {
-        try {
-            request.post(`${apiUrl}${route}`, { form: { url: urls } }, function (error, response, body) {
-                if (error) reject(error);
-                if (response.statusCode !== 200) {
-                    reject(body);
-                } else {
-                    let data = JSON.parse(body);
-                    data = data.url;
-                    resolve(data.split(","));
-                }
-            });
-        } catch (error) {
-            reject(error);
-        }
-    });
-}
 
 async function getApk() {
     return new Promise(function (resolve, reject) {

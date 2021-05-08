@@ -1,19 +1,67 @@
+:root {
+  --background-color: #f7f6ee;
+  --secondary-color: #fbfefb;
+  --third-color: #eceeec;
+  --text: #333333;
+  --text-light: #7b7b85;
+  --tg: #2e87ca;
+  --line: #00b900;
+  --ahref: #00B7FF;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background-color: #404040;
+    --secondary-color: #333333;
+    --third-color: #262626;
+    --text: #737373;
+    --text-light: #cccccc;
+    --tg: #2e87ca;
+    --line: #00b900;
+    --ahref: #00B7FF;
+  }
+}
+
 body {
+  background-color: var(--background-color);
   font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  color: var(--text);
 }
 
 a {
-  color: #00B7FF;
+  color: var(--ahref);
 }
 
 .line-btn, .line-btn a {
-  color: #00b900;
+  color: var(--line);
 }
 
 .tele-btn, .tele-btn a {
-  color: #2e87ca;
+  color: var(--tg);
 }
 
 .app_btn img{
   height: 20px;
+}
+
+#navBar {
+  color: var(--text-light);
+  background-color: var(--secondary-color);
+}
+
+#targetUrls {
+  color: var(--text);
+  background-color: var(--third-color);
+}
+
+.navbar-brand {
+  color: var(--text-light);
+}
+
+.card-body {
+  background-color: var(--background-color);
+}
+
+.resultBtn {
+  background-color: var(--secondary-color);
 }
