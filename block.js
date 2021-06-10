@@ -39,7 +39,7 @@ const knownIds = [
     'jenniehappines',
     'jisoomuseum',
     'jenniedeokie',
-    'qutroise'
+    'qutrosie'
 ];
 
 module.exports = {
