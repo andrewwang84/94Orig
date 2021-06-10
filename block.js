@@ -37,6 +37,9 @@ const greyList = {
 };
 const knownIds = [
     'jenniehappines',
+    'jisoomuseum',
+    'jenniedeokie',
+    'qutroise'
 ];
 
 module.exports = {
