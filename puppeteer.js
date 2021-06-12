@@ -31,7 +31,7 @@ const LAUNCH_ARGS = [
     '--no-zygote'
 ];
 
-async function getStories(url, forceUpdate = false) {
+async function getStories(url, forceUpdate = false, uid = '') {
     try {
         let baseUrl = 'https://www.instagram.com/';
         let imgUrls = [];
@@ -57,6 +57,11 @@ async function getStories(url, forceUpdate = false) {
         }
         if (score >= 150) {
             console.log(`[LOG][IG_Story][Blink_Block][${score}][${url}]`);
+            resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+            return;
+        }
+        if (score >= 60 && block.blinkIds.includes(uid)) {
+            console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
             resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
             return;
         }
@@ -233,7 +238,7 @@ async function getStories(url, forceUpdate = false) {
     }
 }
 
-async function getStoriesHighlight(url, forceUpdate = false) {
+async function getStoriesHighlight(url, forceUpdate = false, uid = '') {
     try {
         await getBrowser('IG_STORY_Highlight');
         const browser = await puppeteer.connect({ browserWSEndpoint });
@@ -278,6 +283,11 @@ async function getStoriesHighlight(url, forceUpdate = false) {
         }
         if (score >= 150) {
             console.log(`[LOG][IG_STORY_Highlight][Blink_Block][${score}][${url}]`);
+            resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+            return;
+        }
+        if (score >= 60 && block.blinkIds.includes(uid)) {
+            console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
             resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
             return;
         }
@@ -396,7 +406,7 @@ async function getStoriesHighlight(url, forceUpdate = false) {
     }
 }
 
-async function igUrl(url) {
+async function igUrl(url, uid = '') {
     console.log(`[LOG] Get IG from Puppeteer`);
     try {
         let imgUrls = [];
@@ -453,6 +463,12 @@ async function igUrl(url) {
         if (score >= 150) {
             console.log(`[LOG][IG][Puppeteer][Blink_Block][${score}][${url}]`);
             resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+            return;
+        }
+        if (score >= 60 && block.blinkIds.includes(uid)) {
+            console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
+            resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+            return;
         }
 
         let count = 1;

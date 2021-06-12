@@ -24,6 +24,8 @@ const greyList = {
     'jisookim': 500,
     'jisoo': 75,
     'blink': 500,
+    'bliink': 100,
+    'yg': 50,
     'black': 80,
     'pink': 80,
     'ink': 20,
@@ -40,11 +42,19 @@ const knownIds = [
     'jisoomuseum',
     'jenniedeokie',
     'qutrosie',
-    'pinkgallerylove'
+    'pinkgallerylove',
+    'bliinks.yg',
+    'ninicoholic',
+    'rubyjanevil',
+    'jenniedeokie'
+];
+const blinkIds = [
+    'IngSLC'
 ];
 
 module.exports = {
     knownIds: knownIds,
     greyList: greyList,
-    blackList: blackList
+    blackList: blackList,
+    blinkIds: blinkIds
 };
