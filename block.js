@@ -39,7 +39,8 @@ const knownIds = [
     'jenniehappines',
     'jisoomuseum',
     'jenniedeokie',
-    'qutrosie'
+    'qutrosie',
+    'pinkgallerylove'
 ];
 
 module.exports = {
