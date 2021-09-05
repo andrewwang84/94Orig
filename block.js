@@ -51,10 +51,15 @@ const knownIds = [
 const blinkIds = [
     'IngSLC'
 ];
+const whiteList = [
+    'ginnygc',
+    'eat.train.love_lisa'
+];
 
 module.exports = {
     knownIds: knownIds,
     greyList: greyList,
     blackList: blackList,
-    blinkIds: blinkIds
+    blinkIds: blinkIds,
+    whiteList: whiteList
 };
