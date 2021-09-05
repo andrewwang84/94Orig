@@ -23,7 +23,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
             throw new Error(`[${logName}] 目前不支援該網址 ${chatMsg}`);
         }
         let timestamp = Date.now();
-        if (TEXT_CD.has(chatId) && chatId !== adminId) {
+        if (TEXT_CD.has(chatId) && chatId != adminId) {
             let cdData = TEXT_CD.get(chatId);
             if (timestamp - cdData.time > 60 * 1000) {
                 TEXT_CD.delete(chatId);
