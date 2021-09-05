@@ -92,12 +92,10 @@ function callApi(datas) {
 
             }
         }
-    }).fail((jqXHR, res) => {
-        console.log(jqXHR);
-        console.log(res);
+    }).fail((res) => {
         $('#submitBtn').prop('disabled', false);
-        if (res !== undefined) {
-            $('#nothing').text(res.message);
+        if (res.responseText !== undefined) {
+            $('#nothing').text(res.responseJSON.message);
         }
         $('#nothing').show();
     });
