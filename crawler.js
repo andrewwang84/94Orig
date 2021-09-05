@@ -108,7 +108,11 @@ function igUrl(url, uid = '') {
             if (error) reject(error);
 
             var $ = cheerio.load(body);
-            target = $(`body > script:contains("window.__additionalDataLoaded")`)[0].children[0].data;
+            let data = $(`body > script:contains("window.__additionalDataLoaded")`)[0];
+            if (data === undefined) {
+                reject ('data not found');
+            }
+            target = data.children[0].data;
             let userName = target.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/)[1];
             let score = 0;
             if (block.whiteList.includes(userName) === false) {
