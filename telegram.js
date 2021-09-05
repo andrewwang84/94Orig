@@ -44,12 +44,12 @@ bot.onText(/https:\/\//, async (msg, match) => {
             throw new Error(`[${logName}] 目前不支援該網址 ${chatMsg}`);
         }
         let timestamp = Date.now();
-        if (TEXT_CD.has(chatId) && chatId !== adminId) {
+        if (TEXT_CD.has(chatId) && chatId != adminId) {
             let cdData = TEXT_CD.get(chatId);
             if (timestamp - cdData.time > 60 * 1000) {
                 TEXT_CD.delete(chatId);
             } else {
-                throw new Error(`[${logName}] CD 時間冷卻中，請 1 分鐘後再試一次`);
+                throw new Error(`[${logName}][${chatId}] CD 時間冷卻中，請 1 分鐘後再試一次`);
             }
         }
         console.log(`[LOG][Telegram] ${logName}`);
