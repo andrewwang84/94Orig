@@ -16,6 +16,7 @@ router.post('/web/', upload.array(), async function (req, res) {
             if (timestamp - cdData.time > 60 * 1000) {
                 TEXT_CD.delete(ip);
             } else {
+                console.log(`[ERROR][${ip}] CD Limit`);
                 throw new Error(`CD 時間冷卻中，請 1 分鐘後再試一次`);
             }
         }

@@ -92,8 +92,11 @@ function callApi(datas) {
 
             }
         }
-    }).fail(() => {
+    }).fail((res) => {
         $('#submitBtn').prop('disabled', false);
+        if (res !== undefined) {
+            $('#nothing').text(res.message);
+        }
         $('#nothing').show();
     });
 }

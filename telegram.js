@@ -28,6 +28,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
             if (timestamp - cdData.time > 60 * 1000) {
                 TEXT_CD.delete(chatId);
             } else {
+                console.log(`[ERROR][${chatId}] CD Limit`);
                 throw new Error(`[${logName}] CD 時間冷卻中，請 1 分鐘後再試一次`);
             }
         }
