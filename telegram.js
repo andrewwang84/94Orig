@@ -7,6 +7,8 @@ const apiUrl = require('./config.js')[app.get('env')].url;
 const adminId = require('./config.js')[app.get('env')].adminId;
 const crawler = require('./crawler.js');
 
+const TEXT_CD = new Map();
+
 bot.onText(/https:\/\//, async (msg, match) => {
     const chatId = msg.chat.id;
     let logName = msg.from.username || msg.from.first_name || msg.from.id;
@@ -20,8 +22,22 @@ bot.onText(/https:\/\//, async (msg, match) => {
         if (target == null) {
             throw new Error(`[${logName}] 目前不支援該網址 ${chatMsg}`);
         }
+        let timestamp = Date.now();
+        if (TEXT_CD.has(chatId)) {
+        // if (TEXT_CD.has(chatId) && chatId !== adminId) {
+            let cdData = TEXT_CD.get(chatId);
+            if (timestamp - cdData.time > 60 * 1000) {
+                TEXT_CD.delete(chatId);
+            } else {
+                throw new Error(`[${logName}] CD 時間冷卻中，請 1 分鐘後再試一次`);
+            }
+        }
         console.log(`[LOG][Telegram] ${logName}`);
-        let resp = await crawler.getImage(target, isPup, forceUpdate, logName);;
+        let resp = await crawler.getImage(target, isPup, forceUpdate, logName);
+
+        TEXT_CD.set(chatId, {
+            'time': timestamp
+        });
 
         if (resp.length !== 0) {
             let resArr = [];
