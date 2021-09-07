@@ -8,9 +8,8 @@ const TEXT_CD = new Map();
 
 router.post('/web/', upload.array(), async function (req, res) {
     try {
-        console.log(req.headers);
-        if (req.headers['origin'] != 'https://origin94origin.herokuapp.com' || req.headers['origin'] != '127.0.0.1:3000') {
-            console.log(`[ERROR][${req.headers['origin']}] 403`);
+        if (req.headers.origin != 'https://origin94origin.herokuapp.com' || req.headers.origin != '127.0.0.1:3000') {
+            console.log(`[ERROR][${req.headers.origin}] 403`);
             throw new Error(`Bye`);
         }
         let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
