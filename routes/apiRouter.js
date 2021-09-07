@@ -8,6 +8,10 @@ const TEXT_CD = new Map();
 
 router.post('/web/', upload.array(), async function (req, res) {
     try {
+        if (req.headers['origin'][0] != 'https://origin94origin.herokuapp.com' || req.headers['origin'][0] != '127.0.0.1:3000') {
+            console.log(`[ERROR][${req.headers['origin'][0]}] 403`);
+            res.send(403, 'Bye');
+        }
         let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
         let timestamp = Date.now();
