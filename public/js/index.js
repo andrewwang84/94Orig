@@ -33,70 +33,70 @@ $(document).ready(() => {
     });
 });
 
-function callApi(datas) {
-    $.ajax({
-        type: 'Post',
-        url: 'api/web/',
-        dataType: 'json',
-        data: {
-            'url': datas
-        }
-    }).done((res) => {
-        $('#submitBtn').prop('disabled', false);
-        results = res.url.split(',');
-        if (results === "") {
-            $('#nothing').show();
-        } else {
-            $('#nothing').hide();
-            for (let index = 0; index < results.length; index++) {
-                const element = results[index];
+// function callApi(datas) {
+//     $.ajax({
+//         type: 'Post',
+//         url: 'api/web/',
+//         dataType: 'json',
+//         data: {
+//             'url': datas
+//         }
+//     }).done((res) => {
+//         $('#submitBtn').prop('disabled', false);
+//         results = res.url.split(',');
+//         if (results === "") {
+//             $('#nothing').show();
+//         } else {
+//             $('#nothing').hide();
+//             for (let index = 0; index < results.length; index++) {
+//                 const element = results[index];
 
-                if (/jpe?g/i.test(element)) {
-                    $('#result').append(`
-<div class="col-sm-3 resultCard mb-1">
-    <div class="card text-center">
-        <img src="${element}" class="card-img-top">
-        <div class="card-body">
-            <a href="${element}" class="btn btn-outline-secondary resultBtn" target="_blank">點我開啟</a>
-        </div>
-    </div>
-</div>
-                    `);
-                } else if (/mp4/i.test(element)) {
-                    $('#result').append(`
-<div class="col-sm-3 resultCard mb-1">
-    <div class="card text-center">
-        <video controls width="250" preload="none">
-            <source src="${element}"
-                    type="video/mp4">
-            Sorry, your browser doesn't support embedded videos.
-        </video>
-        <div class="card-body">
-            <a href="${element}" class="btn btn-outline-secondary resultBtn" target="_blank">點我開啟</a>
-        </div>
-    </div>
-</div>
-                    `);
-                } else {
-                    $('#result').append(`
-<div class="col-sm-3 resultCard mb-1">
-    <div class="card text-center">
-        <div class="card-body">
-            <p>${element}</p>
-        </div>
-    </div>
-</div>
-                    `);
-                }
+//                 if (/jpe?g/i.test(element)) {
+//                     $('#result').append(`
+// <div class="col-sm-3 resultCard mb-1">
+//     <div class="card text-center">
+//         <img src="${element}" class="card-img-top">
+//         <div class="card-body">
+//             <a href="${element}" class="btn btn-outline-secondary resultBtn" target="_blank">點我開啟</a>
+//         </div>
+//     </div>
+// </div>
+//                     `);
+//                 } else if (/mp4/i.test(element)) {
+//                     $('#result').append(`
+// <div class="col-sm-3 resultCard mb-1">
+//     <div class="card text-center">
+//         <video controls width="250" preload="none">
+//             <source src="${element}"
+//                     type="video/mp4">
+//             Sorry, your browser doesn't support embedded videos.
+//         </video>
+//         <div class="card-body">
+//             <a href="${element}" class="btn btn-outline-secondary resultBtn" target="_blank">點我開啟</a>
+//         </div>
+//     </div>
+// </div>
+//                     `);
+//                 } else {
+//                     $('#result').append(`
+// <div class="col-sm-3 resultCard mb-1">
+//     <div class="card text-center">
+//         <div class="card-body">
+//             <p>${element}</p>
+//         </div>
+//     </div>
+// </div>
+//                     `);
+//                 }
 
 
-            }
-        }
-    }).fail((res) => {
-        $('#submitBtn').prop('disabled', false);
-        if (res.responseText !== undefined) {
-            $('#nothing').text(res.responseJSON.message);
-        }
-        $('#nothing').show();
-    });
-}
+//             }
+//         }
+//     }).fail((res) => {
+//         $('#submitBtn').prop('disabled', false);
+//         if (res.responseText !== undefined) {
+//             $('#nothing').text(res.responseJSON.message);
+//         }
+//         $('#nothing').show();
+//     });
+// }
