@@ -14,7 +14,9 @@ bot.onText(/https:\/\//, async (msg, match) => {
     const chatId = msg.chat.id;
     let logName = msg.from.username || msg.from.first_name || msg.from.id;
     let chatMsg = match.input;
-
+    if (chatId != adminId) {
+        throw new Error(`System under maintain, please try again later`);
+    }
     try {
         let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11})|(?:https:\/\/(?:www\.)?instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
         let isPup = (chatMsg.match(/-pup/i) !== null) ? true : false;
