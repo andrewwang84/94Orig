@@ -114,8 +114,13 @@ function igUrl(url, uid = '') {
                 return;
             }
             target = data.children[0].data;
-            console.log(target.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/));
-            let userName = target.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/)[1];
+            let userNameData = target.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/);
+            console.log(userNameData);
+            if (userNameData === undefined) {
+                reject ('');
+                return;
+            }
+            let userName = userNameData[1];
             let score = 0;
             if (block.whiteList.includes(userName) === false) {
                 if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
