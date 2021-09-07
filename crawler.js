@@ -115,8 +115,8 @@ function igUrl(url, uid = '') {
             }
             target = data.children[0].data;
             let userNameData = target.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/);
-            console.log(userNameData);
-            if (userNameData === undefined) {
+            console.log(target);
+            if (userNameData == null) {
                 reject ('');
                 return;
             }
