@@ -108,6 +108,7 @@ function igUrl(url, uid = '') {
             if (error) reject(error);
 
             var $ = cheerio.load(body);
+            console.log($.html());
             let data = $(`body > script:contains("window._sharedData")`)[0];
             if (data === undefined) {
                 reject ('');
@@ -115,7 +116,6 @@ function igUrl(url, uid = '') {
             }
             target = data.children[0].data;
             let userNameData = target.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/);
-            console.log(target);
             if (userNameData == null) {
                 reject ('');
                 return;
