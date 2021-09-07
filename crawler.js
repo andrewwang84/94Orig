@@ -108,9 +108,9 @@ function igUrl(url, uid = '') {
             if (error) reject(error);
 
             var $ = cheerio.load(body);
-            let data = $(`body > script:contains("window.__additionalDataLoaded")`)[0];
+            let data = $(`body > script:contains("window._sharedData")`)[0];
             if (data === undefined) {
-                reject ('data not found');
+                reject ('');
                 return;
             }
             target = data.children[0].data;
