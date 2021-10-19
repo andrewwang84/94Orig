@@ -10,7 +10,8 @@ var config = {
         lineAccessToken: null,
         lineSecret: null,
         twitterToken: null,
-        adminId: null
+        adminId: null,
+        maintenceMode: false
     },
     production: {
         telegramToken: process.env.telegramToken,
@@ -23,7 +24,8 @@ var config = {
         lineAccessToken: process.env.lineAccessToken,
         lineSecret: process.env.lineSecret,
         twitterToken: process.env.twitterToken,
-        adminId: process.env.adminId
+        adminId: process.env.adminId,
+        maintenceMode: process.env.maintenceMode
     }
 }
 
