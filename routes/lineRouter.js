@@ -4,6 +4,7 @@ const crawler = require('../crawler.js');
 const router = express.Router();
 const lineAccessToken = require('../config.js')[process.env.NODE_ENV].lineAccessToken;
 const lineSecret = require('../config.js')[process.env.NODE_ENV].lineSecret;
+const maintenceMode = require('./config.js')[app.get('env')].maintenceMode;
 
 const config = {
     channelAccessToken: lineAccessToken,
@@ -22,7 +23,7 @@ router.post('/webhook', (req, res) => {
 
 const client = new line.Client(config);
 async function handleEvent(event) {
-    if (event.type !== 'message' || event.message.type !== 'text') {
+    if (event.type !== 'message' || event.message.type !== 'text' || maintenceMode === true) {
         // ignore non-text-message event
         return Promise.resolve(null);
     }
