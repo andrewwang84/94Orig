@@ -4,7 +4,7 @@ const crawler = require('../crawler.js');
 const router = express.Router();
 const lineAccessToken = require('../config.js')[process.env.NODE_ENV].lineAccessToken;
 const lineSecret = require('../config.js')[process.env.NODE_ENV].lineSecret;
-const maintenceMode = require('./config.js')[app.get('env')].maintenceMode;
+const maintenceMode = require('../config.js')[process.env.NODE_ENV].maintenceMode;
 
 const config = {
     channelAccessToken: lineAccessToken,
