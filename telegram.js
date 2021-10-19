@@ -5,6 +5,7 @@ const token = require('./config.js')[app.get('env')].telegramToken;
 const bot = new TelegramBot(token, { polling: true });
 const apiUrl = require('./config.js')[app.get('env')].url;
 const adminId = require('./config.js')[app.get('env')].adminId;
+const maintenceMode = require('./config.js')[app.get('env')].maintenceMode;
 const crawler = require('./crawler.js');
 const ydl = require('./ydl.js');
 
@@ -16,9 +17,9 @@ bot.onText(/https:\/\//, async (msg, match) => {
     let chatMsg = match.input;
 
     try {
-        // if (chatId != adminId) {
-        //     throw new Error(`System under maintain, please try again later`);
-        // }
+        if (chatId != adminId && maintenceMode === true) {
+            throw new Error(`System under maintain, please try again later`);
+        }
         let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11})|(?:https:\/\/(?:www\.)?instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
         let isPup = (chatMsg.match(/-pup/i) !== null) ? true : false;
         let forceUpdate = (chatMsg.match(/--f/i) !== null) ? true : false;
