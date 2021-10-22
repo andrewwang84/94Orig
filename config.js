@@ -10,7 +10,7 @@ var config = {
         lineAccessToken: null,
         lineSecret: null,
         twitterToken: null,
-        adminId: null,
+        adminId: [],
         maintenceMode: false
     },
     production: {

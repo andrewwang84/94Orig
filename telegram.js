@@ -29,7 +29,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
             throw new Error(`[${logName}] 目前不支援該網址 ${chatMsg}`);
         }
         let timestamp = Date.now();
-        if (TEXT_CD.has(chatId) && chatId != adminId) {
+        if (TEXT_CD.has(chatId) && !adminId.includes(chatId)) {
             let cdData = TEXT_CD.get(chatId);
             if (timestamp - cdData.time > 60 * 1000) {
                 TEXT_CD.delete(chatId);
@@ -60,7 +60,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
                             await bot.sendMessage(chatId, resArr[i]);
                         }
                     } else if (/\[ADMIN\]/.test(resArr[i])) {
-                        await bot.sendMessage(adminId, resArr[i]);
+                        await bot.sendMessage(adminId[0], resArr[i]);
                     } else {
                         await bot.sendMessage(chatId, resArr[i], { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
                     }
