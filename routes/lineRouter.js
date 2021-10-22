@@ -23,6 +23,7 @@ router.post('/webhook', (req, res) => {
 
 const client = new line.Client(config);
 async function handleEvent(event) {
+    console.log(maintenceMode);
     if (event.type !== 'message' || event.message.type !== 'text' || maintenceMode == true) {
         // ignore non-text-message event
         return Promise.resolve(null);
