@@ -19,7 +19,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
         console.log((maintenceMode == true));
         console.log(adminId.includes(chatId));
         if (!adminId.includes(chatId) && maintenceMode == true) {
-            console.log(`[${chatId}] Maintain Block`);
+            console.log(`[LOG][${chatId}] Maintain Block`);
             throw new Error(`System under maintain, please try again later`);
         }
         let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11})|(?:https:\/\/(?:www\.)?instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
