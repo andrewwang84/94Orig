@@ -16,7 +16,8 @@ bot.onText(/https:\/\//, async (msg, match) => {
     let chatMsg = match.input;
 
     try {
-        console.log(maintenceMode);
+        console.log((maintenceMode == true));
+        console.log(adminId.includes(chatId));
         if (!adminId.includes(chatId) && maintenceMode == true) {
             console.log(`[${chatId}] Maintain Block`);
             throw new Error(`System under maintain, please try again later`);
