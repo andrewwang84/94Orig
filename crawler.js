@@ -3,7 +3,6 @@ var cheerio = require('cheerio');
 const puppeteer = require('./puppeteer.js');
 const block = require('./block.js');
 var app = require('express')();
-const deepSite = require('./config.js')[app.get('env')].deepSite;
 const twitterToken = require('./config.js')[app.get('env')].twitterToken;
 const insCookies = require('./config.js')[app.get('env')].insCookies;
 var request = require('request').defaults({
