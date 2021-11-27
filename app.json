@@ -33,10 +33,6 @@
       "description": "telegram bot token",
       "value": ""
     },
-    "url": {
-      "description": "your project url",
-      "value": ""
-    },
     "lineAccessToken": {
       "description": "line bot token",
       "value": ""

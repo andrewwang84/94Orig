@@ -49,7 +49,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
             throw new Error(`[${logName}] 目前不支援該網址 ${chatMsg}`);
         }
         let timestamp = Date.now();
-        if (TEXT_CD.has(chatId) && !Object.values(adminId).includes(chatId)) {
+        if (TEXT_CD.has(chatId) && !adminId.includes(chatId)) {
             let cdData = TEXT_CD.get(chatId);
             if (timestamp - cdData.time > 60 * 1000) {
                 TEXT_CD.delete(chatId);
@@ -110,45 +110,3 @@ bot.onText(/\/help/, (msg) => {
 
 \- LINE 版本\(受限於平台，我個人還是推薦 Telegram 版本\) \-\> 搜尋 id \@bch6035i`, { parse_mode: 'Markdown'});
 });
-
-bot.onText(/\/apk/, async (msg) => {
-    const chatId = msg.chat.id;
-    let logName = msg.from.username || msg.from.first_name || msg.from.id;
-    console.log(`[LOG][Telegram][/apk] ${logName}`);
-
-    try {
-        let resp = await getApk();
-
-        if (resp == '') {
-            resp[0] = '沒東西啦 !!';
-        }
-
-        let msg = '';
-        for (const key in resp) {
-            let element = resp[key];
-            msg += `${key}：\n版本：${element.version}\n更新日期：${element.date}\n載點：${element.downloadLink}\n`
-        }
-
-        bot.sendMessage(chatId, msg);
-    } catch (error) {
-        bot.sendMessage(chatId, `出錯了: ${error.message}}`, { reply_to_message_id: msg.message_id });
-    }
-});
-
-async function getApk() {
-    return new Promise(function (resolve, reject) {
-        try {
-            request.get(`${apiUrl}api/apk`, function (error, response, body) {
-                if (error) reject(error);
-                if (response.statusCode !== 200) {
-                    reject(body);
-                } else {
-                    let data = JSON.parse(body);
-                    resolve(data.result);
-                }
-            });
-        } catch (error) {
-            reject(error);
-        }
-    });
-}

@@ -548,6 +548,28 @@ async function getBrowser(source = 'IG_STORY') {
             args: LAUNCH_ARGS
         });
         browserWSEndpoint = await browser.wsEndpoint();
+
+        if (source === 'WEB_PING') {
+            const browser = await puppeteer.connect({ browserWSEndpoint });
+
+            const cookie = {
+                name: "sessionid",
+                value: insCookies,
+                path: "/",
+                domain: ".instagram.com",
+            };
+
+            const page = await browser.newPage();
+            await page.setCookie(cookie);
+            await page.setUserAgent(userAgent);
+            await page.setRequestInterception(true);
+            page.on('request', (request) => {
+                if (request.resourceType() === 'image' || request.resourceType() === 'font' || request.resourceType() === 'media') request.abort();
+                else request.continue();
+            });
+
+            await page.goto('http://instagram.com/', { waitUntil: waitUntilMain });
+        }
     }
 
     return new Promise(function (resolve, reject) {

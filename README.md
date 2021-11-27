@@ -41,7 +41,6 @@
 - insEmail: [instagram account email]
 - NODE_ENV: production
 - telegramToken: [telegram bot token, you can recieve it from bot father]
-- url: https://[your heroku project name].herokuapp.com
 - lineAccessToken: [line bot token]
 - lineSecret: [line bot secret]
 - twitterToken: [twitter bearer token for api access]
