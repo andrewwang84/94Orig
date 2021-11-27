@@ -5,7 +5,10 @@ const token = require('./config.js')[app.get('env')].telegramToken;
 const bot = new TelegramBot(token, { polling: true });
 const apiUrl = require('./config.js')[app.get('env')].url;
 const adminId = require('./config.js')[app.get('env')].adminId;
+const maintenceMode = require('./config.js')[app.get('env')].maintenceMode;
 const crawler = require('./crawler.js');
+
+const TEXT_CD = new Map();
 
 bot.onText(/https:\/\//, async (msg, match) => {
     const chatId = msg.chat.id;
@@ -13,6 +16,10 @@ bot.onText(/https:\/\//, async (msg, match) => {
     let chatMsg = match.input;
 
     try {
+        if (!adminId.includes(chatId) && maintenceMode == 'true') {
+            console.log(`[LOG][${chatId}] Maintain Block`);
+            throw new Error(`System under maintain, please try again later`);
+        }
         let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11})|(?:https:\/\/(?:www\.)?instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
         let isPup = (chatMsg.match(/-pup/i) !== null) ? true : false;
         let forceUpdate = (chatMsg.match(/--f/i) !== null) ? true : false;
@@ -20,8 +27,21 @@ bot.onText(/https:\/\//, async (msg, match) => {
         if (target == null) {
             throw new Error(`[${logName}] 目前不支援該網址 ${chatMsg}`);
         }
+        let timestamp = Date.now();
+        if (TEXT_CD.has(chatId) && !adminId.includes(chatId)) {
+            let cdData = TEXT_CD.get(chatId);
+            if (timestamp - cdData.time > 60 * 1000) {
+                TEXT_CD.delete(chatId);
+            } else {
+                throw new Error(`[${logName}][${chatId}] CD 時間冷卻中，請 1 分鐘後再試一次`);
+            }
+        }
         console.log(`[LOG][Telegram] ${logName}`);
-        let resp = await crawler.getImage(target, isPup, forceUpdate);;
+        let resp = await crawler.getImage(target, isPup, forceUpdate, logName);
+
+        TEXT_CD.set(chatId, {
+            'time': timestamp
+        });
 
         if (resp.length !== 0) {
             let resArr = [];
@@ -39,7 +59,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
                             await bot.sendMessage(chatId, resArr[i]);
                         }
                     } else if (/\[ADMIN\]/.test(resArr[i])) {
-                        await bot.sendMessage(adminId, resArr[i]);
+                        await bot.sendMessage(adminId[0], resArr[i]);
                     } else {
                         await bot.sendMessage(chatId, resArr[i], { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
                     }
@@ -69,45 +89,3 @@ bot.onText(/\/help/, (msg) => {
 
 \- LINE 版本\(受限於平台，我個人還是推薦 Telegram 版本\) \-\> 搜尋 id \@bch6035i`, { parse_mode: 'Markdown'});
 });
-
-bot.onText(/\/apk/, async (msg) => {
-    const chatId = msg.chat.id;
-    let logName = msg.from.username || msg.from.first_name || msg.from.id;
-    console.log(`[LOG][Telegram][/apk] ${logName}`);
-
-    try {
-        let resp = await getApk();
-
-        if (resp == '') {
-            resp[0] = '沒東西啦 !!';
-        }
-
-        let msg = '';
-        for (const key in resp) {
-            let element = resp[key];
-            msg += `${key}：\n版本：${element.version}\n更新日期：${element.date}\n載點：${element.downloadLink}\n`
-        }
-
-        bot.sendMessage(chatId, msg);
-    } catch (error) {
-        bot.sendMessage(chatId, `出錯了: ${error.message}}`, { reply_to_message_id: msg.message_id });
-    }
-});
-
-async function getApk() {
-    return new Promise(function (resolve, reject) {
-        try {
-            request.get(`${apiUrl}api/apk`, function (error, response, body) {
-                if (error) reject(error);
-                if (response.statusCode !== 200) {
-                    reject(body);
-                } else {
-                    let data = JSON.parse(body);
-                    resolve(data.result);
-                }
-            });
-        } catch (error) {
-            reject(error);
-        }
-    });
-}
