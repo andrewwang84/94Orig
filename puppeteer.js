@@ -16,8 +16,8 @@ const igPauseSelector = '#react-root > div > div > section > div > div > section
 const igMetaTitle = "head > meta[property='og:title']";
 const igConfirmCheckStoryBtn = '#react-root > section > div > div > section > div > div > div > div > div > div > button';
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36';
-const isHeadless = false;
-// const isHeadless = true;
+// const isHeadless = false;
+const isHeadless = true;
 let browserWSEndpoint = null;
 const waitUntilMain = 'networkidle0';
 const waitUntilMinor = 'domcontentloaded';
