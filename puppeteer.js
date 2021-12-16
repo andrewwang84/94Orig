@@ -7,10 +7,12 @@ const insCookies = require('./config.js')[app.get('env')].insCookies;
 const usernameSelector = 'input[name="username"]';
 const passwordSelector = 'input[name="password"]';
 const loginBtn = 'button[type="submit"]';
-const storiesCountClassSelector = '#react-root > div > div > section > div > div > section > div > header > div:nth-child(1) > div > div';
+// const storiesCountClassSelector = '#react-root > div > div > section > div > div > section > div > header > div:nth-child(1) > div > div';
+const storiesCountClassSelector = '#react-root > section > div > div > section > div > header > div:nth-child(1) > div';
 const nextStorySelector = '.coreSpriteRightChevron';
 const WTFStorySelector = '#react-root > section > div > div > section > div.GHEPc > div.Igw0E.IwRSH.eGOV_._4EzTm.NUiEW > div > div > button > div';
-const storyHomeEnterSelector = `#react-root > div > div > section > main > div > header > div > div`;
+// const storyHomeEnterSelector = `#react-root > div > div > section > main > div > header > div > div`;
+const storyHomeEnterSelector = `#react-root > section > main > div > header > div > div > span`;
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const igPauseSelector = '#react-root > div > div > section > div > div > section > div > header > div > div > button:nth-child(1)';
 const igMetaTitle = "head > meta[property='og:title']";
@@ -217,7 +219,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
         }
 
         //await browser.close();
-        await page.close();
+        // await page.close();
         if (score >= 75) {
             result.push(`[ADMIN][${score}][${userName}][${url}]`);
         }
