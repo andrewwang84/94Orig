@@ -14,7 +14,7 @@ const WTFStorySelector = '#react-root > section > div > div > section > div.GHEP
 // const storyHomeEnterSelector = `#react-root > div > div > section > main > div > header > div > div`;
 const storyHomeEnterSelector = `#react-root > section > main > div > header > div > div > span`;
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
-const igPauseSelector = '#react-root > div > div > section > div > div > section > div > header > div > div > button:nth-child(1)';
+const igPauseSelector = '#react-root > section > div > div > section > div > header > div > div > button:nth-child(1)';
 const igMetaTitle = "head > meta[property='og:title']";
 const igConfirmCheckStoryBtn = '#react-root > section > div > div > section > div > div > div > div > div > div > button';
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36';
@@ -219,7 +219,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
         }
 
         //await browser.close();
-        // await page.close();
+        await page.close();
         if (score >= 75) {
             result.push(`[ADMIN][${score}][${userName}][${url}]`);
         }
