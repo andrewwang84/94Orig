@@ -27,42 +27,44 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
     var imageUrls = [];
     for (var i = 0; i < urls.length; i++) {
         let storyType = 'IG_STORY';
-        if (/instagram\.com\/(?:p|tv|reel)\//.test(urls[i])) {
-            try {
-                start = Date.now();
-                if (isPup == true) {
-                    let res = await puppeteer.igUrl(urls[i], uid);
+        if (/instagram\.com\//.test(urls[i])) {
+            if (/\/(?:p|tv|reel)\//.test(urls[i])) {
+                try {
+                    start = Date.now();
+                    if (isPup == true) {
+                        let res = await puppeteer.igUrl(urls[i], uid);
+                        imageUrls.push(res);
+                        end = Date.now();
+                        console.log(`[LOG][IG][${urls[i]}][${(end - start) / 1000}s][${res.length}] Puppeteer Done`);
+                    } else {
+                        let res = await igUrl(urls[i], uid);
+                        imageUrls.push(res);
+                    }
+                } catch (error) {
+                    console.log(`[ERROR][IG][${urls[i]}]`);
+                    return error;
+                }
+            } else {
+                try {
+                    let url = urls[i];
+                    if (urls[i].indexOf('?') !== -1) {
+                        url = urls[i].slice(0, urls[i].indexOf('?'));
+                    }
+                    let res = [];
+                    start = Date.now();
+                    if (/\/s\//.test(url) || /\/stories\/highlights\/S+/.test(url)) {
+                        storyType = 'IG_STORY_Highlight';
+                        res = await puppeteer.getStoriesHighlight(url, forceUpdate, uid);
+                    } else {
+                        res = await puppeteer.getStories(url, forceUpdate, uid);
+                    }
                     imageUrls.push(res);
                     end = Date.now();
-                    console.log(`[LOG][IG][${urls[i]}][${(end - start) / 1000}s][${res.length}] Puppeteer Done`);
-                } else {
-                    let res = await igUrl(urls[i], uid);
-                    imageUrls.push(res);
+                    console.log(`[LOG][${storyType}][${url}][${(end - start) / 1000}s][${res.length}] Puppeteer Done`);
+                } catch (error) {
+                    console.log(`[ERROR][${storyType}][${urls[i]}]`);
+                    return error;
                 }
-            } catch (error) {
-                console.log(`[ERROR][IG][${urls[i]}]`);
-                return error;
-            }
-        } else if (!/instagram\.com\/(?:p|tv)\//.test(urls[i]) && /instagram\.com/.test(urls[i])) {
-            try {
-                let url = urls[i];
-                if (urls[i].indexOf('?') !== -1) {
-                    url = urls[i].slice(0, urls[i].indexOf('?'));
-                }
-                let res = [];
-                start = Date.now();
-                if (/instagram\.com\/s\//.test(url) || /instagram\.com\/stories\/highlights\/S+/.test(url)) {
-                    storyType = 'IG_STORY_Highlight';
-                    res = await puppeteer.getStoriesHighlight(url, forceUpdate, uid);
-                } else {
-                    res = await puppeteer.getStories(url, forceUpdate, uid);
-                }
-                imageUrls.push(res);
-                end = Date.now();
-                console.log(`[LOG][${storyType}][${url}][${(end - start) / 1000}s][${res.length}] Puppeteer Done`);
-            } catch (error) {
-                console.log(`[ERROR][${storyType}][${urls[i]}]`);
-                return error;
             }
         } else if (/https:\/\/twitter\.com/.test(urls[i])) {
             try {
