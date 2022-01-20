@@ -115,12 +115,14 @@ function igUrl(url, uid = '') {
                 return;
             }
             target = data.children[0].data;
-            let userNameData = target.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/);
-            if (userNameData == null) {
+            target = target.slice(target.indexOf("',") + 2, -2);
+            // console.log(target);
+            target = JSON.parse(target).items[0];
+            let userName = target.user.username;
+            if (userName == undefined) {
                 reject ('');
                 return;
             }
-            let userName = userNameData[1];
             let score = 0;
             if (block.whiteList.includes(userName) === false) {
                 if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
@@ -151,16 +153,23 @@ function igUrl(url, uid = '') {
                 return;
             }
 
-            let results = target.matchAll(/"(?:display_url|video_url)":"([^"]+)",/gi);
+            let results = target.carousel_media;
             for (let value of results) {
-                value = value[1].replace(/\\u0026/gi, "&");
+                let img = value.image_versions2.candidates[0].url.replace(/\\u0026/gi, "&");
+                result.push(img);
 
-                result.push(value);
+                if (value.media_type == 2) {
+                    let count = 0;
+                    let vid = '';
+                    for (let vidData of value.video_versions) {
+                        vid = vidData.url.replace(/\\u0026/gi, "&");
+
+                        count++;
+                    }
+                    result.push(vid);
+                }
             }
 
-            if (result.length > 1) {
-                result.shift();
-            }
             end = Date.now();
             console.log(`[LOG][IG][${userName}][${url}][${(end - start) / 1000}s][${result.length}] Done`);
 
