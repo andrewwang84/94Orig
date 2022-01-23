@@ -4,7 +4,9 @@ const puppeteer = require('./puppeteer.js');
 const block = require('./block.js');
 var app = require('express')();
 const twitterToken = require('./config.js')[app.get('env')].twitterToken;
-const insCookies = require('./config.js')[app.get('env')].insCookies;
+let insCookies1 = require('./config.js')[app.get('env')].insCookies;
+let insCookies2 = require('./config.js')[app.get('env')].insCookies_2;
+let insCookies = insCookies1;
 var request = require('request').defaults({
     jar: true,
     headers: {
@@ -111,15 +113,25 @@ function igUrl(url, uid = '') {
             var $ = cheerio.load(body);
             let data = $(`body > script:contains("window.__additionalDataLoaded")`)[0];
             if (data === undefined) {
+                console.log(data);
+                insCookies = switchCookie();
                 reject ('');
                 return;
             }
             target = data.children[0].data;
             target = target.slice(target.indexOf("',") + 2, -2);
             // console.log(target);
-            target = JSON.parse(target).items[0];
+            target = JSON.parse(target).items;
+            if (target == undefined) {
+                console.log(target);
+                insCookies = switchCookie();
+                reject ('');
+                return;
+            }
+            target = target[0];
             let userName = target.user.username;
             if (userName == undefined) {
+                console.log(userName);
                 reject ('');
                 return;
             }
@@ -159,12 +171,9 @@ function igUrl(url, uid = '') {
                 result.push(img);
 
                 if (value.media_type == 2) {
-                    let count = 0;
                     let vid = '';
                     for (let vidData of value.video_versions) {
                         vid = vidData.url.replace(/\\u0026/gi, "&");
-
-                        count++;
                     }
                     result.push(vid);
                 }
@@ -271,6 +280,14 @@ function twitterVid (id) {
             resolve(vidUrl);
         });
     });
+}
+
+function switchCookie() {
+    if (insCookies == insCookies1) {
+        return insCookies2;
+    } else {
+        return insCookies1
+    }
 }
 
 module.exports = {
