@@ -125,14 +125,14 @@ function igUrl(url, uid = '') {
             if (target == undefined) {
                 console.log(target);
                 insCookies = switchCookie();
-                reject ('');
+                reject('錯誤:找不到 Data');
                 return;
             }
             target = target[0];
             let userName = target.user.username;
             if (userName == undefined) {
                 console.log(userName);
-                reject ('');
+                reject('錯誤:找不到 username');
                 return;
             }
             let score = 0;
@@ -165,24 +165,29 @@ function igUrl(url, uid = '') {
                 return;
             }
 
-            let results = target.carousel_media;
-            if (results == undefined) {
+            let results = '';
+            if (target.image_versions2 == undefined) {
+                results = target.carousel_media;
+                for (let value of results) {
+                    let img = value.image_versions2.candidates[0].url.replace(/\\u0026/gi, "&");
+                    result.push(img);
+
+                    if (value.media_type == 2) {
+                        let vid = '';
+                        for (let vidData of value.video_versions) {
+                            vid = vidData.url.replace(/\\u0026/gi, "&");
+                        }
+                        result.push(vid);
+                    }
+                }
+            } else if (target.image_versions2 != undefined) {
+                results = target.image_versions2;
+                console.log(results);
+            } else {
                 console.log(target);
                 insCookies = switchCookie();
-                reject('');
+                reject('錯誤:找不到圖片');
                 return;
-            }
-            for (let value of results) {
-                let img = value.image_versions2.candidates[0].url.replace(/\\u0026/gi, "&");
-                result.push(img);
-
-                if (value.media_type == 2) {
-                    let vid = '';
-                    for (let vidData of value.video_versions) {
-                        vid = vidData.url.replace(/\\u0026/gi, "&");
-                    }
-                    result.push(vid);
-                }
             }
 
             end = Date.now();
