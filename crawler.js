@@ -166,6 +166,12 @@ function igUrl(url, uid = '') {
             }
 
             let results = target.carousel_media;
+            if (results == undefined) {
+                console.log(target);
+                insCookies = switchCookie();
+                reject('');
+                return;
+            }
             for (let value of results) {
                 let img = value.image_versions2.candidates[0].url.replace(/\\u0026/gi, "&");
                 result.push(img);
