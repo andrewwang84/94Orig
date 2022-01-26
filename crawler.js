@@ -123,6 +123,7 @@ function igUrl(url, uid = '') {
                 reject ('');
                 return;
             }
+
             target = data.children[0].data;
             target = target.slice(target.indexOf("',") + 2, -2);
             // console.log(target);
@@ -139,6 +140,7 @@ function igUrl(url, uid = '') {
                 reject('錯誤:找不到 Data');
                 return;
             }
+
             let userName = '';
             if (type == TYPE_FANSPAGE) {
                 target = target[0];
@@ -151,6 +153,7 @@ function igUrl(url, uid = '') {
                 reject('錯誤:找不到 username');
                 return;
             }
+
             let score = 0;
             if (block.whiteList.includes(userName) === false) {
                 if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
