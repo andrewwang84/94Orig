@@ -4,7 +4,9 @@ const puppeteer = require('./puppeteer.js');
 const block = require('./block.js');
 var app = require('express')();
 const twitterToken = require('./config.js')[app.get('env')].twitterToken;
-const insCookies = require('./config.js')[app.get('env')].insCookies;
+let insCookies1 = require('./config.js')[app.get('env')].insCookies;
+let insCookies2 = require('./config.js')[app.get('env')].insCookies_2;
+let insCookies = insCookies1;
 var request = require('request').defaults({
     jar: true,
     headers: {
@@ -13,6 +15,8 @@ var request = require('request').defaults({
 });
 var start = '';
 var end = '';
+const TYPE_FANSPAGE = 1;
+const TYPE_GRAPHQL = 2;
 
 let getImage = async (urls, isPup = false, forceUpdate = false, uid = '') => {
     try {
@@ -20,6 +24,9 @@ let getImage = async (urls, isPup = false, forceUpdate = false, uid = '') => {
         return data;
     } catch (error) {
         console.error(`[ERROR] ${error}`);
+        return new Promise(function (resolve, reject) {
+            reject(error);
+        });
     }
 }
 
@@ -42,7 +49,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
                     }
                 } catch (error) {
                     console.log(`[ERROR][IG][${urls[i]}]`);
-                    return error;
+                    throw error;
                 }
             } else {
                 try {
@@ -63,7 +70,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
                     console.log(`[LOG][${storyType}][${url}][${(end - start) / 1000}s][${res.length}] Puppeteer Done`);
                 } catch (error) {
                     console.log(`[ERROR][${storyType}][${urls[i]}]`);
-                    return error;
+                    throw error;
                 }
             }
         } else if (/https:\/\/twitter\.com/.test(urls[i])) {
@@ -75,7 +82,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
                 console.log(`[LOG][TWITTER][${urls[i]}][${(end - start) / 1000}s][${res.length}] Done`);
             } catch (error) {
                 console.log(`[ERROR][TWITTER][${urls[i]}]`);
-                return error;
+                throw error;
             }
         } else if (/https:\/\/mobile\.twitter\.com/.test(urls[i])) {
             try {
@@ -87,7 +94,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
                 console.log(`[LOG][TWITTER][${targetUrl}][${(end - start) / 1000}s][${res.length}] Done`);
             } catch (error) {
                 console.log(`[ERROR][TWITTER][${urls[i]}]`);
-                return error;
+                throw error;
             }
         }
     }
@@ -111,16 +118,37 @@ function igUrl(url, uid = '') {
             var $ = cheerio.load(body);
             let data = $(`body > script:contains("window.__additionalDataLoaded")`)[0];
             if (data === undefined) {
+                console.log(data);
+                insCookies = switchCookie();
                 reject ('');
                 return;
             }
             target = data.children[0].data;
             target = target.slice(target.indexOf("',") + 2, -2);
             // console.log(target);
-            target = JSON.parse(target).items[0];
-            let userName = target.user.username;
-            if (userName == undefined) {
-                reject ('');
+            let type = TYPE_FANSPAGE;
+            if (JSON.parse(target).items != undefined) {
+                target = JSON.parse(target).items;
+            } else {
+                type = TYPE_GRAPHQL;
+                target = JSON.parse(target).graphql.shortcode_media;
+            }
+            if (target == undefined) {
+                console.log(target);
+                insCookies = switchCookie();
+                reject('錯誤:找不到 Data');
+                return;
+            }
+            let userName = '';
+            if (type == TYPE_FANSPAGE) {
+                target = target[0];
+                userName = target.user.username;
+            } else if (type == TYPE_GRAPHQL) {
+                userName = target.owner.username;
+            }
+            // console.log(target);
+            if (userName == '') {
+                reject('錯誤:找不到 username');
                 return;
             }
             let score = 0;
@@ -153,21 +181,55 @@ function igUrl(url, uid = '') {
                 return;
             }
 
-            let results = target.carousel_media;
-            for (let value of results) {
-                let img = value.image_versions2.candidates[0].url.replace(/\\u0026/gi, "&");
-                result.push(img);
+            let results = '';
+            if (type == TYPE_FANSPAGE) {
+                if (target.carousel_media != undefined) {
+                    results = target.carousel_media;
+                    for (let value of results) {
+                        let img = value.image_versions2.candidates[0].url.replace(/\\u0026/gi, "&");
+                        result.push(img);
 
-                if (value.media_type == 2) {
-                    let count = 0;
-                    let vid = '';
-                    for (let vidData of value.video_versions) {
-                        vid = vidData.url.replace(/\\u0026/gi, "&");
-
-                        count++;
+                        if (value.media_type == 2) {
+                            let vid = '';
+                            for (let vidData of value.video_versions) {
+                                vid = vidData.url.replace(/\\u0026/gi, "&");
+                            }
+                            result.push(vid);
+                        }
                     }
-                    result.push(vid);
+                } else if (target.image_versions2 != undefined) {
+                    results = target.image_versions2;
+                    let origW = results.original_width;
+                    let origH = results.original_height;
+                    let img = '';
+                    let currentH = 0;
+                    let currentW = 0;
+                    for (let v of results.candidates) {
+                        if (v.width == origW && v.height == origH) {
+                            img = v.url.replace(/\\u0026/gi, "&");
+                            break;
+                        } else if (v.height >= currentH && v.width >= currentW) {
+                            currentH = v.height;
+                            currentW = v.width;
+                            img = v.url.replace(/\\u0026/gi, "&");
+                        }
+                    }
+
+                    result.push(img);
+                } else {
+                    console.log(target);
+                    insCookies = switchCookie();
+                    reject('錯誤:找不到圖片');
+                    return;
                 }
+            } else if (type == TYPE_GRAPHQL) {
+                results = target.display_resources;
+                let img = '';
+                for (let v of results) {
+                    img = v.src.replace(/\\u0026/gi, "&");
+                }
+
+                result.push(img);
             }
 
             end = Date.now();
@@ -271,6 +333,14 @@ function twitterVid (id) {
             resolve(vidUrl);
         });
     });
+}
+
+function switchCookie() {
+    if (insCookies == insCookies1) {
+        return insCookies2;
+    } else {
+        return insCookies1
+    }
 }
 
 module.exports = {

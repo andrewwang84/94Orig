@@ -5,6 +5,8 @@ var config = {
         insPass: null,
         port: 3001,
         insCookies: null,
+        insEmail_2: null,
+        insCookies_2: null,
         lineAccessToken: null,
         lineSecret: null,
         twitterToken: null,
@@ -17,6 +19,8 @@ var config = {
         insPass: process.env.insPass,
         port: process.env.PORT,
         insCookies: process.env.insCookies,
+        insEmail_2: process.env.insEmail_2,
+        insCookies_2: process.env.insCookies_2,
         lineAccessToken: process.env.lineAccessToken,
         lineSecret: process.env.lineSecret,
         twitterToken: process.env.twitterToken,
@@ -30,6 +34,8 @@ if (process.env.NODE_ENV != 'production') {
     config.development['insEmail'] = require('./cred.js').insEmail;
     config.development['insPass'] = require('./cred.js').insPass;
     config.development['insCookies'] = require('./cred.js').insCookies;
+    config.development['insEmail_2'] = require('./cred.js').insEmail_2;
+    config.development['insCookies_2'] = require('./cred.js').insCookies_2;
     config.development['lineAccessToken'] = require('./cred.js').lineAccessToken;
     config.development['lineSecret'] = require('./cred.js').lineSecret;
     config.development['twitterToken'] = require('./cred.js').twitterToken;
