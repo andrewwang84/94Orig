@@ -7,6 +7,10 @@ const helmet = require("helmet");
 
 var indexRouter = require('./routes/index');
 var apiRouter = require('./routes/apiRouter');
+<<<<<<< HEAD
+=======
+// var lineRouter = require('./routes/lineRouter');
+>>>>>>> master
 
 var app = express();
 
@@ -27,6 +31,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/api', apiRouter);
+<<<<<<< HEAD
+=======
+// app.use('/line', lineRouter);
+>>>>>>> master
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

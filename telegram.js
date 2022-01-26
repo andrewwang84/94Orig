@@ -90,8 +90,8 @@ bot.onText(/https:\/\//, async (msg, match) => {
             bot.sendMessage(chatId, '沒東西啦 !!', { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
         }
     } catch (error) {
-        console.log(`[ERROR] ${error.message}`);
-        bot.sendMessage(chatId, `出錯了: ${error.message}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        console.log(`[ERROR] ${error}`);
+        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
     }
 });
 
