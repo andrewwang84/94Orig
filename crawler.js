@@ -125,7 +125,7 @@ function igUrl(url, uid = '') {
             }
             target = data.children[0].data;
             target = target.slice(target.indexOf("',") + 2, -2);
-            console.log(target);
+            // console.log(target);
             let type = TYPE_FANSPAGE;
             if (JSON.parse(target).items != undefined) {
                 target = JSON.parse(target).items;
@@ -183,7 +183,7 @@ function igUrl(url, uid = '') {
 
             let results = '';
             if (type == TYPE_FANSPAGE) {
-                if (target.image_versions2 == undefined) {
+                if (target.carousel_media != undefined) {
                     results = target.carousel_media;
                     for (let value of results) {
                         let img = value.image_versions2.candidates[0].url.replace(/\\u0026/gi, "&");
@@ -199,7 +199,23 @@ function igUrl(url, uid = '') {
                     }
                 } else if (target.image_versions2 != undefined) {
                     results = target.image_versions2;
-                    console.log(results);
+                    let origW = results.original_width;
+                    let origH = results.original_height;
+                    let img = '';
+                    let currentH = 0;
+                    let currentW = 0;
+                    for (let v of results.candidates) {
+                        if (v.width == origW && v.height == origH) {
+                            img = v.url.replace(/\\u0026/gi, "&");
+                            break;
+                        } else if (v.height >= currentH && v.width >= currentW) {
+                            currentH = v.height;
+                            currentW = v.width;
+                            img = v.url.replace(/\\u0026/gi, "&");
+                        }
+                    }
+
+                    result.push(img);
                 } else {
                     console.log(target);
                     insCookies = switchCookie();
