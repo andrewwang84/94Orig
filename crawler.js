@@ -194,13 +194,20 @@ function igUrl(url, uid = '') {
 
                         if (value.media_type == 2) {
                             let vid = '';
+                            let currentH = 0;
+                            let currentW = 0;
                             for (let vidData of value.video_versions) {
-                                vid = vidData.url.replace(/\\u0026/gi, "&");
+                                if (v.height >= currentH && v.width >= currentW) {
+                                    currentH = v.height;
+                                    currentW = v.width;
+                                    vid = vidData.url.replace(/\\u0026/gi, "&");
+                                }
                             }
                             result.push(vid);
                         }
                     }
-                } else if (target.image_versions2 != undefined) {
+                }
+                if (target.image_versions2 != undefined) {
                     results = target.image_versions2;
                     let origW = results.original_width;
                     let origH = results.original_height;
@@ -219,7 +226,23 @@ function igUrl(url, uid = '') {
                     }
 
                     result.push(img);
-                } else {
+                }
+                if (target.video_versions != undefined) {
+                    results = target.video_versions;
+                    let vid = '';
+                    let currentH = 0;
+                    let currentW = 0;
+                    for (let v of results) {
+                        if (v.height >= currentH && v.width >= currentW) {
+                            currentH = v.height;
+                            currentW = v.width;
+                            vid = v.url.replace(/\\u0026/gi, "&");
+                        }
+                    }
+                    result.push(vid);
+                }
+
+                if (result.length == 0) {
                     console.log(target);
                     insCookies = switchCookie();
                     reject('錯誤:找不到圖片');

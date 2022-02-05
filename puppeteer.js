@@ -448,8 +448,15 @@ async function igUrl(url, uid = '') {
         }
 
         const html = await page.content();
-        console.log(html);
-        let userName = html.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/)[1];
+        let userHtml = html.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/);
+        let userName = '';
+        if (userHtml != null) {
+            userName = userHtml[1];
+        } else {
+            console.log(html);
+            throw new Error('No Username');
+        }
+
         let score = 0;
         if (block.whiteList.includes(userName) === false) {
             if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
@@ -499,7 +506,7 @@ async function igUrl(url, uid = '') {
             resolve(imgUrls);
         });
     } catch (error) {
-        console.log(error);
+        console.log(`[ERROR] ${error.message}`);
         return new Promise(function (resolve, reject) {
             resolve([`${url} 發生錯誤，請再試一次`]);
         });
