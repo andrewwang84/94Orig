@@ -448,6 +448,7 @@ async function igUrl(url, uid = '') {
         }
 
         const html = await page.content();
+        console.log(html);
         let userName = html.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/)[1];
         let score = 0;
         if (block.whiteList.includes(userName) === false) {
