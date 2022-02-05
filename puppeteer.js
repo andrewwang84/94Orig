@@ -17,6 +17,7 @@ const privateAccSelector = `#react-root > section > main > div > header > div > 
 const igPauseSelector = '#react-root > section > div > div > section > div > header > div > div > button:nth-child(1)';
 const igMetaTitle = "head > meta[property='og:title']";
 const igConfirmCheckStoryBtn = '#react-root > section > div > div > section > div > div > div > div > div > div > button';
+const igUserNameSelector = '#react-root > section > main > div > div > article > div > div > div > div > div > header > div > div > div > span > a';
 const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36';
 // const isHeadless = false;
 const isHeadless = true;
@@ -448,11 +449,8 @@ async function igUrl(url, uid = '') {
         }
 
         const html = await page.content();
-        let userHtml = html.match(/"username":"([a-zA-Z0-9\.\_]+)","blocked_by_viewer":/);
-        let userName = '';
-        if (userHtml != null) {
-            userName = userHtml[1];
-        } else {
+        let userName = await page.$eval(igUserNameSelector, (elem) => elem.textContent);
+        if (userName == null) {
             console.log(html);
             throw new Error('No Username');
         }
