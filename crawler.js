@@ -126,7 +126,7 @@ function igUrl(url, uid = '') {
 
             target = data.children[0].data;
             target = target.slice(target.indexOf("',") + 2, -2);
-            // console.log(target);
+            console.log(target);
             let type = TYPE_FANSPAGE;
             if (JSON.parse(target).items != undefined) {
                 target = JSON.parse(target).items;
