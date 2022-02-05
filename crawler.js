@@ -233,6 +233,11 @@ function igUrl(url, uid = '') {
                 }
 
                 result.push(img);
+
+                if (target.video_url != undefined) {
+                    img = target.video_url.replace(/\\u0026/gi, "&");
+                    result.push(img);
+                }
             }
 
             end = Date.now();
