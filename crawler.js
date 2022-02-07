@@ -197,9 +197,9 @@ function igUrl(url, uid = '') {
                             let currentH = 0;
                             let currentW = 0;
                             for (let vidData of value.video_versions) {
-                                if (v.height >= currentH && v.width >= currentW) {
-                                    currentH = v.height;
-                                    currentW = v.width;
+                                if (vidData.height >= currentH && vidData.width >= currentW) {
+                                    currentH = vidData.height;
+                                    currentW = vidData.width;
                                     vid = vidData.url.replace(/\\u0026/gi, "&");
                                 }
                             }
