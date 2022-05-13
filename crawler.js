@@ -118,8 +118,10 @@ function igUrl(url, uid = '') {
             var $ = cheerio.load(body);
             let data = $(`body > script:contains("window.__additionalDataLoaded")`)[0];
             if (data === undefined) {
-                console.log(data);
+                console.log(`[ERROR][IG] cheerio data not found`);
+                console.log(`[ERROR][IG] current cookie: ${insCookies}`);
                 insCookies = switchCookie();
+                console.log(`[ERROR][IG] switch cookie: ${insCookies}`);
                 reject ('');
                 return;
             }
