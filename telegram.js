@@ -85,7 +85,5 @@ bot.onText(/\/help/, (msg) => {
 
 \- 保存 Twitter 原圖\(orig\)、影片：傳入單篇推文
 
-\- 一次傳入多個連結請用「\*換行\*」分開
-
-\- LINE 版本\(受限於平台，我個人還是推薦 Telegram 版本\) \-\> 搜尋 id \@bch6035i`, { parse_mode: 'Markdown'});
+\- 一次傳入多個連結請用「\*換行\*」分開`, { parse_mode: 'Markdown'});
 });
