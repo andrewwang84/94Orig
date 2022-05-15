@@ -19,7 +19,7 @@ var config = {
         insCookies_2: process.env.insCookies_2,
         twitterToken: process.env.twitterToken,
         adminId: process.env.adminId,
-        maintenceMode: process.env.maintenceMode
+        maintenceMode: true
     }
 }
 
