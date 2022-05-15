@@ -1,12 +1,11 @@
 const TelegramBot = require('node-telegram-bot-api');
-const request = require('request');
 var app = require('./app');
 const token = require('./config.js')[app.get('env')].telegramToken;
 const bot = new TelegramBot(token, { polling: true });
-const apiUrl = require('./config.js')[app.get('env')].url;
 const adminId = require('./config.js')[app.get('env')].adminId;
 const maintenceMode = require('./config.js')[app.get('env')].maintenceMode;
 const crawler = require('./crawler.js');
+const puppeteer = require('./puppeteer.js');
 
 const TEXT_CD = new Map();
 
@@ -86,4 +85,16 @@ bot.onText(/\/help/, (msg) => {
 \- 保存 Twitter 原圖\(orig\)、影片：傳入單篇推文
 
 \- 一次傳入多個連結請用「\*換行\*」分開`, { parse_mode: 'Markdown'});
+});
+
+bot.onText(/\/relogin/, async (msg) => {
+    const chatId = msg.chat.id;
+
+    let res = await puppeteer.igLogin();
+
+    if (res != '') {
+        bot.sendMessage(chatId, res);
+    } else {
+        bot.sendMessage(chatId, `登入失敗`);
+    }
 });

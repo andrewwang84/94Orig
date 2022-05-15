@@ -556,28 +556,6 @@ async function getBrowser(source = 'IG_STORY') {
             args: LAUNCH_ARGS
         });
         browserWSEndpoint = await browser.wsEndpoint();
-
-        if (source === 'WEB_PING') {
-            const browser = await puppeteer.connect({ browserWSEndpoint });
-
-            const cookie = {
-                name: "sessionid",
-                value: insCookies,
-                path: "/",
-                domain: ".instagram.com",
-            };
-
-            const page = await browser.newPage();
-            await page.setCookie(cookie);
-            await page.setUserAgent(userAgent);
-            await page.setRequestInterception(true);
-            page.on('request', (request) => {
-                if (request.resourceType() === 'image' || request.resourceType() === 'font' || request.resourceType() === 'media') request.abort();
-                else request.continue();
-            });
-
-            await page.goto('http://instagram.com/', { waitUntil: waitUntilMain });
-        }
     }
 
     return new Promise(function (resolve, reject) {
@@ -585,9 +563,63 @@ async function getBrowser(source = 'IG_STORY') {
     });
 }
 
+async function igLogin() {
+    try {
+        let loginUrl = `https://www.instagram.com/accounts/login/`;
+
+        await getBrowser();
+        const browser = await puppeteer.connect({ browserWSEndpoint });
+
+        const page = await browser.newPage();
+        await page.setUserAgent(userAgent);
+        await page.setRequestInterception(true);
+        page.on('request', (request) => {
+            if (request.resourceType() === 'image' || request.resourceType() === 'font' || request.resourceType() === 'media') request.abort();
+            else request.continue();
+        });
+
+        await page.goto(loginUrl, { waitUntil: waitUntilMain });
+
+        console.log(`[LOG] Start Login`);
+        await page.click(usernameSelector);
+        await page.keyboard.type(insEmail);
+        await page.click(passwordSelector);
+        await page.keyboard.type(insPass);
+        await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntilMinor }));
+
+        currentPage = await page.url();
+        if (currentPage.search(/\/challenge\//) !== -1) {
+            await page.close();
+            return new Promise(function (resolve, reject) {
+                resolve(`請重新驗證帳號`);
+            });
+        }
+        let cookies = await page.cookies();
+        let res = '';
+        for (const cookie of cookies) {
+            if (cookie.name == 'sessionid') {
+                res = cookie.value;
+                break
+            }
+        }
+        await page.close();
+
+        return new Promise(function (resolve, reject) {
+            resolve(res);
+        });
+    } catch (error) {
+        console.log(error);
+        await page.close();
+        return new Promise(function (resolve, reject) {
+            resolve([`登入發生錯誤，請再試一次`]);
+        });
+    }
+}
+
 module.exports = {
     getStories: getStories,
     getStoriesHighlight: getStoriesHighlight,
     igUrl: igUrl,
-    getBrowser: getBrowser
+    getBrowser: getBrowser,
+    igLogin: igLogin
 };
