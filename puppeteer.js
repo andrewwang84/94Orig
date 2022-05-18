@@ -18,7 +18,7 @@ const igPauseSelector = '#react-root > section > div > div > section > div > hea
 const igMetaTitle = "head > meta[property='og:title']";
 const igConfirmCheckStoryBtn = '#react-root > section > div > div > section > div > div > div > div > div > div > button';
 const igUserNameSelector = '#react-root > section > main > div > div > article > div > div > div > div > div > header > div > div > div > span > a';
-const userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36';
+const userAgent = require('./config.js')[app.get('env')].ua;
 // const isHeadless = false;
 const isHeadless = true;
 let browserWSEndpoint = null;

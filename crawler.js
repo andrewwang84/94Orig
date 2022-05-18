@@ -7,10 +7,11 @@ const twitterToken = require('./config.js')[app.get('env')].twitterToken;
 let insCookies1 = require('./config.js')[app.get('env')].insCookies;
 let insCookies2 = require('./config.js')[app.get('env')].insCookies_2;
 let insCookies = insCookies1;
+const userAgent = require('./config.js')[app.get('env')].ua;
 var request = require('request').defaults({
     jar: true,
     headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.61 Safari/537.36',
+        'User-Agent': userAgent
     }
 });
 var start = '';
@@ -107,6 +108,172 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
 function igUrl(url, uid = '') {
     var result = [];
     var target = '';
+    url = `${url}?__a=1`;
+    return new Promise(function (resolve, reject) {
+        start = Date.now();
+        const j = request.jar();
+        const cookie = request.cookie(`sessionid=${insCookies}`);
+        j.setCookie(cookie, url);
+        request({ url: url, jar: j }, function (error, response, body) {
+            if (error) reject(error);
+
+            let data = JSON.parse(body);
+            if (data === undefined) {
+                console.log(`[ERROR][IG] cheerio data not found`);
+                console.log(`[ERROR][IG] current cookie: ${insCookies}`);
+                reject('');
+                return;
+            }
+
+            let type = TYPE_FANSPAGE;
+            if (data.items != undefined) {
+                target = data.items;
+            } else {
+                type = TYPE_GRAPHQL;
+                target = data.graphql.shortcode_media;
+            }
+            if (target == undefined) {
+                console.log(target);
+                reject('錯誤:找不到 Data');
+                return;
+            }
+
+            let userName = '';
+            if (type == TYPE_FANSPAGE) {
+                target = target[0];
+                userName = target.user.username;
+            } else if (type == TYPE_GRAPHQL) {
+                userName = target.owner.username;
+            }
+
+            if (userName == '') {
+                reject('錯誤:找不到 username');
+                return;
+            }
+
+            let score = 0;
+            if (block.whiteList.includes(userName) === false) {
+                if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
+                    console.log(`[LOG][IG][Blink_Block][${url}]`);
+                    resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+                    return;
+                }
+                userName = userName.toLowerCase();
+                for (const key in block.greyList) {
+                    if (userName.search(key) !== -1) {
+                        score += parseInt(block.greyList[key]);
+                    }
+                }
+                if (score >= 150) {
+                    console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
+                    resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+                    return;
+                }
+                if (score >= 60 && block.blinkIds.includes(uid)) {
+                    console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
+                    resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+                    return;
+                }
+            }
+            if (score >= 60 && block.blinkIds.includes(uid)) {
+                console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
+                resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+                return;
+            }
+
+            let results = '';
+            if (type == TYPE_FANSPAGE) {
+                if (target.carousel_media != undefined) {
+                    results = target.carousel_media;
+                    for (let value of results) {
+                        let img = value.image_versions2.candidates[0].url.replace(/\\u0026/gi, "&");
+                        result.push(img);
+
+                        if (value.media_type == 2) {
+                            let vid = '';
+                            let currentH = 0;
+                            let currentW = 0;
+                            for (let vidData of value.video_versions) {
+                                if (vidData.height >= currentH && vidData.width >= currentW) {
+                                    currentH = vidData.height;
+                                    currentW = vidData.width;
+                                    vid = vidData.url.replace(/\\u0026/gi, "&");
+                                }
+                            }
+                            result.push(vid);
+                        }
+                    }
+                }
+                if (target.image_versions2 != undefined) {
+                    results = target.image_versions2;
+                    let origW = results.original_width;
+                    let origH = results.original_height;
+                    let img = '';
+                    let currentH = 0;
+                    let currentW = 0;
+                    for (let v of results.candidates) {
+                        if (v.width == origW && v.height == origH) {
+                            img = v.url.replace(/\\u0026/gi, "&");
+                            break;
+                        } else if (v.height >= currentH && v.width >= currentW) {
+                            currentH = v.height;
+                            currentW = v.width;
+                            img = v.url.replace(/\\u0026/gi, "&");
+                        }
+                    }
+
+                    result.push(img);
+                }
+                if (target.video_versions != undefined) {
+                    results = target.video_versions;
+                    let vid = '';
+                    let currentH = 0;
+                    let currentW = 0;
+                    for (let v of results) {
+                        if (v.height >= currentH && v.width >= currentW) {
+                            currentH = v.height;
+                            currentW = v.width;
+                            vid = v.url.replace(/\\u0026/gi, "&");
+                        }
+                    }
+                    result.push(vid);
+                }
+
+                if (result.length == 0) {
+                    console.log(target);
+                    reject('錯誤:找不到圖片');
+                    return;
+                }
+            } else if (type == TYPE_GRAPHQL) {
+                results = target.display_resources;
+                let img = '';
+                for (let v of results) {
+                    img = v.src.replace(/\\u0026/gi, "&");
+                }
+
+                result.push(img);
+
+                if (target.video_url != undefined) {
+                    img = target.video_url.replace(/\\u0026/gi, "&");
+                    result.push(img);
+                }
+            }
+
+            end = Date.now();
+            console.log(`[LOG][IG][${userName}][${url}][${(end - start) / 1000}s][${result.length}] Done`);
+
+            if (score >= 75) {
+                result.push(`[ADMIN][${score}][${userName}][${url}]`);
+            }
+
+            resolve(result);
+        });
+    });
+}
+
+function igUrlLegacy(url, uid = '') {
+    var result = [];
+    var target = '';
     return new Promise(function (resolve, reject) {
         start = Date.now();
         const j = request.jar();
@@ -120,8 +287,6 @@ function igUrl(url, uid = '') {
             if (data === undefined) {
                 console.log(`[ERROR][IG] cheerio data not found`);
                 console.log(`[ERROR][IG] current cookie: ${insCookies}`);
-                insCookies = switchCookie();
-                console.log(`[ERROR][IG] switch cookie: ${insCookies}`);
                 reject ('');
                 return;
             }
@@ -138,7 +303,6 @@ function igUrl(url, uid = '') {
             }
             if (target == undefined) {
                 console.log(target);
-                insCookies = switchCookie();
                 reject('錯誤:找不到 Data');
                 return;
             }
@@ -246,7 +410,6 @@ function igUrl(url, uid = '') {
 
                 if (result.length == 0) {
                     console.log(target);
-                    insCookies = switchCookie();
                     reject('錯誤:找不到圖片');
                     return;
                 }
@@ -366,14 +529,6 @@ function twitterVid (id) {
             resolve(vidUrl);
         });
     });
-}
-
-function switchCookie() {
-    if (insCookies == insCookies1) {
-        return insCookies2;
-    } else {
-        return insCookies1
-    }
 }
 
 module.exports = {

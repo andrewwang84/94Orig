@@ -8,7 +8,8 @@ var config = {
         insCookies_2: null,
         twitterToken: null,
         adminId: [],
-        maintenceMode: true
+        maintenceMode: true,
+        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0'
     },
     production: {
         telegramToken: process.env.telegramToken,
@@ -19,7 +20,8 @@ var config = {
         insCookies_2: process.env.insCookies_2,
         twitterToken: process.env.twitterToken,
         adminId: process.env.adminId,
-        maintenceMode: true
+        maintenceMode: true,
+        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0'
     }
 }
 

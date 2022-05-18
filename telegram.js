@@ -52,7 +52,11 @@ bot.onText(/https:\/\//, async (msg, match) => {
                 if (resArr[i] != '') {
                     if (/mp4|jpe?g|png/.test(resArr[i])) {
                         try {
-                            await bot.sendDocument(chatId, resArr[i]);
+                            if (/webp/.test(resArr[i])) {
+                                await bot.sendMessage(chatId, resArr[i], { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+                            } else {
+                                await bot.sendDocument(chatId, resArr[i]);
+                            }
                         } catch (error) {
                             console.log(`[ERROR] sendDocument error: ${error}`);
                             await bot.sendMessage(chatId, resArr[i]);
