@@ -108,13 +108,12 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
 function igUrl(url, uid = '') {
     var result = [];
     var target = '';
-    url = `${url}?__a=1`;
     return new Promise(function (resolve, reject) {
         start = Date.now();
         const j = request.jar();
         const cookie = request.cookie(`sessionid=${insCookies}`);
         j.setCookie(cookie, url);
-        request({ url: url, jar: j }, function (error, response, body) {
+        request({ url: `${url}?__a=1`, jar: j }, function (error, response, body) {
             if (error) reject(error);
 
             let data = JSON.parse(body);
