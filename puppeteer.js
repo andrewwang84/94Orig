@@ -81,10 +81,12 @@ async function getStories(url, forceUpdate = false, uid = '') {
                 let data = cache.data;
                 let result = [];
                 if (storiesUrl !== null) {
-                    result.push(data[storiesUrl]);
-                    return new Promise(function (resolve, reject) {
-                        resolve(result);
-                    });
+                    if (data[storiesUrl] != undefined || data[storiesUrl] != '') {
+                        result.push(data[storiesUrl]);
+                        return new Promise(function (resolve, reject) {
+                            resolve(result);
+                        });
+                    }
                 } else {
                     for (const key in data) {
                         result.push(data[key]);
