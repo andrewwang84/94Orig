@@ -37,6 +37,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
             if (/\/(?:p|tv|reel)\//.test(urls[i])) {
                 try {
                     start = Date.now();
+                    urls[i] = urls[i].replace(/\?\S+/, '');
                     if (isPup == true) {
                         let res = await puppeteer.igUrl(urls[i], uid);
                         imageUrls.push(res);
