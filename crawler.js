@@ -4,9 +4,7 @@ const puppeteer = require('./puppeteer.js');
 const block = require('./block.js');
 var app = require('express')();
 const twitterToken = require('./config.js')[app.get('env')].twitterToken;
-let insCookies1 = require('./config.js')[app.get('env')].insCookies;
-let insCookies2 = require('./config.js')[app.get('env')].insCookies_2;
-let insCookies = insCookies1;
+const insCookies = require('./config.js')[app.get('env')].insCookies;
 const userAgent = require('./config.js')[app.get('env')].ua;
 var request = require('request').defaults({
     jar: true,
@@ -116,6 +114,10 @@ function igUrl(url, uid = '') {
         request({ url: `${url}?__a=1`, jar: j }, function (error, response, body) {
             if (error) reject(error);
 
+            if (/<!DOCTYPE/.test(body)) {
+                reject('cookie 失效');
+                return;
+            }
             let data = JSON.parse(body);
             if (data === undefined) {
                 console.log(`[ERROR][IG] cheerio data not found`);
