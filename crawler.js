@@ -1,5 +1,6 @@
 var request = require('request');
 var cheerio = require('cheerio');
+const timerP = require('node:timers/promises');
 const puppeteer = require('./puppeteer.js');
 const block = require('./block.js');
 var app = require('express')();
@@ -97,6 +98,8 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
                 throw error;
             }
         }
+
+        await timerP.setTimeout(500);
     }
 
     return new Promise(function (resolve, reject) {
