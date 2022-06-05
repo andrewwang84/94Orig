@@ -158,7 +158,12 @@ async function getStories(url, forceUpdate = false, uid = '') {
         let nextClass = nextStorySelector;
         let pauseClass = igPauseSelector;
         try {
-            await page.click(storyHomeEnterSelector).catch(e => puppeteerError(e)).then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
+            await page.click(storyHomeEnterSelector)
+                .catch(e => {
+                    puppeteerError(e);
+                    throw new Error(`Don't wait`);
+                })
+                .then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
         } catch (error) {
             try {
                 console.log(`[ERROR][IG_STORY][${userName}] Home Selector 1 Not Found, Fall back to 2`);
