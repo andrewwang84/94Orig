@@ -7,20 +7,21 @@ const insCookies = require('./config.js')[app.get('env')].insCookies;
 const usernameSelector = 'input[name="username"]';
 const passwordSelector = 'input[name="password"]';
 const loginBtn = 'button[type="submit"]';
-// const storiesCountClassSelector = '#react-root > div > div > section > div > div > section > div > header > div:nth-child(1) > div > div';
+const storyHomeEnterSelector = `#react-root > section > main > div > header > div > div > span`;
 const storiesCountClassSelector = '#react-root > section > div > div > section > div > header > div:nth-child(1) > div';
 const nextStorySelector = '.coreSpriteRightChevron';
-const WTFStorySelector = '#react-root > section > div > div > section > div.GHEPc > div.Igw0E.IwRSH.eGOV_._4EzTm.NUiEW > div > div > button > div';
-// const storyHomeEnterSelector = `#react-root > div > div > section > main > div > header > div > div`;
-const storyHomeEnterSelector = `#react-root > section > main > div > header > div > div > span`;
-const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const igPauseSelector = '#react-root > section > div > div > section > div > header > div > div > button:nth-child(1)';
+const storyHomeEnterSelector2 = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > main > div > header > div > div > span`;
+const storiesCountClassSelector2 = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > header > div:first-child`;
+const nextStorySelector2 = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > button > div`;
+const igPauseSelector2 = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > header > div > div > button:nth-child(1) > div`
+const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const igMetaTitle = "head > meta[property='og:title']";
 const igConfirmCheckStoryBtn = '#react-root > section > div > div > section > div > div > div > div > div > div > button';
 const igUserNameSelector = '#react-root > section > main > div > div > article > div > div > div > div > div > header > div > div > div > span > a';
 const userAgent = require('./config.js')[app.get('env')].ua;
-// const isHeadless = false;
-const isHeadless = true;
+const isHeadless = false;
+// const isHeadless = true;
 let browserWSEndpoint = null;
 const waitUntilMain = 'networkidle0';
 const waitUntilMinor = 'domcontentloaded';
@@ -35,15 +36,14 @@ const LAUNCH_ARGS = [
 ];
 
 async function getStories(url, forceUpdate = false, uid = '') {
+    let baseUrl = 'https://www.instagram.com/';
+    let userName = url.match(/https:\/\/(?:www\.)?instagram\.com\/(?:stories\/)?([a-zA-Z0-9\.\_]+)/)[1];
+    let loginUrl = `https://www.instagram.com/accounts/login/?next=%2F${userName}%2F`;
+    let storyId = (url.match(/https:\/\/(?:www\.)?instagram.com\/stories\/[a-zA-Z0-9\.\_]+\/([0-9]+)/) == null) ? null : url.match(/https:\/\/(?:www\.)?instagram.com\/stories\/[a-zA-Z0-9\.\_]+\/([0-9]+)/)[1];
+    let storiesUrl = (storyId == null) ? null : `https://www.instagram.com/stories/${userName}/${storyId}/`;
+    let homeUrl = `https://www.instagram.com/${userName}/`;
+    let imgUrls = [];
     try {
-        let baseUrl = 'https://www.instagram.com/';
-        let imgUrls = [];
-        let userName = url.match(/https:\/\/(?:www\.)?instagram\.com\/(?:stories\/)?([a-zA-Z0-9\.\_]+)/)[1];
-        let loginUrl = `https://www.instagram.com/accounts/login/?next=%2F${userName}%2F`;
-        let storyId = (url.match(/https:\/\/(?:www\.)?instagram.com\/stories\/[a-zA-Z0-9\.\_]+\/([0-9]+)/) == null) ? null : url.match(/https:\/\/(?:www\.)?instagram.com\/stories\/[a-zA-Z0-9\.\_]+\/([0-9]+)/)[1];
-        let storiesUrl = (storyId == null) ? null : `https://www.instagram.com/stories/${userName}/${storyId}/`;
-        let homeUrl = `https://www.instagram.com/${userName}/`;
-
         if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
             return new Promise(function (resolve, reject) {
                 console.log(`[LOG][IG_Story][Blink_Block][${url}]`);
@@ -154,31 +154,42 @@ async function getStories(url, forceUpdate = false, uid = '') {
             });
         }
 
+        let countClass = storiesCountClassSelector;
+        let nextClass = nextStorySelector;
+        let pauseClass = igPauseSelector;
         try {
             await page.click(storyHomeEnterSelector).catch(e => puppeteerError(e)).then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
         } catch (error) {
-            await page.close();
-            return new Promise(function (resolve, reject) {
-                console.log(`[ERROR][IG_STORY][${userName}] Not Found`);
-                let timestamp = Date.now();
-                let cacheArr = [];
-                cacheArr[url] = `@${userName} 目前沒有限時動態`;
-                CACHE.set(homeUrl, {
-                    'time': timestamp,
-                    'data': cacheArr
+            try {
+                console.log(`[ERROR][IG_STORY][${userName}] Home Selector 1 Not Found, Fall back to 2`);
+                countClass = storiesCountClassSelector2;
+                nextClass = nextStorySelector2;
+                pauseClass = igPauseSelector2;
+                await page.click(storyHomeEnterSelector2).catch(e => puppeteerError(e)).then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
+            } catch (error) {
+                await page.close();
+                return new Promise(function (resolve, reject) {
+                    console.log(`[ERROR][IG_STORY][${userName}] Not Found`);
+                    let timestamp = Date.now();
+                    let cacheArr = [];
+                    cacheArr[url] = `@${userName} 目前沒有限時動態`;
+                    CACHE.set(homeUrl, {
+                        'time': timestamp,
+                        'data': cacheArr
+                    });
+                    imgUrls.push(`@${userName} 目前沒有限時動態`);
+                    resolve(imgUrls);
                 });
-                imgUrls.push(`@${userName} 目前沒有限時動態`);
-                resolve(imgUrls);
-            });
+            }
         }
 
-        await page.waitForSelector(storiesCountClassSelector).catch(e => puppeteerError(e));
-        let count = await page.$$eval(storiesCountClassSelector, div => div.length);
+        await page.waitForSelector(countClass).catch(e => puppeteerError(e));
+        let count = await page.$$eval(countClass, div => div.length);
         let errFlag = false;
         let cacheArr = [];
         for (let index = 0; index < count; index++) {
             if (index === 0) {
-                await page.click(igPauseSelector).catch(e => puppeteerError(e))
+                await page.click(pauseClass).catch(e => puppeteerError(e))
             }
             let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
             let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
@@ -200,9 +211,9 @@ async function getStories(url, forceUpdate = false, uid = '') {
             cacheArr[currentPage] = result;
             imgUrls.push(result);
 
-            if (await page.$(nextStorySelector) !== null) {
+            if (await page.$(nextClass) !== null) {
                 await Promise.all([
-                    page.click(nextStorySelector).catch(e => puppeteerError(e)),
+                    page.click(nextClass).catch(e => puppeteerError(e)),
                     waitForNetworkIdle(page, 500, 0),
                 ]);
 
@@ -221,7 +232,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
             });
         }
 
-        //await browser.close();
+        // await browser.close();
         await page.close();
         if (score >= 75) {
             result.push(`[ADMIN][${score}][${userName}][${url}]`);
