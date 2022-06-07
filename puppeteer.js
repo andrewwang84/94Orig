@@ -7,14 +7,14 @@ const insCookies = require('./config.js')[app.get('env')].insCookies;
 const usernameSelector = 'input[name="username"]';
 const passwordSelector = 'input[name="password"]';
 const loginBtn = 'button[type="submit"]';
-const storyHomeEnterSelector = `#react-root > section > main > div > header > div > div > span`;
-const storiesCountClassSelector = '#react-root > section > div > div > section > div > header > div:nth-child(1) > div';
-const nextStorySelector = '.coreSpriteRightChevron';
-const igPauseSelector = '#react-root > section > div > div > section > div > header > div > div > button:nth-child(1)';
-const storyHomeEnterSelector2 = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > main > div > header > div > div > span`;
-const storiesCountClassSelector2 = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > header > div:first-child`;
-const nextStorySelector2 = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > button > div`;
-const igPauseSelector2 = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > header > div > div > button:nth-child(1) > div`
+const storyHomeEnterSelector2 = `#react-root > section > main > div > header > div > div > span`;
+const storiesCountClassSelector2 = '#react-root > section > div > div > section > div > header > div:nth-child(1) > div';
+const nextStorySelector2 = '.coreSpriteRightChevron';
+const igPauseSelector2 = '#react-root > section > div > div > section > div > header > div > div > button:nth-child(1)';
+const storyHomeEnterSelector = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > main > div > header > div > div > span`;
+const storiesCountClassSelector = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > header > div:first-child > div`;
+const nextStorySelector = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > button > div`;
+const igPauseSelector = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > header > div > div > button:nth-child(1) > div`
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const igMetaTitle = "head > meta[property='og:title']";
 const igConfirmCheckStoryBtn = '#react-root > section > div > div > section > div > div > div > div > div > div > button';
