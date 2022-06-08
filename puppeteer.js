@@ -13,7 +13,7 @@ const nextStorySelector2 = '.coreSpriteRightChevron';
 const igPauseSelector2 = '#react-root > section > div > div > section > div > header > div > div > button:nth-child(1)';
 const storyHomeEnterSelector = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > main > div > header > div > div > span`;
 const storiesCountClassSelector = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > header > div:first-child > div`;
-const nextStorySelector = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > button > div`;
+const nextStorySelector = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > button:last-of-type`;
 const igPauseSelector = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > header > div > div > button:nth-child(1) > div`
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const igMetaTitle = "head > meta[property='og:title']";
