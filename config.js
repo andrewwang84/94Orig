@@ -9,7 +9,8 @@ var config = {
         twitterToken: null,
         adminId: [],
         maintenceMode: true,
-        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0'
+        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0',
+        isHeadless: false
     },
     production: {
         telegramToken: process.env.telegramToken,
@@ -21,7 +22,8 @@ var config = {
         twitterToken: process.env.twitterToken,
         adminId: process.env.adminId,
         maintenceMode: true,
-        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0'
+        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0',
+        isHeadless: true
     }
 }
 
