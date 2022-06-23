@@ -67,7 +67,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
                 if (resArr[i] != '') {
                     if (/mp4|jpe?g|png/.test(resArr[i])) {
                         try {
-                            if (/webp/.test(resArr[i])) {
+                            if (/dst-webp/.test(resArr[i])) {
                                 await bot.sendMessage(chatId, resArr[i], { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
                             } else {
                                 await bot.sendDocument(chatId, resArr[i]);
