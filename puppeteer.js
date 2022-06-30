@@ -18,7 +18,7 @@ const igPauseSelector = `body > div:first-child > div > div:nth-child(1) > div >
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const igMetaTitle = "head > meta[property='og:title']";
 const igConfirmCheckStoryBtn = '#react-root > section > div > div > section > div > div > div > div > div > div > button';
-const igUserNameSelector = '#react-root > section > main > div > div > article > div > div > div > div > div > header > div > div > div > span > a';
+const igUserNameSelector = 'section > main > div > div > article > div > div > div > div > div > header > div > div > div > div > span > a';
 const userAgent = require('./config.js')[app.get('env')].ua;
 const isHeadless = require('./config.js')[app.get('env')].isHeadless;
 let browserWSEndpoint = null;
@@ -446,13 +446,14 @@ async function igUrl(url, uid = '') {
 
         await page.goto(url, { waitUntil: waitUntilMain });
         if (await page.$(usernameSelector)) {
+            await page.goto(loginUrl, { waitUntil: waitUntilMain });
+
             console.log(`[LOG] Start Login`);
-            // login
             await page.click(usernameSelector);
             await page.keyboard.type(insEmail);
             await page.click(passwordSelector);
             await page.keyboard.type(insPass);
-            await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
+            await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntilMinor }));
 
             currentPage = await page.url();
             if (currentPage.search(/\/challenge\//) !== -1) {
