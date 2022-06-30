@@ -39,15 +39,15 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
                 try {
                     start = Date.now();
                     urls[i] = urls[i].replace(/\?\S+/, '');
-                    if (isPup == true) {
+                    // if (isPup == true) {
                         let res = await puppeteer.igUrl(urls[i], uid);
                         imageUrls.push(res);
                         end = Date.now();
                         console.log(`[LOG][IG][${urls[i]}][${(end - start) / 1000}s][${res.length}] Puppeteer Done`);
-                    } else {
-                        let res = await igUrl(urls[i], uid);
-                        imageUrls.push(res);
-                    }
+                    // } else {
+                    //     let res = await igUrl(urls[i], uid);
+                    //     imageUrls.push(res);
+                    // }
                 } catch (error) {
                     console.log(`[ERROR][IG][${urls[i]}]`);
                     throw error;

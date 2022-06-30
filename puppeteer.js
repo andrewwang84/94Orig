@@ -499,11 +499,9 @@ async function igUrl(url, uid = '') {
         }
 
         let count = 1;
-        for (let index = 0; index < 12; index++) {
-            if (await page.$('.coreSpriteRightChevron') !== null) {
-                await page.click('.coreSpriteRightChevron');
-                count++;
-            }
+        while (await page.$('section > main > div > div > article > div > div > div > div > div > div > button:nth-child(2)') !== null) {
+            await page.click('section > main > div > div > article > div > div > div > div > div > div > button:nth-child(2)');
+            count++;
         }
 
         let img = await page.$$eval('article img[decoding="auto"]', e => e.map(img => img.getAttribute('src'))).catch(err => err);
