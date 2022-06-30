@@ -504,8 +504,8 @@ async function igUrl(url, uid = '') {
             count++;
         }
 
-        let img = await page.$$eval('article img[decoding="auto"]', e => e.map(img => img.getAttribute('src'))).catch(err => err);
-        let video = await page.$$eval('article video[type="video/mp4"]', e => e.map(img => img.getAttribute('src'))).catch(err => err);
+        let img = await page.$$eval('article img[decoding="auto"],article ul > li img', e => e.map(img => img.getAttribute('src'))).catch(err => err);
+        let video = await page.$$eval('article video[type="video/mp4"],article ul > li video', e => e.map(img => img.getAttribute('src'))).catch(err => err);
         imgUrls = [].concat(img, video);
 
         if (imgUrls.length < count) {
@@ -513,7 +513,7 @@ async function igUrl(url, uid = '') {
         }
 
         //await browser.close();
-        await page.close();
+        // await page.close();
 
         return new Promise(function (resolve, reject) {
             resolve(imgUrls);
