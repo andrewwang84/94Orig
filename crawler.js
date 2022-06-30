@@ -107,7 +107,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
     });
 }
 
-function igUrl(url, uid = '') {
+function igUrlLegacy(url, uid = '') {
     var result = [];
     var target = '';
     return new Promise(function (resolve, reject) {
@@ -276,7 +276,7 @@ function igUrl(url, uid = '') {
     });
 }
 
-function igUrlLegacy(url, uid = '') {
+function igUrl(url, uid = '') {
     var result = [];
     var target = '';
     return new Promise(function (resolve, reject) {
