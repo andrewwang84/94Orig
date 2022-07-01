@@ -39,15 +39,15 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
                 try {
                     start = Date.now();
                     urls[i] = urls[i].replace(/\?\S+/, '');
-                    // if (isPup == true) {
+                    if (isPup == true) {
                         let res = await puppeteer.igUrl(urls[i], uid);
                         imageUrls.push(res);
                         end = Date.now();
                         console.log(`[LOG][IG][${urls[i]}][${(end - start) / 1000}s][${res.length}] Puppeteer Done`);
-                    // } else {
-                    //     let res = await igUrl(urls[i], uid);
-                    //     imageUrls.push(res);
-                    // }
+                    } else {
+                        let res = await igUrl(urls[i], uid);
+                        imageUrls.push(res);
+                    }
                 } catch (error) {
                     console.log(`[ERROR][IG][${urls[i]}]`);
                     throw error;
@@ -107,7 +107,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
     });
 }
 
-function igUrlLegacy(url, uid = '') {
+function igUrl(url, uid = '') {
     var result = [];
     var target = '';
     return new Promise(function (resolve, reject) {
@@ -115,7 +115,7 @@ function igUrlLegacy(url, uid = '') {
         const j = request.jar();
         const cookie = request.cookie(`sessionid=${insCookies}`);
         j.setCookie(cookie, url);
-        request({ url: `${url}?__a=1`, jar: j }, function (error, response, body) {
+        request({ url: `${url}?__a=1&__d=dis`, jar: j }, function (error, response, body) {
             if (error) reject(error);
 
             if (/<!DOCTYPE/.test(body)) {
@@ -276,7 +276,7 @@ function igUrlLegacy(url, uid = '') {
     });
 }
 
-function igUrl(url, uid = '') {
+function igUrlLegacy(url, uid = '') {
     var result = [];
     var target = '';
     return new Promise(function (resolve, reject) {
