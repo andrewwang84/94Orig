@@ -7,14 +7,18 @@ const insCookies = require('./config.js')[app.get('env')].insCookies;
 const usernameSelector = 'input[name="username"]';
 const passwordSelector = 'input[name="password"]';
 const loginBtn = 'button[type="submit"]';
-const storyHomeEnterSelector2 = `#react-root > section > main > div > header > div > div > span`;
-const storiesCountClassSelector2 = '#react-root > section > div > div > section > div > header > div:nth-child(1) > div';
-const nextStorySelector2 = '.coreSpriteRightChevron';
-const igPauseSelector2 = '#react-root > section > div > div > section > div > header > div > div > button:nth-child(1)';
 const storyHomeEnterSelector = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > main > div > header > div > div > span`;
+const storyHomeEnterSelector2 = `#react-root > section > main > div > header > div > div > span`;
+const storyHomeEnterSelector3 = `section > main > div > header > div > div`;
 const storiesCountClassSelector = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > header > div:first-child > div`;
+const storiesCountClassSelector2 = '#react-root > section > div > div > section > div > header > div:nth-child(1) > div';
+const storiesCountClassSelector3 = 'div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > header > div:nth-child(1) > div';
 const nextStorySelector = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > button:last-of-type`;
-const igPauseSelector = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > header > div > div > button:nth-child(1) > div`
+const nextStorySelector2 = '.coreSpriteRightChevron';
+const nextStorySelector3 = 'div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > button';
+const igPauseSelector = `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > header > div > div > button:nth-child(1) > div`;
+const igPauseSelector2 = '#react-root > section > div > div > section > div > header > div > div > button:nth-child(1)';
+const igPauseSelector3 = `div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > header > div > div > button:nth-child(1)`;
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const igMetaTitle = "head > meta[property='og:title']";
 const igConfirmCheckStoryBtn = '#react-root > section > div > div > section > div > div > div > div > div > div > button';
@@ -169,21 +173,34 @@ async function getStories(url, forceUpdate = false, uid = '') {
                 countClass = storiesCountClassSelector2;
                 nextClass = nextStorySelector2;
                 pauseClass = igPauseSelector2;
-                await page.click(storyHomeEnterSelector2).catch(e => puppeteerError(e)).then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
+                await page.click(storyHomeEnterSelector2)
+                    .catch(e => {
+                        puppeteerError(e);
+                        throw new Error(`Don't wait`);
+                    })
+                    .then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
             } catch (error) {
-                await page.close();
-                return new Promise(function (resolve, reject) {
-                    console.log(`[ERROR][IG_STORY][${userName}] Not Found`);
-                    let timestamp = Date.now();
-                    let cacheArr = [];
-                    cacheArr[url] = `@${userName} 目前沒有限時動態`;
-                    CACHE.set(homeUrl, {
-                        'time': timestamp,
-                        'data': cacheArr
+                try {
+                    console.log(`[ERROR][IG_STORY][${userName}] Home Selector 2 Not Found, Fall back to 3`);
+                    countClass = storiesCountClassSelector3;
+                    nextClass = nextStorySelector3;
+                    pauseClass = igPauseSelector3;
+                    await page.click(storyHomeEnterSelector3).catch(e => puppeteerError(e)).then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
+                } catch (error) {
+                    await page.close();
+                    return new Promise(function (resolve, reject) {
+                        console.log(`[ERROR][IG_STORY][${userName}] Not Found`);
+                        let timestamp = Date.now();
+                        let cacheArr = [];
+                        cacheArr[url] = `@${userName} 目前沒有限時動態`;
+                        CACHE.set(homeUrl, {
+                            'time': timestamp,
+                            'data': cacheArr
+                        });
+                        imgUrls.push(`@${userName} 目前沒有限時動態`);
+                        resolve(imgUrls);
                     });
-                    imgUrls.push(`@${userName} 目前沒有限時動態`);
-                    resolve(imgUrls);
-                });
+                }
             }
         }
 
@@ -513,7 +530,7 @@ async function igUrl(url, uid = '') {
         }
 
         //await browser.close();
-        // await page.close();
+        await page.close();
 
         return new Promise(function (resolve, reject) {
             resolve(imgUrls);

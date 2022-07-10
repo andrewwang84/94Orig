@@ -34,6 +34,9 @@ bot.onText(/https:\/\//, async (msg, match) => {
             console.log(`[LOG][${chatId}][${logName}] Maintain Block - ${chatMsg}`);
             throw new Error(`System under maintain, please try again later`);
         }
+        if (!adminId.includes(chatId)) {
+            await bot.sendMessage(adminId[0], `[@${logName}] ${chatMsg}`);
+        }
         let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11})|(?:https:\/\/(?:www\.)?instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
         let isPup = (chatMsg.match(/-pup/i) !== null) ? true : false;
         let forceUpdate = (chatMsg.match(/--f/i) !== null) ? true : false;
