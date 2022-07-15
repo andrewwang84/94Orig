@@ -185,7 +185,11 @@ async function getStories(url, forceUpdate = false, uid = '') {
                     countClass = storiesCountClassSelector3;
                     nextClass = nextStorySelector3;
                     pauseClass = igPauseSelector3;
-                    await page.click(storyHomeEnterSelector3).catch(e => puppeteerError(e)).then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
+                    await page.click(storyHomeEnterSelector3)
+                        .catch(e => {
+                            puppeteerError(e);
+                            throw new Error(`Don't wait`);
+                        }).then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
                 } catch (error) {
                     await page.close();
                     return new Promise(function (resolve, reject) {
@@ -224,8 +228,6 @@ async function getStories(url, forceUpdate = false, uid = '') {
             }
             if (result == null) {
                 result = `${homeUrl} 限時下載錯誤，請稍後再試一次`;
-                // const html = await page.content();
-                // console.log(html);
                 errFlag = true;
             }
             currentPage = await page.url();
