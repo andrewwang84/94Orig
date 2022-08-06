@@ -135,13 +135,14 @@ function igUrl(url, uid = '') {
                 target = data.items;
             } else {
                 type = TYPE_GRAPHQL;
-                target = data.graphql.shortcode_media;
+                target = data.graphql;
             }
             if (target == undefined) {
                 console.log(target);
                 reject('錯誤:找不到 Data');
                 return;
             }
+            target = target.shortcode_media;
 
             let userName = '';
             if (type == TYPE_FANSPAGE) {
