@@ -133,22 +133,21 @@ function igUrl(url, uid = '') {
             let type = TYPE_FANSPAGE;
             if (data.items != undefined) {
                 target = data.items;
-            } else {
+            } else if (data.graphql != undefined) {
                 type = TYPE_GRAPHQL;
                 target = data.graphql;
-            }
-            if (target == undefined) {
-                console.log(target);
+            } else {
+                console.log(data);
                 reject('錯誤:找不到 Data');
                 return;
             }
-            target = target.shortcode_media;
 
             let userName = '';
             if (type == TYPE_FANSPAGE) {
                 target = target[0];
                 userName = target.user.username;
             } else if (type == TYPE_GRAPHQL) {
+                target = target.shortcode_media;
                 userName = target.owner.username;
             }
 
