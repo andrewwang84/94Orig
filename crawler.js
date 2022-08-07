@@ -23,7 +23,6 @@ let getImage = async (urls, isPup = false, forceUpdate = false, uid = '') => {
         const data = await prepareData(urls, isPup, forceUpdate, uid);
         return data;
     } catch (error) {
-        console.error(`[ERROR] ${error}`);
         return new Promise(function (resolve, reject) {
             reject(error);
         });
@@ -39,6 +38,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
                 try {
                     start = Date.now();
                     urls[i] = urls[i].replace(/\?\S+/, '');
+                    urls[i] = urls[i].replace(/\/(?:tv|reel)\//, '/p/');
                     if (isPup == true) {
                         let res = await puppeteer.igUrl(urls[i], uid);
                         imageUrls.push(res);

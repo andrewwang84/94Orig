@@ -68,6 +68,8 @@ bot.onText(/https:\/\//, async (msg, match) => {
 
             for (var i = 0; i < resArr.length; i++) {
                 if (resArr[i] != '') {
+                    console.log(resArr[i]);
+                    continue;
                     if (/mp4|jpe?g|png/.test(resArr[i]) && adminId.includes(chatId)) {
                         try {
                             if (/dst-webp/.test(resArr[i])) {
