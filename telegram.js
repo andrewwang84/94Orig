@@ -158,6 +158,9 @@ bot.onText(/\/relogin/, async (msg) => {
 
         bot.sendMessage(chatId, res);
     } catch (error) {
+        const html = await page.content();
+        console.log(html);
+        await page.close();
         console.log(error);
         bot.sendMessage(chatId, `登入失敗`);
     }
