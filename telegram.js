@@ -136,7 +136,7 @@ bot.onText(/\/relogin/, async (msg) => {
         await page.keyboard.type(insPass);
         const html = await page.content();
         console.log(html);
-        await page.click(loginBtn).catch(e => e).then(() => {
+        await page.click(loginBtn).catch(e => e).then(async () => {
             const html = await page.content();
             console.log(html);
             page.waitForNavigation({ waitUntil: waitUntilMain })
