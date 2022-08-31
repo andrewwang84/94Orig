@@ -158,6 +158,10 @@ bot.onText(/\/relogin/, async (msg) => {
 
         bot.sendMessage(chatId, res);
     } catch (error) {
+        await puppeteerfunc.getBrowser();
+        const browser = await puppeteer.connect({ browserWSEndpoint });
+        const pages = await browser.pages();
+        const page = pages[1];
         const html = await page.content();
         console.log(html);
         await page.close();
@@ -215,7 +219,12 @@ bot.onText(/\/verify/, async (msg) => {
 
         bot.sendMessage(chatId, res);
     } catch (error) {
-        console.log(error);
+        await puppeteerfunc.getBrowser();
+        const browser = await puppeteer.connect({ browserWSEndpoint });
+        const pages = await browser.pages();
+        const page = pages[1];
+        const html = await page.content();
+        console.log(html);
         await page.close();
         bot.sendMessage(chatId, `登入失敗`);
     }
