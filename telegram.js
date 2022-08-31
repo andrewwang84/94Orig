@@ -18,6 +18,7 @@ const insEmail = require('./config.js')[app.get('env')].insEmail;
 const insPass = require('./config.js')[app.get('env')].insPass;
 const usernameSelector = 'input[name="username"]';
 const passwordSelector = 'input[name="password"]';
+const saveLoginDataSelector = 'section > div button';
 const loginBtn = 'button[type="submit"]';
 const sendVerifyBtn = `#react-root > section > main > div > div > div > div > div > div:nth-child(2) > div > div:nth-child(2) > div`;
 const verifyInputSelector = `#react-root > section > main > div > div > div > div > div > div > div > div:nth-child(3) > div > div > input`;
@@ -133,13 +134,16 @@ bot.onText(/\/relogin/, async (msg) => {
         await page.keyboard.type(insEmail);
         await page.click(passwordSelector);
         await page.keyboard.type(insPass);
-        await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntilMinor }));
+        await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
 
         currentPage = await page.url();
         if (currentPage.search(/\/challenge\//) !== -1) {
             await page.click(sendVerifyBtn);
             bot.sendMessage(chatId, `請到信箱 (${insEmail}) 收取驗證碼並輸入以下指令\n\\verify [驗證碼]`);
             return;
+        }
+        if ((await page.$(saveLoginDataSelector)) != null) {
+            await page.click(saveLoginDataSelector);
         }
 
         let cookies = await page.cookies();
@@ -182,6 +186,10 @@ bot.onText(/\/verify/, async (msg) => {
         await page.click(verifyInputBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntilMinor }));
 
         await page.click(confirmDataBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntilMinor }));
+
+        if ((await page.$(saveLoginDataSelector)) != null) {
+            await page.click(saveLoginDataSelector);
+        }
 
         currentPage = await page.url();
         if (currentPage.search(/\/accounts\/edit\//) == -1) {
