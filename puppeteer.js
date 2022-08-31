@@ -34,6 +34,7 @@ const igConfirmCheckStoryBtn = '#react-root > section > div > div > section > di
 const igUserNameSelector = 'section > main > div > div > article > div > div > div > div > div > header > div > div > div > div > span > a';
 const userAgent = require('./config.js')[app.get('env')].ua;
 const isHeadless = require('./config.js')[app.get('env')].isHeadless;
+// const isHeadless = true;
 let browserWSEndpoint = null;
 const waitUntilMain = 'networkidle0';
 const waitUntilMinor = 'domcontentloaded';

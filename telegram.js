@@ -134,7 +134,13 @@ bot.onText(/\/relogin/, async (msg) => {
         await page.keyboard.type(insEmail);
         await page.click(passwordSelector);
         await page.keyboard.type(insPass);
-        await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
+        const html = await page.content();
+        console.log(html);
+        await page.click(loginBtn).catch(e => e).then(() => {
+            const html = await page.content();
+            console.log(html);
+            page.waitForNavigation({ waitUntil: waitUntilMain })
+        });
 
         currentPage = await page.url();
         if (currentPage.search(/\/challenge\//) !== -1) {
