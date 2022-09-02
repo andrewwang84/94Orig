@@ -13,20 +13,19 @@ const storyHomeEnterSelector = [
     `section > main > div > header > div > div`
 ];
 const storiesCountClassSelector = [
-    `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > header > div:first-child > div`,
+    `div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div:nth-child(1) > div`,
     `#react-root > section > div > div > section > div > header > div:nth-child(1) > div`,
     'div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > header > div:nth-child(1) > div'
 ];
-
-const nextStorySelector = [
-    `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > button:last-of-type`,
-    '.coreSpriteRightChevron',
-    'div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > button:last-of-type'
-];
 const igPauseSelector = [
-    `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > div > div > section > div > header > div > div > button:nth-child(1) > div`,
+    `div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div > div > button:nth-child(1)`,
     '#react-root > section > div > div > section > div > header > div > div > button:nth-child(1)',
     `div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > header > div > div > button:nth-child(1)`
+];
+const nextStorySelector = [
+    `div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > button:last-of-type`,
+    '.coreSpriteRightChevron',
+    'div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > button:last-of-type'
 ];
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const igMetaTitle = "head > meta[property='og:title']";
@@ -249,7 +248,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
         }
 
         // await browser.close();
-        await page.close();
+        // await page.close();
         if (score >= 75) {
             result.push(`[ADMIN][${score}][${userName}][${url}]`);
         }
