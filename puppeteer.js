@@ -130,26 +130,6 @@ async function getStories(url, forceUpdate = false, uid = '') {
         });
 
         await page.goto(homeUrl, { waitUntil: waitUntilMain });
-        // login
-        if (await page.$(usernameSelector)) {
-            await page.goto(loginUrl, { waitUntil: waitUntilMain });
-
-            console.log(`[LOG] Start Login`);
-            await page.click(usernameSelector);
-            await page.keyboard.type(insEmail);
-            await page.click(passwordSelector);
-            await page.keyboard.type(insPass);
-            await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntilMinor }));
-
-            currentPage = await page.url();
-            if (currentPage.search(/\/challenge\//) !== -1) {
-                await page.close();
-                return new Promise(function (resolve, reject) {
-                    imgUrls.push(`請重新驗證帳號喔QQ`);
-                    resolve(imgUrls);
-                });
-            }
-        }
         if (await page.$(privateAccSelector)) {
             await page.close();
             return new Promise(function (resolve, reject) {
@@ -340,26 +320,6 @@ async function getStoriesHighlight(url, forceUpdate = false, uid = '') {
         }
 
         console.info(`[LOG][IG_STORY_Highlight][${userName}]Start`);
-        // login
-        if (await page.$(usernameSelector)) {
-            await page.goto(loginUrl, { waitUntil: waitUntilMain });
-
-            console.log(`[LOG] Start Login`);
-            await page.click(usernameSelector);
-            await page.keyboard.type(insEmail);
-            await page.click(passwordSelector);
-            await page.keyboard.type(insPass);
-            await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntilMinor }));
-
-            currentPage = await page.url();
-            if (currentPage.search(/\/challenge\//) !== -1) {
-                await page.close();
-                return new Promise(function (resolve, reject) {
-                    imgUrls.push(`請重新驗證帳號喔QQ`);
-                    resolve(imgUrls);
-                });
-            }
-        }
         if (await page.$(privateAccSelector)) {
             await page.close();
             return new Promise(function (resolve, reject) {
