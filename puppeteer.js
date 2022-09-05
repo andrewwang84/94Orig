@@ -228,7 +228,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
         }
 
         // await browser.close();
-        // await page.close();
+        await page.close();
         if (score >= 75) {
             result.push(`[ADMIN][${score}][${userName}][${url}]`);
         }
@@ -274,7 +274,6 @@ async function getStoriesHighlight(url, forceUpdate = false, uid = '') {
         let ogTitle = await page.$eval(igMetaTitle, element => element.content);
         let userName = ogTitle.slice(ogTitle.lastIndexOf('@') + 1);
         let storyBaseUrl = await page.url();
-        let loginUrl = `https://www.instagram.com/accounts/login/?next=%2F${userName}%2F`;
         let imgUrls = [];
 
         if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
@@ -379,7 +378,7 @@ async function getStoriesHighlight(url, forceUpdate = false, uid = '') {
             });
         }
 
-        // await page.close();
+        await page.close();
         if (score >= 75) {
             result.push(`[ADMIN][${score}][${userName}][${storyBaseUrl}]`);
         }
