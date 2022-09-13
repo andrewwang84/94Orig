@@ -229,7 +229,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
         }
 
         // await browser.close();
-        await page.close();
+        // await page.close();
         if (score >= 75) {
             result.push(`[ADMIN][${score}][${userName}][${url}]`);
         }
@@ -381,7 +381,7 @@ async function getStoriesHighlight(url, forceUpdate = false, uid = '') {
             });
         }
 
-        await page.close();
+        // await page.close();
         if (score >= 75) {
             result.push(`[ADMIN][${score}][${userName}][${storyBaseUrl}]`);
         }
@@ -391,7 +391,7 @@ async function getStoriesHighlight(url, forceUpdate = false, uid = '') {
         });
     } catch (error) {
         console.log(error);
-        await page.close();
+        // await page.close();
         return new Promise(function (resolve, reject) {
             resolve([`${storyBaseUrl} 發生錯誤，請再試一次`]);
         });
@@ -488,7 +488,7 @@ async function igUrl(url, uid = '') {
         }
 
         //await browser.close();
-        await page.close();
+        // await page.close();
 
         return new Promise(function (resolve, reject) {
             resolve(imgUrls);
