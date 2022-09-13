@@ -55,72 +55,73 @@ async function getStories(url, forceUpdate = false, uid = '') {
     let storiesUrl = (storyId == null) ? null : `https://www.instagram.com/stories/${userName}/${storyId}/`;
     let homeUrl = `https://www.instagram.com/${userName}/`;
     let imgUrls = [];
-    try {
-        if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
-            return new Promise(function (resolve, reject) {
-                console.log(`[LOG][IG_Story][Blink_Block][${url}]`);
-                resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-                return;
-            });
-        }
-        let score = 0;
-        userName = userName.toLowerCase();
-        for (const key in block.greyList) {
-            if (userName.search(key) !== -1) {
-                score += parseInt(block.greyList[key]);
-            }
-        }
-        if (score >= 150) {
-            console.log(`[LOG][IG_Story][Blink_Block][${score}][${url}]`);
-            resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-            return;
-        }
-        if (score >= 60 && block.blinkIds.includes(uid)) {
-            console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
-            resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-            return;
-        }
 
-        // get Cache
-        if (CACHE.has(homeUrl) && !forceUpdate) {
-            console.info(`[LOG][IG_STORY]Get Story From Cache`);
-            let timestamp = Date.now();
-            let cache = CACHE.get(homeUrl);
-            if (timestamp - cache.time > 30 * 60 * 1000) {
-                console.info(`[LOG][IG_STORY]Cache Outdated, Delete Cache`);
-                CACHE.delete(homeUrl);
-            } else {
-                let data = cache.data;
-                let result = [];
-                if (storiesUrl !== null) {
-                    if (data[storiesUrl] != undefined || data[storiesUrl] != '') {
-                        result.push(data[storiesUrl]);
-                        return new Promise(function (resolve, reject) {
-                            resolve(result);
-                        });
-                    }
-                } else {
-                    for (const key in data) {
-                        result.push(data[key]);
-                    }
+    if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
+        return new Promise(function (resolve, reject) {
+            console.log(`[LOG][IG_Story][Blink_Block][${url}]`);
+            resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+            return;
+        });
+    }
+    let score = 0;
+    userName = userName.toLowerCase();
+    for (const key in block.greyList) {
+        if (userName.search(key) !== -1) {
+            score += parseInt(block.greyList[key]);
+        }
+    }
+    if (score >= 150) {
+        console.log(`[LOG][IG_Story][Blink_Block][${score}][${url}]`);
+        resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+        return;
+    }
+    if (score >= 60 && block.blinkIds.includes(uid)) {
+        console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
+        resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
+        return;
+    }
+
+    // get Cache
+    if (CACHE.has(homeUrl) && !forceUpdate) {
+        console.info(`[LOG][IG_STORY]Get Story From Cache`);
+        let timestamp = Date.now();
+        let cache = CACHE.get(homeUrl);
+        if (timestamp - cache.time > 30 * 60 * 1000) {
+            console.info(`[LOG][IG_STORY]Cache Outdated, Delete Cache`);
+            CACHE.delete(homeUrl);
+        } else {
+            let data = cache.data;
+            let result = [];
+            if (storiesUrl !== null) {
+                if (data[storiesUrl] != undefined || data[storiesUrl] != '') {
+                    result.push(data[storiesUrl]);
                     return new Promise(function (resolve, reject) {
                         resolve(result);
                     });
                 }
+            } else {
+                for (const key in data) {
+                    result.push(data[key]);
+                }
+                return new Promise(function (resolve, reject) {
+                    resolve(result);
+                });
             }
         }
+    }
 
-        await getBrowser();
-        const browser = await puppeteer.connect({ browserWSEndpoint });
+    await getBrowser();
+    const browser = await puppeteer.connect({ browserWSEndpoint });
 
-        const cookie = {
-            name: "sessionid",
-            value: insCookies,
-            path: "/",
-            domain: ".instagram.com",
-        };
+    const cookie = {
+        name: "sessionid",
+        value: insCookies,
+        path: "/",
+        domain: ".instagram.com",
+    };
 
-        const page = await browser.newPage();
+    const page = await browser.newPage();
+    try {
         await page.setCookie(cookie);
         await page.setUserAgent(userAgent);
         await page.setRequestInterception(true);
@@ -245,22 +246,24 @@ async function getStories(url, forceUpdate = false, uid = '') {
         return new Promise(function (resolve, reject) {
             resolve([`${homeUrl} 發生錯誤，請再試一次`]);
         });
+    } finally {
+        await page.close();
     }
 }
 
 async function getStoriesHighlight(url, forceUpdate = false, uid = '') {
+    await getBrowser('IG_STORY_Highlight');
+    const browser = await puppeteer.connect({ browserWSEndpoint });
+
+    const cookie = {
+        name: "sessionid",
+        value: insCookies,
+        path: "/",
+        domain: ".instagram.com",
+    };
+
+    const page = await browser.newPage();
     try {
-        await getBrowser('IG_STORY_Highlight');
-        const browser = await puppeteer.connect({ browserWSEndpoint });
-
-        const cookie = {
-            name: "sessionid",
-            value: insCookies,
-            path: "/",
-            domain: ".instagram.com",
-        };
-
-        const page = await browser.newPage();
         await page.setCookie(cookie);
         await page.setUserAgent(userAgent);
         await page.setRequestInterception(true);
@@ -392,25 +395,27 @@ async function getStoriesHighlight(url, forceUpdate = false, uid = '') {
         return new Promise(function (resolve, reject) {
             resolve([`${storyBaseUrl} 發生錯誤，請再試一次`]);
         });
+    } finally {
+        await page.close();
     }
 }
 
 async function igUrl(url, uid = '') {
     console.log(`[LOG] Get IG from Puppeteer`);
+    let imgUrls = [];
+
+    await getBrowser('IG');
+    const browser = await puppeteer.connect({ browserWSEndpoint });
+
+    const cookie = {
+        name: "sessionid",
+        value: insCookies,
+        path: "/",
+        domain: ".instagram.com",
+    };
+
+    const page = await browser.newPage();
     try {
-        let imgUrls = [];
-
-        await getBrowser('IG');
-        const browser = await puppeteer.connect({ browserWSEndpoint });
-
-        const cookie = {
-            name: "sessionid",
-            value: insCookies,
-            path: "/",
-            domain: ".instagram.com",
-        };
-
-        const page = await browser.newPage();
         await page.setCookie(cookie);
         await page.setUserAgent(userAgent);
 
@@ -493,6 +498,8 @@ async function igUrl(url, uid = '') {
         return new Promise(function (resolve, reject) {
             resolve([`${url} 發生錯誤，請再試一次`]);
         });
+    } finally {
+        await page.close();
     }
 }
 
