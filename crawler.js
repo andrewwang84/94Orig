@@ -99,7 +99,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
             }
         }
 
-        await timerP.setTimeout(500);
+        await timerP.setTimeout(1000);
     }
 
     return new Promise(function (resolve, reject) {

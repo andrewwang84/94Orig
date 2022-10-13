@@ -1,6 +1,7 @@
 const puppeteer = require('puppeteer');
 var app = require('express')();
 const block = require('./block.js');
+const timerP = require('node:timers/promises');
 const insEmail = require('./config.js')[app.get('env')].insEmail;
 const insPass = require('./config.js')[app.get('env')].insPass;
 const insCookies = require('./config.js')[app.get('env')].insCookies;
@@ -217,6 +218,8 @@ async function getStories(url, forceUpdate = false, uid = '') {
                     break;
                 }
             }
+
+            await timerP.setTimeout(500);
         }
 
         if (!errFlag) {
@@ -229,7 +232,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
         }
 
         // await browser.close();
-        // await page.close();
+        await page.close();
         if (score >= 75) {
             result.push(`[ADMIN][${score}][${userName}][${url}]`);
         }
