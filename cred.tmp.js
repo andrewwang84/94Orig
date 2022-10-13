@@ -4,8 +4,6 @@ var cred = {
     insCookies: "",
     insEmail: "",
     botName: "",
-    lineAccessToken: "",
-    lineSecret: "",
     twitterToken: ""
 }
 module.exports = cred;

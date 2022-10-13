@@ -16,9 +16,6 @@
 - [X] IG Story video
 - [X] Twitter image
 - [X] Twitter video
-- [X] Error handling
-- [X] Web
-- [X] Line
 
 ## Input
 
@@ -30,19 +27,14 @@
   - https://twitter.com/[userName]/status/[postId]
 - Seperate multi urls with new line
 
-## Try it on Heroku
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
-
-#### in order to let the bot work, set up the following vars in heroku setting
+#### in order to let the bot work, set up the following vars in cred.tmp.js
 
 - insCookies: [instagram login cookie]
 - insPass: [instagram account password]
 - insEmail: [instagram account email]
 - NODE_ENV: production
 - telegramToken: [telegram bot token, you can recieve it from bot father]
-- lineAccessToken: [line bot token]
-- lineSecret: [line bot secret]
 - twitterToken: [twitter bearer token for api access]
 
 cause the region difference, I highly recommend not to use your own instagram account in this bot
