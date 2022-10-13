@@ -204,6 +204,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
                 result = `${homeUrl} 限時下載錯誤，請稍後再試一次`;
                 errFlag = true;
             }
+            console.log(result);
             currentPage = await page.url();
             cacheArr[currentPage] = result;
             imgUrls.push(result);
@@ -219,7 +220,9 @@ async function getStories(url, forceUpdate = false, uid = '') {
                 }
             }
 
-            await timerP.setTimeout(500);
+            console.log('wait');
+            await timerP.setTimeout(1000);
+            console.log('end wait');
         }
 
         if (!errFlag) {
@@ -232,7 +235,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
         }
 
         // await browser.close();
-        await page.close();
+        // await page.close();
         if (score >= 75) {
             result.push(`[ADMIN][${score}][${userName}][${url}]`);
         }
