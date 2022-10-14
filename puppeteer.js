@@ -190,8 +190,8 @@ async function getStories(url, forceUpdate = false, uid = '') {
             if (index === 0) {
                 await page.click(pauseClass).catch(e => puppeteerError(e))
             }
-            let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
-            let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
+            let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => console.log(err));
+            let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => console.log(err));
             let result = null;
             if (/Error:/.test(video) && /Error:/.test(img)) {
                 result = null;
@@ -201,6 +201,8 @@ async function getStories(url, forceUpdate = false, uid = '') {
                 result = video;
             }
             if (result == null) {
+                console.log(img);
+                console.log(video);
                 result = `${homeUrl} 限時下載錯誤，請稍後再試一次`;
                 errFlag = true;
             }
