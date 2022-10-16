@@ -480,7 +480,7 @@ function twitterUrl(url, uid = '') {
             return;
         }
 
-        request.get(`https://api.twitter.com/2/tweets?ids=${id}&media.fields=type,url&expansions=attachments.media_keys`, {
+        request.get(`https://api.twitter.com/2/tweets/${id}?tweet.fields=attachments&media.fields=type,url,variants&expansions=attachments.media_keys`, {
             'auth': {
                 'bearer': twitterToken
             }
@@ -490,9 +490,21 @@ function twitterUrl(url, uid = '') {
             let result = [];
             for (let i = 0; i < media.length; i++) {
                 let data = media[i];
-                if (data.url == undefined) {
-                    let vid = await twitterVid(id);
-                    result.push(vid);
+                if (data.type == 'video') {
+                    let videos = data.variants;
+                    let bitrate = 0;
+                    let vidUrl = '';
+                    for (const key in videos) {
+                        let elem = videos[key];
+                        if (elem.bit_rate == undefined) {
+                            continue;
+                        }
+                        if (elem.bit_rate > bitrate) {
+                            vidUrl = elem.url;
+                            bitrate = elem.bit_rate;
+                        }
+                    }
+                    result.push(vidUrl);
                 } else {
                     result.push(`${data.url}:orig`);
                 }
