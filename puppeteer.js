@@ -190,8 +190,8 @@ async function getStories(url, forceUpdate = false, uid = '') {
             if (index === 0) {
                 await page.click(pauseClass).catch(e => puppeteerError(e))
             }
-            let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => console.log(err));
-            let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => console.log(err));
+            let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
+            let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
             let result = null;
             if (/Error:/.test(video) && /Error:/.test(img)) {
                 result = null;
