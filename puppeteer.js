@@ -21,7 +21,7 @@ const storiesCountClassSelector = [
 const igPauseSelector = [
     `div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div > div > button:nth-child(1)`,
     '#react-root > section > div > div > section > div > header > div > div > button:nth-child(1)',
-    `div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > header > div > div > button:nth-child(1)`
+    `div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div > div > button:nth-child(1)`
 ];
 const nextStorySelector = [
     `div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > button:last-of-type`,
@@ -191,21 +191,21 @@ async function getStories(url, forceUpdate = false, uid = '') {
                 await page.click(pauseClass).catch(e => puppeteerError(e))
             }
             let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
-            let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
-            console.log(typeof img);
-            console.log(img);
-            console.log(typeof video);
-            console.log(video);
+            let video1 = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
+            let video2 = await page.$eval('video[preload="none"]', e => e.getAttribute('src')).catch(err => err);
             let result = null;
-            if (/Error:/.test(video) && /Error:/.test(img)) {
-                result = null;
-            } else if (/Error:/.test(video)) {
+            if (typeof img == 'string') {
                 result = img;
+            } else if (typeof video1 == 'string') {
+                result = video1;
+            } else if (typeof video2 == 'string') {
+                result = video2;
             } else {
-                result = video;
+                result = null;
             }
             if (result == null) {
                 result = `${url} 限時下載錯誤，請稍後再試一次`;
+                console.log(result);
                 errFlag = true;
             }
 
