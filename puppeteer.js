@@ -192,6 +192,10 @@ async function getStories(url, forceUpdate = false, uid = '') {
             }
             let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
             let video = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
+            console.log(typeof img);
+            console.log(img);
+            console.log(typeof video);
+            console.log(video);
             let result = null;
             if (/Error:/.test(video) && /Error:/.test(img)) {
                 result = null;
@@ -201,9 +205,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
                 result = video;
             }
             if (result == null) {
-                console.log(img);
-                console.log(video);
-                result = `${homeUrl} 限時下載錯誤，請稍後再試一次`;
+                result = `${url} 限時下載錯誤，請稍後再試一次`;
                 errFlag = true;
             }
 
