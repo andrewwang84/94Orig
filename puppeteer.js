@@ -30,7 +30,7 @@ const nextStorySelector = [
 ];
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const igMetaTitle = "head > meta[property='og:title']";
-const igConfirmCheckStoryBtn = '#react-root > section > div > div > section > div > div > div > div > div > div > button';
+const igConfirmCheckStoryBtn = 'div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > div > div > div > div > div > button';
 const igUserNameSelector = 'section > main > div > div > article > div > div > div > div > div > header > div > div > div > div > span > a';
 const userAgent = require('./config.js')[app.get('env')].ua;
 const isHeadless = require('./config.js')[app.get('env')].isHeadless;
@@ -190,6 +190,12 @@ async function getStories(url, forceUpdate = false, uid = '') {
             if (index === 0) {
                 await page.click(pauseClass).catch(e => puppeteerError(e))
             }
+            if (await page.$(igConfirmCheckStoryBtn) !== null) {
+                await Promise.all([
+                    page.click(igConfirmCheckStoryBtn).catch(e => puppeteerError(e)),
+                    waitForNetworkIdle(page, 500, 0),
+                ]);
+            }
             let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
             let video1 = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
             let video2 = await page.$eval('video[preload="none"]', e => e.getAttribute('src')).catch(err => err);
@@ -206,6 +212,8 @@ async function getStories(url, forceUpdate = false, uid = '') {
             if (result == null) {
                 result = `${url} 限時下載錯誤，請稍後再試一次`;
                 console.log(result);
+                const html = await page.content();
+                console.log(html);
                 errFlag = true;
             }
 
