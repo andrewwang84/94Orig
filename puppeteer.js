@@ -28,6 +28,7 @@ const nextStorySelector = [
     '.coreSpriteRightChevron',
     'div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > button:last-of-type'
 ];
+const igShareDialog = `div > div > div > div:nth-child(4) > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div:nth-child(1) > button`;
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const igMetaTitle = "head > meta[property='og:title']";
 const igConfirmCheckStoryBtn = 'div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > div > div > div > div > div > button';
@@ -193,6 +194,12 @@ async function getStories(url, forceUpdate = false, uid = '') {
             if (await page.$(igConfirmCheckStoryBtn) !== null) {
                 await Promise.all([
                     page.click(igConfirmCheckStoryBtn).catch(e => puppeteerError(e)),
+                    waitForNetworkIdle(page, 500, 0),
+                ]);
+            }
+            if (await page.$(igShareDialog) !== null) {
+                await Promise.all([
+                    page.click(igShareDialog).catch(e => puppeteerError(e)),
                     waitForNetworkIdle(page, 500, 0),
                 ]);
             }
