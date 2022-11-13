@@ -189,19 +189,22 @@ async function getStories(url, forceUpdate = false, uid = '') {
         let cacheArr = [];
         for (let index = 0; index < count; index++) {
             if (index === 0) {
-                await page.click(pauseClass).catch(e => puppeteerError(e))
+                await page.click(pauseClass).catch(e => puppeteerError(e));
+                await timerP.setTimeout(1000);
             }
             if (await page.$(igConfirmCheckStoryBtn) !== null) {
                 await Promise.all([
                     page.click(igConfirmCheckStoryBtn).catch(e => puppeteerError(e)),
                     waitForNetworkIdle(page, 500, 0),
                 ]);
+                await timerP.setTimeout(1000);
             }
             if (await page.$(igShareDialog) !== null) {
                 await Promise.all([
                     page.click(igShareDialog).catch(e => puppeteerError(e)),
                     waitForNetworkIdle(page, 500, 0),
                 ]);
+                await timerP.setTimeout(1000);
             }
             let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
             let video1 = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
@@ -229,6 +232,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
             imgUrls.push(result);
 
             if (await page.$(nextClass) !== null) {
+                await timerP.setTimeout(1000);
                 await Promise.all([
                     page.click(nextClass).catch(e => puppeteerError(e)),
                     waitForNetworkIdle(page, 500, 0),
@@ -238,8 +242,6 @@ async function getStories(url, forceUpdate = false, uid = '') {
                     break;
                 }
             }
-
-            await timerP.setTimeout(1000);
         }
 
         if (!errFlag) {
