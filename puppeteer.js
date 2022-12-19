@@ -446,23 +446,11 @@ async function igUrl(url, uid = '') {
 
         await page.goto(url, { waitUntil: waitUntilMain });
         if (await page.$(usernameSelector)) {
-            await page.goto(loginUrl, { waitUntil: waitUntilMain });
-
-            console.log(`[LOG] Start Login`);
-            await page.click(usernameSelector);
-            await page.keyboard.type(insEmail);
-            await page.click(passwordSelector);
-            await page.keyboard.type(insPass);
-            await page.click(loginBtn).catch(e => e).then(() => page.waitForNavigation({ waitUntil: waitUntilMinor }));
-
-            currentPage = await page.url();
-            if (currentPage.search(/\/challenge\//) !== -1) {
-                await page.close();
-                return new Promise(function (resolve, reject) {
-                    imgUrls.push(`請重新驗證帳號喔QQ`);
-                    resolve(imgUrls);
-                });
-            }
+            await page.close();
+            return new Promise(function (resolve, reject) {
+                imgUrls.push(`登入失效`);
+                resolve(imgUrls);
+            });
         }
 
         const html = await page.content();
