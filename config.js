@@ -8,8 +8,8 @@ var config = {
         adminId: [],
         maintenceMode: true,
         ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0',
-        isHeadless: false,
-        // isHeadless: true
+        // isHeadless: false,
+        isHeadless: true
     },
     production: {
         telegramToken: process.env.telegramToken,

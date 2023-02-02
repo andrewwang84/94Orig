@@ -157,7 +157,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
             try {
                 await page.click(tmpHomeEnter)
                     .catch(e => {
-                        puppeteerError(e);
+                        // puppeteerError(e);
                         throw new Error(`Don't wait`);
                     })
                     .then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
@@ -216,9 +216,8 @@ async function getStories(url, forceUpdate = false, uid = '') {
                 result = video1;
             } else if (typeof video2 == 'string') {
                 result = video2;
-            } else {
-                result = null;
             }
+
             if (result == null) {
                 result = `${url} 限時下載錯誤，請稍後再試一次`;
                 console.log(result);
