@@ -3,20 +3,22 @@ var app = require('express')();
 const timerP = require('node:timers/promises');
 const insCookies = require('./config.js')[app.get('env')].insCookies;
 const storyHomeEnterSelector = [
-    `#react-root > section > main > div > header > div > div > span`,
     `section > main > div > header > div > div`
 ];
 const storiesCountClassSelector = [
-    `#react-root > section > div > div > section > div > header > div:nth-child(1) > div`,
     'div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > header > div:nth-child(1) > div'
 ];
 const igPauseSelector = [
-    '#react-root > section > div > div > section > div > header > div > div > button:nth-child(1)',
     `div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div > div > button:nth-child(1)`
 ];
 const nextStorySelector = [
-    '.coreSpriteRightChevron',
     'div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > button:last-of-type'
+];
+const storySwitchSelector = [
+    'div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > button'
+];
+const prevStorySelector = [
+    'div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > button:first-of-type'
 ];
 const igShareDialog = `div > div > div > div:nth-child(4) > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div:nth-child(1) > button`;
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
@@ -169,6 +171,33 @@ async function getStories(url, forceUpdate = false, uid = '') {
                 ]);
                 await timerP.setTimeout(1000);
             }
+
+            let switchCount = await page.$$eval(storySwitchSelector, btn => btn.length);
+            while (index === 0 && switchCount > 1) {
+                if (await page.$(igConfirmCheckStoryBtn) !== null) {
+                    await Promise.all([
+                        page.click(igConfirmCheckStoryBtn).catch(e => puppeteerError(e)),
+                        waitForNetworkIdle(page, 500, 0),
+                    ]);
+                    await timerP.setTimeout(500);
+                }
+                if (await page.$(igShareDialog) !== null) {
+                    await Promise.all([
+                        page.click(igShareDialog).catch(e => puppeteerError(e)),
+                        waitForNetworkIdle(page, 500, 0),
+                    ]);
+                    await timerP.setTimeout(500);
+                }
+
+                await Promise.all([
+                    page.click(prevStorySelector).catch(e => puppeteerError(e)),
+                    waitForNetworkIdle(page, 500, 0),
+                ]);
+                await timerP.setTimeout(500);
+
+                switchCount = await page.$$eval(storySwitchSelector, btn => btn.length);
+            }
+
             let img = await page.$eval('img[decoding="sync"]', e => e.getAttribute('src')).catch(err => err);
             let video1 = await page.$eval('video[preload="auto"] > source', e => e.getAttribute('src')).catch(err => err);
             let video2 = await page.$eval('video[preload="none"]', e => e.getAttribute('src')).catch(err => err);
@@ -184,8 +213,8 @@ async function getStories(url, forceUpdate = false, uid = '') {
             if (result == null) {
                 result = `${url} 限時下載錯誤，請稍後再試一次`;
                 console.log(result);
-                const html = await page.content();
-                console.log(html);
+                // const html = await page.content();
+                // console.log(html);
                 errFlag = true;
             }
 
@@ -199,7 +228,6 @@ async function getStories(url, forceUpdate = false, uid = '') {
                     page.click(nextClass).catch(e => puppeteerError(e)),
                     waitForNetworkIdle(page, 500, 0),
                 ]);
-
                 if (await page.url() === baseUrl) {
                     break;
                 }
