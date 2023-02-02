@@ -215,12 +215,6 @@ async function getStories(url, forceUpdate = false, uid = '') {
             });
         }
 
-        // await browser.close();
-        // await page.close();
-        if (score >= 75) {
-            result.push(`[ADMIN][${score}][${userName}][${url}]`);
-        }
-
         return new Promise(function (resolve, reject) {
             if (storiesUrl !== null) {
                 resolve([cacheArr[storiesUrl]]);
@@ -266,7 +260,6 @@ async function getStoriesHighlight(url, forceUpdate = false, uid = '') {
         let storyBaseUrl = await page.url();
         let imgUrls = [];
 
-        let score = 0;
         userName = userName.toLowerCase();
 
         // get Cache
@@ -344,11 +337,6 @@ async function getStoriesHighlight(url, forceUpdate = false, uid = '') {
                 'time': timestamp,
                 'data': cacheData
             });
-        }
-
-        // await page.close();
-        if (score >= 75) {
-            result.push(`[ADMIN][${score}][${userName}][${storyBaseUrl}]`);
         }
 
         return new Promise(function (resolve, reject) {

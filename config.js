@@ -5,7 +5,7 @@ var config = {
         twitterToken: null,
         adminId: [],
         maintenceMode: true,
-        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0',
+        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
         // isHeadless: false,
         isHeadless: true
     },
@@ -15,7 +15,7 @@ var config = {
         twitterToken: process.env.twitterToken,
         adminId: process.env.adminId,
         maintenceMode: true,
-        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:64.0) Gecko/20100101 Firefox/64.0',
+        ua: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
         isHeadless: true
     }
 }

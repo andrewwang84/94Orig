@@ -230,10 +230,6 @@ function igUrl(url, uid = '') {
             end = Date.now();
             console.log(`[LOG][IG][${userName}][${url}][${(end - start) / 1000}s][${result.length}] Done`);
 
-            if (score >= 75) {
-                result.push(`[ADMIN][${score}][${userName}][${url}]`);
-            }
-
             resolve(result);
         });
     });
@@ -369,10 +365,6 @@ function igUrlLegacy(url, uid = '') {
             end = Date.now();
             console.log(`[LOG][IG][${userName}][${url}][${(end - start) / 1000}s][${result.length}] Done`);
 
-            if (score >= 75) {
-                result.push(`[ADMIN][${score}][${userName}][${url}]`);
-            }
-
             resolve(result);
         });
     });
@@ -412,10 +404,6 @@ function twitterUrl(url, uid = '') {
                 } else {
                     result.push(`${data.url}:orig`);
                 }
-            }
-
-            if (score >= 75) {
-                result.push(`[ADMIN][${score}][${userName}][${url}]`);
             }
 
             resolve(result);
