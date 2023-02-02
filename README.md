@@ -27,12 +27,9 @@
   - https://twitter.com/[userName]/status/[postId]
 - Seperate multi urls with new line
 
-
 #### in order to let the bot work, set up the following vars in cred.tmp.js
 
 - insCookies: [instagram login cookie]
-- insPass: [instagram account password]
-- insEmail: [instagram account email]
 - NODE_ENV: production
 - telegramToken: [telegram bot token, you can recieve it from bot father]
 - twitterToken: [twitter bearer token for api access]

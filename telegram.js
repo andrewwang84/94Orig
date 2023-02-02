@@ -22,7 +22,6 @@ bot.onText(/https:\/\//, async (msg, match) => {
             await bot.sendMessage(adminId[0], `[@${logName}] ${chatMsg}`);
         }
         let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11})|(?:https:\/\/(?:www\.)?instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
-        let isPup = (chatMsg.match(/-pup/i) !== null) ? true : false;
         let forceUpdate = (chatMsg.match(/--f/i) !== null) ? true : false;
 
         if (target == null) {
@@ -38,7 +37,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
             }
         }
         console.log(`[LOG][Telegram] ${logName}`);
-        let resp = await crawler.getImage(target, isPup, forceUpdate, logName);
+        let resp = await crawler.getImage(target, forceUpdate, logName);
 
         TEXT_CD.set(chatId, {
             'time': timestamp

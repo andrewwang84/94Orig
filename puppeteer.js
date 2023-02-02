@@ -1,30 +1,20 @@
 const puppeteer = require('puppeteer');
 var app = require('express')();
-const block = require('./block.js');
 const timerP = require('node:timers/promises');
-const insEmail = require('./config.js')[app.get('env')].insEmail;
-const insPass = require('./config.js')[app.get('env')].insPass;
 const insCookies = require('./config.js')[app.get('env')].insCookies;
-const usernameSelector = 'input[name="username"]';
-const passwordSelector = 'input[name="password"]';
-const loginBtn = 'button[type="submit"]';
 const storyHomeEnterSelector = [
-    `body > div:first-child > div > div:nth-child(1) > div > div > div > div > div > div > section > main > div > header > div > div > span`,
     `#react-root > section > main > div > header > div > div > span`,
     `section > main > div > header > div > div`
 ];
 const storiesCountClassSelector = [
-    `div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div:nth-child(1) > div`,
     `#react-root > section > div > div > section > div > header > div:nth-child(1) > div`,
     'div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > header > div:nth-child(1) > div'
 ];
 const igPauseSelector = [
-    `div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div > div > button:nth-child(1)`,
     '#react-root > section > div > div > section > div > header > div > div > button:nth-child(1)',
     `div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div > div > button:nth-child(1)`
 ];
 const nextStorySelector = [
-    `div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > button:last-of-type`,
     '.coreSpriteRightChevron',
     'div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > button:last-of-type'
 ];
@@ -32,13 +22,10 @@ const igShareDialog = `div > div > div > div:nth-child(4) > div > div > div > di
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const igMetaTitle = "head > meta[property='og:title']";
 const igConfirmCheckStoryBtn = 'div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > div > div > div > div > div > button';
-const igUserNameSelector = 'section > main > div > div > article > div > div > div > div > div > header > div > div > div > div > span > a';
 const userAgent = require('./config.js')[app.get('env')].ua;
 const isHeadless = require('./config.js')[app.get('env')].isHeadless;
-// const isHeadless = true;
 let browserWSEndpoint = null;
 const waitUntilMain = 'networkidle0';
-const waitUntilMinor = 'domcontentloaded';
 const CACHE = new Map();
 const LAUNCH_ARGS = [
     '--no-sandbox',
@@ -52,36 +39,12 @@ const LAUNCH_ARGS = [
 async function getStories(url, forceUpdate = false, uid = '') {
     let baseUrl = 'https://www.instagram.com/';
     let userName = url.match(/https:\/\/(?:www\.)?instagram\.com\/(?:stories\/)?([a-zA-Z0-9\.\_]+)/)[1];
-    let loginUrl = `https://www.instagram.com/accounts/login/?next=%2F${userName}%2F`;
     let storyId = (url.match(/https:\/\/(?:www\.)?instagram.com\/stories\/[a-zA-Z0-9\.\_]+\/([0-9]+)/) == null) ? null : url.match(/https:\/\/(?:www\.)?instagram.com\/stories\/[a-zA-Z0-9\.\_]+\/([0-9]+)/)[1];
     let storiesUrl = (storyId == null) ? null : `https://www.instagram.com/stories/${userName}/${storyId}/`;
     let homeUrl = `https://www.instagram.com/${userName}/`;
     let imgUrls = [];
 
-    if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
-        return new Promise(function (resolve, reject) {
-            console.log(`[LOG][IG_Story][Blink_Block][${url}]`);
-            resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-            return;
-        });
-    }
-    let score = 0;
     userName = userName.toLowerCase();
-    for (const key in block.greyList) {
-        if (userName.search(key) !== -1) {
-            score += parseInt(block.greyList[key]);
-        }
-    }
-    if (score >= 150) {
-        console.log(`[LOG][IG_Story][Blink_Block][${score}][${url}]`);
-        resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-        return;
-    }
-    if (score >= 60 && block.blinkIds.includes(uid)) {
-        console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
-        resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-        return;
-    }
 
     // get Cache
     if (CACHE.has(homeUrl) && !forceUpdate) {
@@ -303,30 +266,8 @@ async function getStoriesHighlight(url, forceUpdate = false, uid = '') {
         let storyBaseUrl = await page.url();
         let imgUrls = [];
 
-        if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
-            return new Promise(function (resolve, reject) {
-                console.log(`[LOG][IG_STORY_Highlight][Blink_Block][${url}]`);
-                resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-                return;
-            });
-        }
         let score = 0;
         userName = userName.toLowerCase();
-        for (const key in block.greyList) {
-            if (userName.search(key) !== -1) {
-                score += parseInt(block.greyList[key]);
-            }
-        }
-        if (score >= 150) {
-            console.log(`[LOG][IG_STORY_Highlight][Blink_Block][${score}][${url}]`);
-            resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-            return;
-        }
-        if (score >= 60 && block.blinkIds.includes(uid)) {
-            console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
-            resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-            return;
-        }
 
         // get Cache
         if (CACHE.has(storyBaseUrl) && !forceUpdate) {
@@ -424,97 +365,6 @@ async function getStoriesHighlight(url, forceUpdate = false, uid = '') {
     }
 }
 
-async function igUrl(url, uid = '') {
-    console.log(`[LOG] Get IG from Puppeteer`);
-    let imgUrls = [];
-
-    await getBrowser('IG');
-    const browser = await puppeteer.connect({ browserWSEndpoint });
-
-    const cookie = {
-        name: "sessionid",
-        value: insCookies,
-        path: "/",
-        domain: ".instagram.com",
-    };
-
-    const page = await browser.newPage();
-    try {
-        await page.setCookie(cookie);
-        await page.setUserAgent(userAgent);
-
-        await page.goto(url, { waitUntil: waitUntilMain });
-        if (await page.$(usernameSelector)) {
-            await page.close();
-            return new Promise(function (resolve, reject) {
-                imgUrls.push(`登入失效`);
-                resolve(imgUrls);
-            });
-        }
-
-        const html = await page.content();
-        let userName = await page.$eval(igUserNameSelector, (elem) => elem.textContent);
-        if (userName == null) {
-            console.log(html);
-            throw new Error('No Username');
-        }
-
-        let score = 0;
-        if (block.whiteList.includes(userName) === false) {
-            if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
-                return new Promise(function (resolve, reject) {
-                    console.log(`[LOG][IG][Puppeteer][Blink_Block][${url}]`);
-                    resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-                });
-            }
-            userName = userName.toLowerCase();
-            for (const key in block.greyList) {
-                if (userName.search(key) !== -1) {
-                    score += parseInt(block.greyList[key]);
-                }
-            }
-            if (score >= 150) {
-                console.log(`[LOG][IG][Puppeteer][Blink_Block][${score}][${url}]`);
-                resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-                return;
-            }
-            if (score >= 60 && block.blinkIds.includes(uid)) {
-                console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
-                resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-                return;
-            }
-        }
-
-        let count = 1;
-        while (await page.$('section > main > div > div > article > div > div > div > div > div > div > button:nth-child(2)') !== null) {
-            await page.click('section > main > div > div > article > div > div > div > div > div > div > button:nth-child(2)');
-            count++;
-        }
-
-        let img = await page.$$eval('article img[decoding="auto"],article ul > li img', e => e.map(img => img.getAttribute('src'))).catch(err => err);
-        let video = await page.$$eval('article video[type="video/mp4"],article ul > li video', e => e.map(img => img.getAttribute('src'))).catch(err => err);
-        imgUrls = [].concat(img, video);
-
-        if (imgUrls.length < count) {
-            imgUrls.push(`[警告] ${url} 疑似下載不完全，請再試一次`);
-        }
-
-        //await browser.close();
-        // await page.close();
-
-        return new Promise(function (resolve, reject) {
-            resolve(imgUrls);
-        });
-    } catch (error) {
-        console.log(`[ERROR] ${error.message}`);
-        return new Promise(function (resolve, reject) {
-            resolve([`${url} 發生錯誤，請再試一次`]);
-        });
-    } finally {
-        await page.close();
-    }
-}
-
 function puppeteerError(e) {
     console.log(`[ERROR][Puppeteer] ${e}`);
 }
@@ -570,6 +420,5 @@ async function getBrowser(source = 'IG_STORY') {
 module.exports = {
     getStories: getStories,
     getStoriesHighlight: getStoriesHighlight,
-    igUrl: igUrl,
     getBrowser: getBrowser
 };
