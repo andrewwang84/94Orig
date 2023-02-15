@@ -53,27 +53,38 @@ async function getStories(url, forceUpdate = false, uid = '') {
         console.info(`[LOG][IG_STORY]Get Story From Cache`);
         let timestamp = Date.now();
         let cache = CACHE.get(homeUrl);
-        if (timestamp - cache.time > 30 * 60 * 1000) {
+
+        // 12 小時直接清 cache
+        if (timestamp - cache.time > 12 * 60 * 60 * 1000) {
             console.info(`[LOG][IG_STORY]Cache Outdated, Delete Cache`);
             CACHE.delete(homeUrl);
-        } else {
-            let data = cache.data;
-            let result = [];
-            if (storiesUrl !== null) {
-                if (data[storiesUrl] != undefined || data[storiesUrl] != '') {
-                    result.push(data[storiesUrl]);
-                    return new Promise(function (resolve, reject) {
-                        resolve(result);
-                    });
-                }
-            } else {
-                for (const key in data) {
-                    result.push(data[key]);
-                }
+        }
+
+        // forceupdate 表示 cache 過期
+        if (forceUpdate) {
+            console.info(`[LOG][IG_STORY]Forceupdate, Delete Cache`);
+            CACHE.delete(homeUrl);
+        }
+
+        let data = cache.data;
+        let result = [];
+        if (storiesUrl !== null) {
+            if (data[storiesUrl] != undefined || data[storiesUrl] != '') {
+                result.push(data[storiesUrl]);
                 return new Promise(function (resolve, reject) {
                     resolve(result);
                 });
+            } else {
+                console.info(`[LOG][IG_STORY]Cache Outdated, Delete Cache`);
+                CACHE.delete(homeUrl);
             }
+        } else {
+            for (const key in data) {
+                result.push(data[key]);
+            }
+            return new Promise(function (resolve, reject) {
+                resolve(result);
+            });
         }
     }
 
