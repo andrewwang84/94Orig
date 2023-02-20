@@ -49,7 +49,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
     userName = userName.toLowerCase();
 
     // get Cache
-    if (CACHE.has(homeUrl) && !forceUpdate) {
+    if (CACHE.has(homeUrl)) {
         console.info(`[LOG][IG_STORY]Get Story From Cache`);
         let timestamp = Date.now();
         let cache = CACHE.get(homeUrl);
@@ -58,33 +58,31 @@ async function getStories(url, forceUpdate = false, uid = '') {
         if (timestamp - cache.time > 12 * 60 * 60 * 1000) {
             console.info(`[LOG][IG_STORY]Cache Outdated, Delete Cache`);
             CACHE.delete(homeUrl);
-        }
-
-        // forceupdate 表示 cache 過期
-        if (forceUpdate) {
+        } else if (forceUpdate) {
+            // forceupdate 表示 cache 過期
             console.info(`[LOG][IG_STORY]Forceupdate, Delete Cache`);
             CACHE.delete(homeUrl);
-        }
-
-        let data = cache.data;
-        let result = [];
-        if (storiesUrl !== null) {
-            if (data[storiesUrl] != undefined || data[storiesUrl] != '') {
-                result.push(data[storiesUrl]);
+        } else {
+            let data = cache.data;
+            let result = [];
+            if (storiesUrl !== null) {
+                if (data[storiesUrl] != undefined || data[storiesUrl] != '') {
+                    result.push(data[storiesUrl]);
+                    return new Promise(function (resolve, reject) {
+                        resolve(result);
+                    });
+                } else {
+                    console.info(`[LOG][IG_STORY]Cache Outdated, Delete Cache`);
+                    CACHE.delete(homeUrl);
+                }
+            } else {
+                for (const key in data) {
+                    result.push(data[key]);
+                }
                 return new Promise(function (resolve, reject) {
                     resolve(result);
                 });
-            } else {
-                console.info(`[LOG][IG_STORY]Cache Outdated, Delete Cache`);
-                CACHE.delete(homeUrl);
             }
-        } else {
-            for (const key in data) {
-                result.push(data[key]);
-            }
-            return new Promise(function (resolve, reject) {
-                resolve(result);
-            });
         }
     }
 
