@@ -226,7 +226,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
                 // console.log(html);
                 errFlag = true;
             }
-
+console.log(result);
             currentPage = await page.url();
             cacheArr[currentPage] = result;
             imgUrls.push(result);
@@ -251,7 +251,8 @@ async function getStories(url, forceUpdate = false, uid = '') {
                 'data': cacheArr
             });
         }
-
+        console.log(cacheArr);
+        console.log(imgUrls);
         return new Promise(function (resolve, reject) {
             if (storiesUrl !== null) {
                 resolve([cacheArr[storiesUrl]]);
