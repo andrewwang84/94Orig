@@ -251,6 +251,9 @@ async function getStories(url, forceUpdate = false, uid = '') {
                 'data': cacheArr
             });
         }
+
+        console.log(cacheArr[storiesUrl]);
+        console.log(imgUrls)
         if (cacheArr[storiesUrl] == undefined && imgUrls == []) {
             throw new Error('Not Found')
         }
@@ -263,11 +266,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
         }
 
         return new Promise(function (resolve, reject) {
-            if (storiesUrl !== null) {
-                resolve([cacheArr[storiesUrl]]);
-            } else {
-                resolve(imgUrls);
-            }
+            resolve(res);
         });
     } catch (error) {
         console.log(error);
