@@ -255,7 +255,9 @@ async function getStories(url, forceUpdate = false, uid = '') {
         console.log(cacheArr[storiesUrl]);
         console.log(imgUrls)
         if (cacheArr[storiesUrl] == undefined && imgUrls == []) {
-            throw new Error('Not Found')
+            return new Promise(function (resolve, reject) {
+                reject(`${homeUrl} Not Found`);
+            });
         }
 
         let res = [];
