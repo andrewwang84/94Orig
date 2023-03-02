@@ -5,8 +5,9 @@ const insCookies = require('./config.js')[app.get('env')].insCookies;
 const storyHomeEnterSelector = [
     `section > main > div > header > div > div`
 ];
+// 白條 div，不是外層的 div
 const storiesCountClassSelector = [
-    'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div:nth-child(1)'
+    'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div:nth-child(1) > div'
 ];
 const igPauseSelector = [
     `div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div > div > button:nth-child(1)`
@@ -182,6 +183,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
             }
 
             let switchCount = await page.$$eval(storySwitchSelector, btn => btn.length);
+            console.log(switchCount)
             while (index === 0 && switchCount > 1) {
                 if (await page.$(igConfirmCheckStoryBtn) !== null) {
                     await Promise.all([
