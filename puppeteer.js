@@ -252,9 +252,8 @@ async function getStories(url, forceUpdate = false, uid = '') {
             });
         }
 
-        console.log(cacheArr[storiesUrl]);
-        console.log(imgUrls)
         if (cacheArr[storiesUrl] == undefined && imgUrls == []) {
+            console.log('hi');
             return new Promise(function (resolve, reject) {
                 reject(`${homeUrl} Not Found`);
             });
@@ -268,6 +267,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
         }
 
         return new Promise(function (resolve, reject) {
+            console.log('resolve');
             resolve(res);
         });
     } catch (error) {
