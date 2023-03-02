@@ -252,13 +252,6 @@ async function getStories(url, forceUpdate = false, uid = '') {
             });
         }
 
-        if (cacheArr[storiesUrl] == undefined && Object.keys(imgUrls).length == 0) {
-            console.log('hi');
-            return new Promise(function (resolve, reject) {
-                reject(`${homeUrl} Not Found`);
-            });
-        }
-
         let res = [];
         if (storiesUrl !== null) {
             res = [cacheArr[storiesUrl]];
@@ -266,8 +259,11 @@ async function getStories(url, forceUpdate = false, uid = '') {
             res = imgUrls;
         }
 
+        if (cacheArr[storiesUrl] == undefined && Object.keys(imgUrls).length == 0) {
+            res = [`${homeUrl} Not Found`];
+        }
+
         return new Promise(function (resolve, reject) {
-            console.log('resolve');
             resolve(res);
         });
     } catch (error) {
