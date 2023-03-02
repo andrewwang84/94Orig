@@ -226,7 +226,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
                 // console.log(html);
                 errFlag = true;
             }
-console.log(result);
+
             currentPage = await page.url();
             cacheArr[currentPage] = result;
             imgUrls.push(result);
@@ -251,8 +251,17 @@ console.log(result);
                 'data': cacheArr
             });
         }
-        console.log(cacheArr);
-        console.log(imgUrls);
+        if (cacheArr[storiesUrl] == undefined && imgUrls == []) {
+            throw new Error('Not Found')
+        }
+
+        let res = [];
+        if (storiesUrl !== null) {
+            res = [cacheArr[storiesUrl]];
+        } else {
+            res = imgUrls;
+        }
+
         return new Promise(function (resolve, reject) {
             if (storiesUrl !== null) {
                 resolve([cacheArr[storiesUrl]]);
