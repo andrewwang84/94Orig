@@ -6,19 +6,19 @@ const storyHomeEnterSelector = [
     `section > main > div > header > div > div`
 ];
 const storiesCountClassSelector = [
-    'div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > header > div:nth-child(1) > div'
+    'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div:nth-child(1)'
 ];
 const igPauseSelector = [
     `div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div > div > button:nth-child(1)`
 ];
 const nextStorySelector = [
-    'div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > button:last-of-type'
+    'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > button:last-of-type'
 ];
 const storySwitchSelector = [
-    'div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > button'
+    'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > button'
 ];
 const prevStorySelector = [
-    'div > div:nth-child(1) > div > div > div > div > div > div > div > section > div > div > section > div > button:first-of-type'
+    'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > button:first-of-type'
 ];
 const igShareDialog = `div > div > div > div:nth-child(4) > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div:nth-child(1) > button`;
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
