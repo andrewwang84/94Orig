@@ -183,7 +183,6 @@ async function getStories(url, forceUpdate = false, uid = '') {
             }
 
             let switchCount = await page.$$eval(storySwitchSelector, btn => btn.length);
-            console.log(switchCount)
             while (index === 0 && switchCount > 1) {
                 if (await page.$(igConfirmCheckStoryBtn) !== null) {
                     await Promise.all([
