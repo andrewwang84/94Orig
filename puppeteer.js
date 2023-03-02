@@ -252,7 +252,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
             });
         }
 
-        if (cacheArr[storiesUrl] == undefined && Object.keys(obj).length == 0) {
+        if (cacheArr[storiesUrl] == undefined && Object.keys(imgUrls).length == 0) {
             console.log('hi');
             return new Promise(function (resolve, reject) {
                 reject(`${homeUrl} Not Found`);
