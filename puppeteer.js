@@ -44,7 +44,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
     let storyId = (url.match(/https:\/\/(?:www\.)?instagram.com\/stories\/[a-zA-Z0-9\.\_]+\/([0-9]+)/) == null) ? null : url.match(/https:\/\/(?:www\.)?instagram.com\/stories\/[a-zA-Z0-9\.\_]+\/([0-9]+)/)[1];
     let storiesUrl = (storyId == null) ? null : `https://www.instagram.com/stories/${userName}/${storyId}/`;
     let homeUrl = `https://www.instagram.com/${userName}/`;
-    let imgUrls = [];
+    let imgUrls = {};
 
     userName = userName.toLowerCase();
 
@@ -252,7 +252,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
             });
         }
 
-        if (cacheArr[storiesUrl] == undefined && imgUrls == []) {
+        if (cacheArr[storiesUrl] == undefined && Object.keys(obj).length == 0) {
             console.log('hi');
             return new Promise(function (resolve, reject) {
                 reject(`${homeUrl} Not Found`);
