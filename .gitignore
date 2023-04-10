@@ -65,3 +65,5 @@ ssh.exe.stackdump
 .DS_Store
 */.DS_Store
 downloads/
+tmp.html
+tmp.log

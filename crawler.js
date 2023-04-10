@@ -2,7 +2,6 @@ var request = require('request');
 var cheerio = require('cheerio');
 const timerP = require('node:timers/promises');
 const puppeteer = require('./puppeteer.js');
-const block = require('./block.js');
 var app = require('express')();
 const twitterToken = require('./config.js')[app.get('env')].twitterToken;
 const insCookies = require('./config.js')[app.get('env')].insCookies;
@@ -18,19 +17,18 @@ var end = '';
 const TYPE_FANSPAGE = 1;
 const TYPE_GRAPHQL = 2;
 
-let getImage = async (urls, isPup = false, forceUpdate = false, uid = '') => {
+let getImage = async (urls, forceUpdate = false, uid = '') => {
     try {
-        const data = await prepareData(urls, isPup, forceUpdate, uid);
+        const data = await prepareData(urls, forceUpdate, uid);
         return data;
     } catch (error) {
-        console.error(`[ERROR] ${error}`);
         return new Promise(function (resolve, reject) {
             reject(error);
         });
     }
 }
 
-async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
+async function prepareData(urls, forceUpdate = false, uid = '') {
     var imageUrls = [];
     for (var i = 0; i < urls.length; i++) {
         let storyType = 'IG_STORY';
@@ -39,15 +37,10 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
                 try {
                     start = Date.now();
                     urls[i] = urls[i].replace(/\?\S+/, '');
-                    if (isPup == true) {
-                        let res = await puppeteer.igUrl(urls[i], uid);
-                        imageUrls.push(res);
-                        end = Date.now();
-                        console.log(`[LOG][IG][${urls[i]}][${(end - start) / 1000}s][${res.length}] Puppeteer Done`);
-                    } else {
-                        let res = await igUrl(urls[i], uid);
-                        imageUrls.push(res);
-                    }
+                    urls[i] = urls[i].replace(/\/(?:tv|reel)\//, '/p/');
+
+                    let res = await igUrl(urls[i], uid);
+                    imageUrls.push(res);
                 } catch (error) {
                     console.log(`[ERROR][IG][${urls[i]}]`);
                     throw error;
@@ -99,7 +92,7 @@ async function prepareData(urls, isPup = false, forceUpdate = false, uid = '') {
             }
         }
 
-        await timerP.setTimeout(500);
+        await timerP.setTimeout(1000);
     }
 
     return new Promise(function (resolve, reject) {
@@ -115,7 +108,7 @@ function igUrl(url, uid = '') {
         const j = request.jar();
         const cookie = request.cookie(`sessionid=${insCookies}`);
         j.setCookie(cookie, url);
-        request({ url: `${url}?__a=1`, jar: j }, function (error, response, body) {
+        request({ url: `${url}?__a=1&__d=dis`, jar: j }, function (error, response, body) {
             if (error) reject(error);
 
             if (/<!DOCTYPE/.test(body)) {
@@ -133,12 +126,11 @@ function igUrl(url, uid = '') {
             let type = TYPE_FANSPAGE;
             if (data.items != undefined) {
                 target = data.items;
-            } else {
+            } else if (data.graphql != undefined) {
                 type = TYPE_GRAPHQL;
-                target = data.graphql.shortcode_media;
-            }
-            if (target == undefined) {
-                console.log(target);
+                target = data.graphql;
+            } else {
+                console.log(data);
                 reject('錯誤:找不到 Data');
                 return;
             }
@@ -148,41 +140,12 @@ function igUrl(url, uid = '') {
                 target = target[0];
                 userName = target.user.username;
             } else if (type == TYPE_GRAPHQL) {
+                target = target.shortcode_media;
                 userName = target.owner.username;
             }
 
             if (userName == '') {
                 reject('錯誤:找不到 username');
-                return;
-            }
-
-            let score = 0;
-            if (block.whiteList.includes(userName) === false) {
-                if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
-                    console.log(`[LOG][IG][Blink_Block][${url}]`);
-                    resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-                    return;
-                }
-                userName = userName.toLowerCase();
-                for (const key in block.greyList) {
-                    if (userName.search(key) !== -1) {
-                        score += parseInt(block.greyList[key]);
-                    }
-                }
-                if (score >= 150) {
-                    console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
-                    resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-                    return;
-                }
-                if (score >= 60 && block.blinkIds.includes(uid)) {
-                    console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
-                    resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-                    return;
-                }
-            }
-            if (score >= 60 && block.blinkIds.includes(uid)) {
-                console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
-                resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
                 return;
             }
 
@@ -266,10 +229,6 @@ function igUrl(url, uid = '') {
 
             end = Date.now();
             console.log(`[LOG][IG][${userName}][${url}][${(end - start) / 1000}s][${result.length}] Done`);
-
-            if (score >= 75) {
-                result.push(`[ADMIN][${score}][${userName}][${url}]`);
-            }
 
             resolve(result);
         });
@@ -325,36 +284,6 @@ function igUrlLegacy(url, uid = '') {
                 return;
             }
 
-            let score = 0;
-            if (block.whiteList.includes(userName) === false) {
-                if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
-                    console.log(`[LOG][IG][Blink_Block][${url}]`);
-                    resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-                    return;
-                }
-                userName = userName.toLowerCase();
-                for (const key in block.greyList) {
-                    if (userName.search(key) !== -1) {
-                        score += parseInt(block.greyList[key]);
-                    }
-                }
-                if (score >= 150) {
-                    console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
-                    resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-                    return;
-                }
-                if (score >= 60 && block.blinkIds.includes(uid)) {
-                    console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
-                    resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-                    return;
-                }
-            }
-            if (score >= 60 && block.blinkIds.includes(uid)) {
-                console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
-                resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-                return;
-            }
-
             let results = '';
             if (type == TYPE_FANSPAGE) {
                 if (target.carousel_media != undefined) {
@@ -436,10 +365,6 @@ function igUrlLegacy(url, uid = '') {
             end = Date.now();
             console.log(`[LOG][IG][${userName}][${url}][${(end - start) / 1000}s][${result.length}] Done`);
 
-            if (score >= 75) {
-                result.push(`[ADMIN][${score}][${userName}][${url}]`);
-            }
-
             resolve(result);
         });
     });
@@ -451,36 +376,7 @@ function twitterUrl(url, uid = '') {
     userName = userName.toLowerCase();
 
     return new Promise(function (resolve, reject) {
-        let score = 0;
-        if (block.whiteList.includes(userName) === false) {
-            if (block.blackList.includes(userName) || block.knownIds.includes(userName)) {
-                console.log(`[LOG][TWITTER][Blink_Block][${url}]`);
-                resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-                return;
-            }
-            for (const key in block.greyList) {
-                if (userName.search(key) !== -1) {
-                    score += parseInt(block.greyList[key]);
-                }
-            }
-            if (score >= 150) {
-                console.log(`[LOG][TWITTER][Blink_Block][${score}][${url}]`);
-                resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-                return;
-            }
-            if (score >= 60 && block.blinkIds.includes(uid)) {
-                console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
-                resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-                return;
-            }
-        }
-        if (score >= 60 && block.blinkIds.includes(uid)) {
-            console.log(`[LOG][IG][Blink_Block][${score}][${url}]`);
-            resolve(['非常抱歉，本工具不支援 BlackPink，請另尋高明 https://www.dcard.tw/f/entertainer/p/229335287']);
-            return;
-        }
-
-        request.get(`https://api.twitter.com/2/tweets?ids=${id}&media.fields=type,url&expansions=attachments.media_keys`, {
+        request.get(`https://api.twitter.com/2/tweets/${id}?tweet.fields=attachments&media.fields=type,url,variants&expansions=attachments.media_keys`, {
             'auth': {
                 'bearer': twitterToken
             }
@@ -490,16 +386,24 @@ function twitterUrl(url, uid = '') {
             let result = [];
             for (let i = 0; i < media.length; i++) {
                 let data = media[i];
-                if (data.url == undefined) {
-                    let vid = await twitterVid(id);
-                    result.push(vid);
+                if (data.type == 'video') {
+                    let videos = data.variants;
+                    let bitrate = 0;
+                    let vidUrl = '';
+                    for (const key in videos) {
+                        let elem = videos[key];
+                        if (elem.bit_rate == undefined) {
+                            continue;
+                        }
+                        if (elem.bit_rate > bitrate) {
+                            vidUrl = elem.url;
+                            bitrate = elem.bit_rate;
+                        }
+                    }
+                    result.push(vidUrl);
                 } else {
                     result.push(`${data.url}:orig`);
                 }
-            }
-
-            if (score >= 75) {
-                result.push(`[ADMIN][${score}][${userName}][${url}]`);
             }
 
             resolve(result);
