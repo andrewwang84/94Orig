@@ -21,10 +21,10 @@ const storySwitchSelector = [
 const prevStorySelector = [
     'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > button:first-of-type'
 ];
+
 const igShareDialog = `div > div > div > div:nth-child(4) > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div:nth-child(1) > button`;
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
 const igMetaTitle = "head > meta[property='og:title']";
-const igConfirmCheckStoryBtn = 'div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > div > div > div > div > div > button';
 const userAgent = require('./config.js')[app.get('env')].ua;
 const isHeadless = require('./config.js')[app.get('env')].isHeadless;
 let browserWSEndpoint = null;
@@ -67,7 +67,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
             let data = cache.data;
             let result = [];
             if (storiesUrl !== null) {
-                if (data[storiesUrl] != undefined || data[storiesUrl] != '') {
+                if (data[storiesUrl] != undefined && data[storiesUrl] != '') {
                     result.push(data[storiesUrl]);
                     return new Promise(function (resolve, reject) {
                         resolve(result);
@@ -167,13 +167,6 @@ async function getStories(url, forceUpdate = false, uid = '') {
                 await page.click(pauseClass).catch(e => puppeteerError(e));
                 await timerP.setTimeout(1000);
             }
-            if (await page.$(igConfirmCheckStoryBtn) !== null) {
-                await Promise.all([
-                    page.click(igConfirmCheckStoryBtn).catch(e => puppeteerError(e)),
-                    waitForNetworkIdle(page, 500, 0),
-                ]);
-                await timerP.setTimeout(1000);
-            }
             if (await page.$(igShareDialog) !== null) {
                 await Promise.all([
                     page.click(igShareDialog).catch(e => puppeteerError(e)),
@@ -184,13 +177,6 @@ async function getStories(url, forceUpdate = false, uid = '') {
 
             let switchCount = await page.$$eval(storySwitchSelector, btn => btn.length);
             while (index === 0 && switchCount > 1) {
-                if (await page.$(igConfirmCheckStoryBtn) !== null) {
-                    await Promise.all([
-                        page.click(igConfirmCheckStoryBtn).catch(e => puppeteerError(e)),
-                        waitForNetworkIdle(page, 500, 0),
-                    ]);
-                    await timerP.setTimeout(500);
-                }
                 if (await page.$(igShareDialog) !== null) {
                     await Promise.all([
                         page.click(igShareDialog).catch(e => puppeteerError(e)),
@@ -273,7 +259,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
             resolve([`${homeUrl} 發生錯誤，請再試一次`]);
         });
     } finally {
-        await page.close();
+        // await page.close();
     }
 }
 
@@ -342,13 +328,6 @@ async function getStoriesHighlight(url, forceUpdate = false, uid = '') {
         }
 
         await page.goto(storyBaseUrl, { waitUntil: waitUntilMain });
-
-        if (await page.$(igConfirmCheckStoryBtn) !== null) {
-            await Promise.all([
-                page.click(igConfirmCheckStoryBtn).catch(e => puppeteerError(e)),
-                waitForNetworkIdle(page, 500, 0),
-            ]);
-        }
 
         let errFlag = false;
         let cacheData = [];
