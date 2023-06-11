@@ -259,7 +259,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
             resolve([`${homeUrl} 發生錯誤，請再試一次`]);
         });
     } finally {
-        // await page.close();
+        await page.close();
     }
 }
 
