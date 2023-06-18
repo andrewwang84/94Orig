@@ -1,15 +1,17 @@
-const axios = require('axios');
-var cheerio = require('cheerio');
+const cheerio = require('cheerio');
 const timerP = require('node:timers/promises');
 const puppeteer = require('./puppeteer.js');
-var app = require('express')();
+const app = require('express')();
 const insCookies = require('./config.js')[app.get('env')].insCookies;
 const userAgent = require('./config.js')[app.get('env')].ua;
-let axiosInst = axios.create({
+
+const request = require('request').defaults({
+    jar: true,
     headers: {
         'User-Agent': userAgent
     }
 });
+
 var start = '';
 var end = '';
 const TYPE_FANSPAGE = 1;
@@ -98,22 +100,22 @@ async function prepareData(urls, forceUpdate = false, uid = '') {
     });
 }
 
-function igUrl(url, uid = '') {
+function igUrl(url) {
     var result = [];
     var target = '';
     return new Promise(function (resolve, reject) {
         start = Date.now();
-        // set cookie sessionId with insCookies
+        const j = request.jar();
+        const cookie = request.cookie(`sessionid=${insCookies}`);
+        j.setCookie(cookie, url);
+        request({ url: `${url}?__a=1&__d=dis`, jar: j }, function (error, response, body) {
+            if (error) reject(error);
 
-        axiosInst.get(`${url}?__a=1&__d=dis`, { jar: cookieJar }).then(function (response) {
-            console.log(response.headers['content-type']);
-            let data = response.data;
-            console.log(data);
-            if (/<!DOCTYPE/.test(data)) {
+            if (/<!DOCTYPE/.test(body)) {
                 reject('cookie 失效');
                 return;
             }
-
+            let data = JSON.parse(body);
             if (data === undefined) {
                 console.log(`[ERROR][IG] data not found`);
                 console.log(`[ERROR][IG] current cookie: ${insCookies}`);
@@ -229,10 +231,6 @@ function igUrl(url, uid = '') {
             console.log(`[LOG][IG][${userName}][${url}][${(end - start) / 1000}s][${result.length}] Done`);
 
             resolve(result);
-        }).catch(function (error) {
-            console.log(`[ERROR][IG][${url}]`);
-            console.log(error);
-            reject(error);
         })
     });
 }
