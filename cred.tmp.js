@@ -1,7 +1,6 @@
 var cred = {
     telegramToken: "",
     insCookies: "",
-    botName: "",
-    twitterToken: ""
+    botName: ""
 }
 module.exports = cred;

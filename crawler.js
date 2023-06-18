@@ -1,4 +1,3 @@
-var request = require('request');
 const axios = require('axios');
 var cheerio = require('cheerio');
 const timerP = require('node:timers/promises');
@@ -6,8 +5,7 @@ const puppeteer = require('./puppeteer.js');
 var app = require('express')();
 const insCookies = require('./config.js')[app.get('env')].insCookies;
 const userAgent = require('./config.js')[app.get('env')].ua;
-var request = require('request').defaults({
-    jar: true,
+let axiosInst = axios.create({
     headers: {
         'User-Agent': userAgent
     }
@@ -105,19 +103,19 @@ function igUrl(url, uid = '') {
     var target = '';
     return new Promise(function (resolve, reject) {
         start = Date.now();
-        const j = request.jar();
-        const cookie = request.cookie(`sessionid=${insCookies}`);
-        j.setCookie(cookie, url);
-        request({ url: `${url}?__a=1&__d=dis`, jar: j }, function (error, response, body) {
-            if (error) reject(error);
+        // set cookie sessionId with insCookies
 
-            if (/<!DOCTYPE/.test(body)) {
+        axiosInst.get(`${url}?__a=1&__d=dis`, { jar: cookieJar }).then(function (response) {
+            console.log(response.headers['content-type']);
+            let data = response.data;
+            console.log(data);
+            if (/<!DOCTYPE/.test(data)) {
                 reject('cookie 失效');
                 return;
             }
-            let data = JSON.parse(body);
+
             if (data === undefined) {
-                console.log(`[ERROR][IG] cheerio data not found`);
+                console.log(`[ERROR][IG] data not found`);
                 console.log(`[ERROR][IG] current cookie: ${insCookies}`);
                 reject('');
                 return;
@@ -231,78 +229,21 @@ function igUrl(url, uid = '') {
             console.log(`[LOG][IG][${userName}][${url}][${(end - start) / 1000}s][${result.length}] Done`);
 
             resolve(result);
-        });
+        }).catch(function (error) {
+            console.log(`[ERROR][IG][${url}]`);
+            console.log(error);
+            reject(error);
+        })
     });
 }
 
-// deprecate, api is block by paywall
 function twitterUrl(url, uid = '') {
     let id = url.match(/https:\/\/twitter\.com\/\S+\/status\/([0-9]+)/)[1];
     let userName = url.match(/https:\/\/twitter\.com\/(\S+)\/status\/[0-9]+/)[1];
     userName = userName.toLowerCase();
 
     return new Promise(function (resolve, reject) {
-        request.get(`https://api.twitter.com/2/tweets/${id}?tweet.fields=attachments&media.fields=type,url,variants&expansions=attachments.media_keys`, {
-            'auth': {
-                'bearer': twitterToken
-            }
-        }, async function (error, response, body) {
-            let data = JSON.parse(body);
-            let media = data.includes.media;
-            let result = [];
-            for (let i = 0; i < media.length; i++) {
-                let data = media[i];
-                if (data.type == 'video') {
-                    let videos = data.variants;
-                    let bitrate = 0;
-                    let vidUrl = '';
-                    for (const key in videos) {
-                        let elem = videos[key];
-                        if (elem.bit_rate == undefined) {
-                            continue;
-                        }
-                        if (elem.bit_rate > bitrate) {
-                            vidUrl = elem.url;
-                            bitrate = elem.bit_rate;
-                        }
-                    }
-                    result.push(vidUrl);
-                } else {
-                    result.push(`${data.url}:orig`);
-                }
-            }
-
-            resolve(result);
-        });
-    });
-}
-
-function twitterVid (id) {
-    return new Promise(function (resolve, reject) {
-        request.get(`https://api.twitter.com/1.1/statuses/show.json?id=${id}`, {
-            'auth': {
-                'bearer': twitterToken
-            }
-        }, function (error, response, body) {
-            let data = JSON.parse(body);
-            let vidUrl = '';
-            if (data.extended_entities !== undefined) {
-                let video = data.extended_entities.media[0].video_info.variants;
-                let bitrate = 0;
-                for (const key in video) {
-                    let elem = video[key];
-                    if (elem.bitrate == undefined) {
-                        continue;
-                    }
-                    if (elem.bitrate > bitrate) {
-                        vidUrl = elem.url;
-                        bitrate = elem.bitrate;
-                    }
-                }
-            }
-
-            resolve(vidUrl);
-        });
+        resolve('');
     });
 }
 

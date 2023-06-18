@@ -7,7 +7,7 @@
     "test": "export NODE_ENV=development && npm start"
   },
   "engines": {
-    "node": "16.x"
+    "node": "18.x"
   },
   "dependencies": {
     "axios": "^1.4.0",
