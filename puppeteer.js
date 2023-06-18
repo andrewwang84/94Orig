@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer');
-var app = require('express')();
+const app = require('express')();
 const timerP = require('node:timers/promises');
 const insCookies = require('./config.js')[app.get('env')].insCookies;
 const storyHomeEnterSelector = [
@@ -15,9 +15,7 @@ const igPauseSelector = [
 const nextStorySelector = [
     'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > button:last-of-type'
 ];
-const storySwitchSelector = [
-    'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > button'
-];
+const storySwitchSelector = 'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > button';
 const prevStorySelector = [
     'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > button:first-of-type'
 ];
@@ -368,7 +366,6 @@ async function getStoriesHighlight(url, forceUpdate = false, uid = '') {
         });
     } catch (error) {
         console.log(error);
-        // await page.close();
         return new Promise(function (resolve, reject) {
             resolve([`${storyBaseUrl} 發生錯誤，請再試一次`]);
         });
