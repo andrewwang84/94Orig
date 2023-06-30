@@ -21,8 +21,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
         if (!adminId.includes(chatId)) {
             await bot.sendMessage(adminId[0], `[@${logName}] ${chatMsg}`);
         }
-        // let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11})|(?:https:\/\/(?:www\.)?instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
-        let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11})|(?:https:\/\/(?:www\.)?instagram\.com\/\S+)/g);
+        let target = chatMsg.match(/(?:https:\/\/www\.instagram\.com\/p\/\S{11})|(?:https:\/\/(?:www\.)?instagram\.com\/\S+)|(?:https:\/\/(?:mobile\.)?twitter\.com\/\S+\/[0-9]+)/g);
         let forceUpdate = (chatMsg.match(/--f/i) !== null) ? true : false;
 
         if (target == null) {

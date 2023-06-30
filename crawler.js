@@ -4,6 +4,14 @@ const puppeteer = require('./puppeteer.js');
 const app = require('express')();
 const insCookies = require('./config.js')[app.get('env')].insCookies;
 const userAgent = require('./config.js')[app.get('env')].ua;
+const Twit = require('twit');
+
+let T = new Twit({
+    consumer_key: require('./config.js')[app.get('env')].twitterKey,
+    consumer_secret: require('./config.js')[app.get('env')].twitterKeySecret,
+    access_token: require('./config.js')[app.get('env')].twitterAccessToken,
+    access_token_secret: require('./config.js')[app.get('env')].twitterAccessTokenSecret,
+})
 
 const request = require('request').defaults({
     jar: true,
@@ -235,13 +243,46 @@ function igUrl(url) {
     });
 }
 
-function twitterUrl(url, uid = '') {
+function twitterUrl(url) {
     let id = url.match(/https:\/\/twitter\.com\/\S+\/status\/([0-9]+)/)[1];
     let userName = url.match(/https:\/\/twitter\.com\/(\S+)\/status\/[0-9]+/)[1];
     userName = userName.toLowerCase();
 
     return new Promise(function (resolve, reject) {
-        resolve('');
+        T.get('statuses/show/:id', {
+            id: id,
+            include_card_uri: true,
+            tweet_mode: 'extended'
+        }, (err, data, response) => {
+            if (err) {
+                reject(err);
+            } else {
+                let result = [];
+                if (data.extended_entities == undefined) {
+                    reject('');
+                    return;
+                }
+                let medias = data.extended_entities.media;
+                for (const media of medias) {
+                    if (media.type == 'photo') {
+                        result.push(`${media.media_url_https}:orig`);
+                    } else if (media.type == 'video') {
+                        let videoUrl = media.video_info.variants[0].url;
+                        let bitrate = 0;
+                        for (let v of media.video_info.variants) {
+                            if (v.bitrate == undefined) continue;
+                            if (v.bitrate > bitrate) {
+                                bitrate = v.bitrate;
+                                videoUrl = v.url;
+                            }
+                        }
+                        result.push(videoUrl);
+                    }
+                }
+
+                resolve(result);
+            }
+        });
     });
 }
 
