@@ -2,23 +2,13 @@ const puppeteer = require('puppeteer');
 const app = require('express')();
 const timerP = require('node:timers/promises');
 const insCookies = require('./config.js')[app.get('env')].insCookies;
-const storyHomeEnterSelector = [
-    `section > main > div > header > div > div`
-];
+const storyHomeEnterSelector = `section > main > div > header > div > div`;
 // 白條 div，不是外層的 div
-const storiesCountClassSelector = [
-    'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div:nth-child(1) > div'
-];
-const igPauseSelector = [
-    `div > div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div > div > button:nth-child(1)`
-];
-const nextStorySelector = [
-    'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > button:last-of-type'
-];
+const storiesCountClassSelector = 'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div:nth-child(1) > div';
+const igPauseSelector = `div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > header > div:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div`;
+const nextStorySelector = 'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > button:last-of-type';
 const storySwitchSelector = 'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > button';
-const prevStorySelector = [
-    'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > button:first-of-type'
-];
+const prevStorySelector = 'div > div > div > div > div > div > div > div:nth-child(1) > section > div > div > section > div > button:first-of-type';
 
 const igShareDialog = `div > div > div > div:nth-child(4) > div > div > div > div > div > div > div > div > div > div > div > div > div > div > div:nth-child(1) > button`;
 const privateAccSelector = `#react-root > section > main > div > header > div > div > div > button > img`;
@@ -48,19 +38,27 @@ async function getStories(url, forceUpdate = false, uid = '') {
     userName = userName.toLowerCase();
 
     // get Cache
-    if (CACHE.has(homeUrl)) {
+    if (CACHE.has(homeUrl) || CACHE.has(storiesUrl)) {
         console.info(`[LOG][IG_STORY]Get Story From Cache`);
         let timestamp = Date.now();
-        let cache = CACHE.get(homeUrl);
+        let cache = '';
+        let tmpUrl = '';
+        if (CACHE.has(storiesUrl)) {
+            cache = CACHE.get(storiesUrl);
+            tmpUrl = storiesUrl;
+        } else {
+            cache = CACHE.get(homeUrl);
+            tmpUrl = homeUrl;
+        }
 
         // 12 小時直接清 cache
         if (timestamp - cache.time > 12 * 60 * 60 * 1000) {
             console.info(`[LOG][IG_STORY]Cache Outdated, Delete Cache`);
-            CACHE.delete(homeUrl);
+            CACHE.delete(tmpUrl);
         } else if (forceUpdate) {
             // forceupdate 表示 cache 過期
             console.info(`[LOG][IG_STORY]Forceupdate, Delete Cache`);
-            CACHE.delete(homeUrl);
+            CACHE.delete(tmpUrl);
         } else {
             let data = cache.data;
             let result = [];
@@ -72,7 +70,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
                     });
                 } else {
                     console.info(`[LOG][IG_STORY]Cache Outdated, Delete Cache`);
-                    CACHE.delete(homeUrl);
+                    CACHE.delete(tmpUrl);
                 }
             } else {
                 for (const key in data) {
@@ -125,46 +123,36 @@ async function getStories(url, forceUpdate = false, uid = '') {
         let countClass = storiesCountClassSelector;
         let nextClass = nextStorySelector;
         let pauseClass = igPauseSelector;
-        for (const key in storyHomeEnterSelector) {
-            let tmpHomeEnter = storyHomeEnterSelector[key];
-            try {
-                await page.click(tmpHomeEnter)
-                    .catch(e => {
-                        // puppeteerError(e);
-                        throw new Error(`Don't wait`);
-                    })
-                    .then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
-                countClass = storiesCountClassSelector[key];
-                nextClass = nextStorySelector[key];
-                pauseClass = igPauseSelector[key];
-                break;
-            } catch (error) {
-                if (key == storyHomeEnterSelector.length - 1) {
-                    console.log(`[ERROR][IG_STORY][${userName}] Not Found`);
-                    let timestamp = Date.now();
-                    let cacheArr = [];
-                    cacheArr[url] = `@${userName} 目前沒有限時動態`;
-                    CACHE.set(homeUrl, {
-                        'time': timestamp,
-                        'data': cacheArr
-                    });
-                    imgUrls.push(`@${userName} 目前沒有限時動態`);
-                    resolve(imgUrls);
-                } else {
-                    continue;
-                }
-            }
+        let homeEnter = storyHomeEnterSelector;
+        try {
+            await page.click(homeEnter)
+                .catch(e => {
+                    // puppeteerError(e);
+                    throw new Error(`Don't wait`);
+                })
+                .then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
+        } catch (error) {
+            console.log(`[ERROR][IG_STORY][${userName}] Not Found`);
+            let timestamp = Date.now();
+            let cacheArr = [];
+            cacheArr[url] = `@${userName} 目前沒有限時動態`;
+            CACHE.set(homeUrl, {
+                'time': timestamp,
+                'data': cacheArr
+            });
+            imgUrls.push(`@${userName} 目前沒有限時動態`);
+            return new Promise(function (resolve, reject) {
+                resolve(imgUrls);
+            });
         }
 
+        await page.waitForSelector(pauseClass);
+        await page.click(pauseClass);
         await page.waitForSelector(countClass).catch(e => puppeteerError(e));
         let count = await page.$$eval(countClass, div => div.length);
         let errFlag = false;
         let cacheArr = [];
         for (let index = 0; index < count; index++) {
-            if (index === 0) {
-                await page.click(pauseClass).catch(e => puppeteerError(e));
-                await timerP.setTimeout(1000);
-            }
             if (await page.$(igShareDialog) !== null) {
                 await Promise.all([
                     page.click(igShareDialog).catch(e => puppeteerError(e)),
@@ -215,6 +203,14 @@ async function getStories(url, forceUpdate = false, uid = '') {
             currentPage = await page.url();
             cacheArr[currentPage] = result;
             imgUrls.push(result);
+
+            let timestamp = Date.now();
+            let tmpArr = [];
+            tmpArr[currentPage] = result;
+            CACHE.set(currentPage, {
+                'time': timestamp,
+                'data': tmpArr
+            });
 
             if (await page.$(nextClass) !== null) {
                 await timerP.setTimeout(1000);
