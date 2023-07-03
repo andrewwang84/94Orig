@@ -37,6 +37,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
 
     userName = userName.toLowerCase();
 
+    console.info(`[LOG][PUPPETEER_DEBUG] Cache Start`);
     // get Cache
     if (CACHE.has(homeUrl) || CACHE.has(storiesUrl)) {
         console.info(`[LOG][IG_STORY]Get Story From Cache`);
@@ -83,6 +84,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
         }
     }
 
+    console.info(`[LOG][PUPPETEER_DEBUG] Puppeteer Start`);
     try {
         await getBrowser();
         const browser = await puppeteer.connect({ browserWSEndpoint });
@@ -104,6 +106,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
             else request.continue();
         });
 
+        console.info(`[LOG][PUPPETEER_DEBUG] Go to ${homeUrl}`);
         await page.goto(homeUrl, { waitUntil: waitUntilMain });
         if (await page.$(privateAccSelector)) {
             await page.close();
@@ -113,6 +116,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
             });
         }
 
+        console.info(`[LOG][PUPPETEER_DEBUG] Click ${homeUrl}`);
         let countClass = storiesCountClassSelector;
         let nextClass = nextStorySelector;
         let pauseClass = igPauseSelector;
@@ -132,6 +136,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
             });
         }
 
+        console.info(`[LOG][PUPPETEER_DEBUG] Start parsing stories`);
         await page.waitForSelector(pauseClass);
         await page.click(pauseClass);
         await page.waitForSelector(countClass).catch(e => puppeteerError(e));
@@ -210,6 +215,7 @@ async function getStories(url, forceUpdate = false, uid = '') {
             }
         }
 
+        console.info(`[LOG][PUPPETEER_DEBUG] Set cache`);
         if (!errFlag) {
             let timestamp = Date.now();
 
