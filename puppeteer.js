@@ -107,14 +107,6 @@ async function getStories(url, forceUpdate = false, uid = '') {
         if (await page.$(privateAccSelector)) {
             await page.close();
             return new Promise(function (resolve, reject) {
-                let timestamp = Date.now();
-                let cacheArr = [];
-                cacheArr[url] = `@${userName} 是私人帳號`;
-                CACHE.set(homeUrl, {
-                    'time': timestamp,
-                    'data': cacheArr
-                });
-
                 imgUrls.push(`@${userName} 是私人帳號`);
                 resolve(imgUrls);
             });
@@ -133,13 +125,6 @@ async function getStories(url, forceUpdate = false, uid = '') {
                 .then(() => page.waitForNavigation({ waitUntil: waitUntilMain }));
         } catch (error) {
             console.log(`[ERROR][IG_STORY][${userName}] Not Found`);
-            let timestamp = Date.now();
-            let cacheArr = [];
-            cacheArr[url] = `@${userName} 目前沒有限時動態`;
-            CACHE.set(homeUrl, {
-                'time': timestamp,
-                'data': cacheArr
-            });
             imgUrls.push(`@${userName} 目前沒有限時動態`);
             return new Promise(function (resolve, reject) {
                 resolve(imgUrls);

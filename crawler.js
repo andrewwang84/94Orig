@@ -251,7 +251,6 @@ function twitterUrl(url) {
     return new Promise(function (resolve, reject) {
         T.get('statuses/show/:id', {
             id: id,
-            include_card_uri: true,
             tweet_mode: 'extended'
         }, (err, data, response) => {
             if (err) {

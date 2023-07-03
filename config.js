@@ -9,8 +9,8 @@ var config = {
         twitterKeySecret: null,
         twitterAccessToken: null,
         twitterAccessTokenSecret: null,
-        isHeadless: false,
-        // isHeadless: 'new'
+        // isHeadless: false,
+        isHeadless: 'new'
     },
     production: {
         telegramToken: process.env.telegramToken,
