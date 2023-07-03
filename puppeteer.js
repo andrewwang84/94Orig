@@ -83,18 +83,19 @@ async function getStories(url, forceUpdate = false, uid = '') {
         }
     }
 
-    await getBrowser();
-    const browser = await puppeteer.connect({ browserWSEndpoint });
-
-    const cookie = {
-        name: "sessionid",
-        value: insCookies,
-        path: "/",
-        domain: ".instagram.com",
-    };
-
-    const page = await browser.newPage();
     try {
+        await getBrowser();
+        const browser = await puppeteer.connect({ browserWSEndpoint });
+
+        const cookie = {
+            name: "sessionid",
+            value: insCookies,
+            path: "/",
+            domain: ".instagram.com",
+        };
+
+        const page = await browser.newPage();
+
         await page.setCookie(cookie);
         await page.setUserAgent(userAgent);
         await page.setRequestInterception(true);
