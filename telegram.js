@@ -74,10 +74,15 @@ bot.onText(/https:\/\//, async (msg, match) => {
         }
     } catch (error) {
         if (error.message == 'ETELEGRAM: 502 Bad Gateway') {
+            console.log('[ERROR] Self Terminate');
             process.exit();
         }
-        console.log(`[ERROR][Telegram] ${error}`);
-        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        if (typeof error == 'object') {
+            console.dir(error);
+        } else {
+            console.log(`[ERROR][Telegram] ${error}`);
+            bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        }
     }
 });
 
