@@ -64,6 +64,8 @@ bot.onText(/https:\/\//, async (msg, match) => {
                         }
                     } else if (/\[ADMIN\]/.test(resArr[i])) {
                         await bot.sendMessage(adminId[0], resArr[i]);
+                    } else if (/blob/.test(resArr[i])) {
+                        await bot.sendMessage(chatId, 'Get Blob, https://twitter.com/twicebot_/media', { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
                     } else {
                         await bot.sendMessage(chatId, resArr[i], { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
                     }
