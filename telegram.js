@@ -75,7 +75,8 @@ bot.onText(/https:\/\//, async (msg, match) => {
             bot.sendMessage(chatId, '沒東西啦 !!', { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
         }
     } catch (error) {
-        if (error.message == 'ETELEGRAM: 502 Bad Gateway') {
+        console.log(error.code);
+        if (error.code == 'ECONNREFUSED') {
             console.log('[ERROR] Self Terminate');
             bot.sendMessage(chatId, `出錯了: 自動重啟程式`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
             process.exit();
