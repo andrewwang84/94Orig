@@ -198,7 +198,9 @@ function igUrl(url) {
                         }
                     }
 
-                    result.push(img);
+                    if (!result.includes(img)) {
+                        result.push(img);
+                    }
                 }
                 if (target.video_versions != undefined) {
                     results = target.video_versions;
@@ -227,7 +229,9 @@ function igUrl(url) {
                     img = v.src.replace(/\\u0026/gi, "&");
                 }
 
-                result.push(img);
+                if (!result.includes(img)) {
+                    result.push(img);
+                }
 
                 if (target.video_url != undefined) {
                     img = target.video_url.replace(/\\u0026/gi, "&");
