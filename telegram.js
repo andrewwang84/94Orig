@@ -75,15 +75,13 @@ bot.onText(/https:\/\//, async (msg, match) => {
             bot.sendMessage(chatId, '沒東西啦 !!', { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
         }
     } catch (error) {
-        console.log(error.code);
-        if (error.code == 'ECONNREFUSED') {
+        if (error.code == undefined) {
+            console.dir(error);
             console.log('[ERROR] Self Terminate');
             bot.sendMessage(chatId, `出錯了: 自動重啟程式`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
             process.exit();
-        }
-        if (typeof error == 'object') {
-            console.dir(error);
         } else {
+            console.dir(error);
             console.log(`[ERROR][Telegram] ${error}`);
             bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
         }
