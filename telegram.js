@@ -88,6 +88,26 @@ bot.onText(/https:\/\//, async (msg, match) => {
     }
 });
 
+bot.onText(/\/reboot/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    let logName = msg.from.username || msg.from.first_name || msg.from.id;
+    let chatMsg = match.input;
+
+    try {
+        if (!adminId.includes(chatId) && maintenceMode == true) {
+            console.log(`[LOG][${chatId}][${logName}] Maintain Block - ${chatMsg}`);
+            throw new Error(`System under maintain, please try again later`);
+        }
+
+        console.log('[Telegram] 重啟指令');
+        bot.sendMessage(chatId, `正在重啟程式......`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        process.exit();
+    } catch (error) {
+        console.log(`[ERROR][Telegram] ${error}`);
+        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+    }
+});
+
 bot.onText(/\/help/, (msg) => {
     const chatId = msg.chat.id;
     bot.sendMessage(chatId, `
