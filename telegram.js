@@ -99,9 +99,11 @@ bot.onText(/\/reboot/, async (msg, match) => {
             throw new Error(`System under maintain, please try again later`);
         }
 
-        console.log('[Telegram] 重啟指令');
-        bot.sendMessage(chatId, `正在重啟程式......`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
-        process.exit();
+        if (Date.now() - msg.date * 1000 < 1000) {
+            console.log('[Telegram] 重啟指令');
+            await bot.sendMessage(chatId, `正在重啟程式......`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+            process.exit();
+        }
     } catch (error) {
         console.log(`[ERROR][Telegram] ${error}`);
         bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
