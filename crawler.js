@@ -123,7 +123,14 @@ function igUrl(url) {
                 reject('cookie 失效');
                 return;
             }
-            let data = JSON.parse(body);
+            let data = [];
+            try {
+                data = JSON.parse(body);
+            } catch (error) {
+                console.log(body);
+                console.log(`[ERROR][IG] ${error}`);
+            }
+
             if (data === undefined) {
                 console.log(`[ERROR][IG] data not found`);
                 console.log(`[ERROR][IG] current cookie: ${insCookies}`);
@@ -158,12 +165,18 @@ function igUrl(url) {
             }
 
             let results = '';
+            let imgRecord = {};
             if (type == TYPE_FANSPAGE) {
                 if (target.carousel_media != undefined) {
                     results = target.carousel_media;
                     for (let value of results) {
                         let img = value.image_versions2.candidates[0].url.replace(/\\u0026/gi, "&");
-                        result.push(img);
+                        let imgHeight = value.image_versions2.candidates[0].height;
+                        let imgFileName = img.match(/\/([0-9\_n]+\.(?:jpw?g|png))/)[1];
+                        if (imgRecord[imgFileName] == undefined || imgHeight > imgRecord.imgFileName) {
+                            imgRecord[imgFileName] = imgHeight;
+                            result.push(img);
+                        }
 
                         if (value.media_type == 2) {
                             let vid = '';
@@ -189,6 +202,8 @@ function igUrl(url) {
                     let currentW = 0;
                     for (let v of results.candidates) {
                         if (v.width == origW && v.height == origH) {
+                            currentH = v.height;
+                            currentW = v.width;
                             img = v.url.replace(/\\u0026/gi, "&");
                             break;
                         } else if (v.height >= currentH && v.width >= currentW) {
@@ -198,7 +213,10 @@ function igUrl(url) {
                         }
                     }
 
-                    if (!result.includes(img)) {
+                    let imgHeight = currentH;
+                    let imgFileName = img.match(/\/([0-9\_n]+\.(?:jpw?g|png))/)[1];
+                    if (imgRecord[imgFileName] == undefined || imgHeight > imgRecord.imgFileName) {
+                        imgRecord[imgFileName] = imgHeight;
                         result.push(img);
                     }
                 }
@@ -242,6 +260,7 @@ function igUrl(url) {
             end = Date.now();
             console.log(`[LOG][IG][${userName}][${url}][${(end - start) / 1000}s][${result.length}] Done`);
 
+            console.log(imgRecord);
             resolve(result);
         })
     });

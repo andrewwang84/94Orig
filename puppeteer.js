@@ -404,7 +404,8 @@ async function getBrowser(source = 'IG_STORY') {
         console.log(`[LOG][${source}] Launch Browser`);
         const browser = await puppeteer.launch({
             headless: isHeadless,
-            args: LAUNCH_ARGS
+            args: LAUNCH_ARGS,
+            // executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe'
         });
         browserWSEndpoint = await browser.wsEndpoint();
     }
