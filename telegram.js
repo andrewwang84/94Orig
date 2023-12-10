@@ -51,7 +51,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
 
             for (var i = 0; i < resArr.length; i++) {
                 if (resArr[i] != '') {
-                    if (/mp4|jpe?g|png/.test(resArr[i]) && adminId.includes(chatId)) {
+                    if (/mp4|jpe?g|png|heic/.test(resArr[i]) && adminId.includes(chatId)) {
                         try {
                             if (/dst-webp/.test(resArr[i])) {
                                 await bot.sendMessage(chatId, resArr[i], { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });

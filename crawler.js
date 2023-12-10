@@ -172,7 +172,7 @@ function igUrl(url) {
                     for (let value of results) {
                         let img = value.image_versions2.candidates[0].url.replace(/\\u0026/gi, "&");
                         let imgHeight = value.image_versions2.candidates[0].height;
-                        let imgFileName = img.match(/\/([0-9\_n]+\.(?:jpw?g|png))/)[1];
+                        let imgFileName = img.match(/\/([0-9\_n]+\.(?:jpe?g|png|heic))/)[1];
                         if (imgRecord[imgFileName] == undefined || imgHeight > imgRecord.imgFileName) {
                             imgRecord[imgFileName] = imgHeight;
                             result.push(img);
@@ -214,7 +214,7 @@ function igUrl(url) {
                     }
 
                     let imgHeight = currentH;
-                    let imgFileName = img.match(/\/([0-9\_n]+\.(?:jpw?g|png))/)[1];
+                    let imgFileName = img.match(/\/([0-9\_n]+\.(?:jpe?g|png|heic))/)[1];
                     if (imgRecord[imgFileName] == undefined || imgHeight > imgRecord.imgFileName) {
                         imgRecord[imgFileName] = imgHeight;
                         result.push(img);
