@@ -3,25 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www",
+    "start": "node app.js",
     "test": "export NODE_ENV=development && npm start"
   },
   "engines": {
-    "node": "18.x"
+    "node": "21.x"
   },
   "dependencies": {
-    "cheerio": "^1.0.0-rc.11",
-    "cookie-parser": "^1.4.6",
-    "debug": "^4.3.4",
-    "ejs": "^3.1.8",
-    "express": "^4.18.1",
-    "helmet": "^5.1.0",
-    "http-errors": "^2.0.0",
-    "morgan": "^1.10.0",
-    "node-telegram-bot-api": "^0.57.0",
-    "puppeteer": "^20.7.2",
-    "request": "^2.88.2",
-    "twit": "^2.2.11"
+    "node-telegram-bot-api": "^0.66.0"
   },
   "description": "service to return original instagram and twitter image to user",
   "keywords": [
