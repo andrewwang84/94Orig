@@ -26,6 +26,10 @@ let getImage = async (urlDatas, downloadRemote = false) => {
                     }
                 });
 
+                // process.stderr.on('data', (data) => {
+                //     console.log(`stderr:`, data.toString());
+                // });
+
                 process.on('close', (code) => {
                     console.log(`${url} Done, code:${code}`);
                     urlDatas[url].isDone = true;
