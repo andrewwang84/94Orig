@@ -1,6 +1,11 @@
 const { spawn } = require('child_process');
+const TYPE_IG_NORMAL = 1;
+const TYPE_IG_STORY = 2;
+const TYPE_X = 3;
+const TYPE_YT = 4;
+const TYPE_STREAM = 5;
 
-let getImage = async (urlDatas, downloadRemote = false) => {
+let getImage = async (urlDatas, downloadRemote = false, forceYtDlp = false) => {
     try {
         let promises = [];
         for (const url in urlDatas) {
@@ -8,21 +13,49 @@ let getImage = async (urlDatas, downloadRemote = false) => {
 
             let modeTxt = (downloadRemote) ? '' : '-g';
             let cmdPreview = `gallery-dl --cookies-from-browser firefox ${modeTxt} ${url}`;
-            console.info(`[LOG][${tmpElem.typeTxt}][${url}] ${cmdPreview}`);
             let cmd = `gallery-dl`;
             let args = (downloadRemote) ? ['--cookies-from-browser', 'firefox', url] : ['--cookies-from-browser', 'firefox', modeTxt, url];
+            let isYtdlp = (forceYtDlp || tmpElem.type == TYPE_YT || tmpElem.type == TYPE_STREAM);
+            if (isYtdlp) {
+                let cookiesTxt = '';
+                let cookiesTxt2 = '';
+                let outputTxt = '';
+                let outputTxt2 = '';
+                cmd = `yt-dlp`;
+                if (tmpElem.type == TYPE_X) {
+                    cookiesTxt = '--cookies-from-browser';
+                    cookiesTxt2 = 'firefox';
+                    outputTxt = '-o';
+                    outputTxt2 ='%(uploader_id)s_%(id)s_%(upload_date>%y%m%d|0)s.%(ext)s';
+                    args = [cookiesTxt, cookiesTxt2, outputTxt, outputTxt2, url];
+                } else if (tmpElem.type == TYPE_STREAM) {
+                    cookiesTxt = '--cookies-from-browser';
+                    cookiesTxt2 = 'firefox';
+                    args = [cookiesTxt, cookiesTxt2, url];
+                } else {
+                    args = [url];
+                }
+                cmdPreview = `yt-dlp ${cookiesTxt} ${cookiesTxt2} ${outputTxt} ${outputTxt2} ${url}`;
+            }
+            console.info(`[LOG][${tmpElem.typeTxt}][${url}] ${cmdPreview}`);
 
             let promise = new Promise((resolve, reject) => {
                 const process = spawn(cmd, args);
 
                 process.stdout.on('data', (data) => {
-                    // console.log(`stdout:`, dataStrArr);
-                    if (!downloadRemote) {
-                        let dataStrArr = data.toString().replaceAll('| ', '').replace(/\r?\n/g, '<br>').split('<br>').filter(Boolean);
-                        urlDatas[url].data = [...urlDatas[url].data, ...dataStrArr];
+                    // console.log(`stdout:`, data.toString());
+                    if (isYtdlp) {
+                        if (/\[download\] Destination/.test(data.toString()) || /has already been downloaded/.test(data.toString())) {
+                            urlDatas[url].data = ['Done'];
+                        }
                     } else {
-                        let dataStrArr = data.toString().replace(/\r?\n/g, '<br>').split('<br>').filter(Boolean);
-                        urlDatas[url].data = [...urlDatas[url].data, ...dataStrArr];
+                        if (!downloadRemote) {
+                            let dataStrArr = data.toString().replaceAll('| ', '').replace(/\r?\n/g, '<br>').split('<br>').filter(Boolean);
+                            urlDatas[url].data = [...urlDatas[url].data, ...dataStrArr];
+                        } else {
+                            let dataStrArr = data.toString().replace(/\r?\n/g, '<br>').split('<br>').filter(Boolean);
+                            urlDatas[url].data = [...urlDatas[url].data, ...dataStrArr];
+                        }
                     }
                 });
 

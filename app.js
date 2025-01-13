@@ -7,10 +7,14 @@ const crawler = require('./crawler.js');
 const TYPE_IG_NORMAL = 1;
 const TYPE_IG_STORY = 2;
 const TYPE_X = 3;
+const TYPE_YT = 4;
+const TYPE_STREAM = 5;
 const patterns = {
     [TYPE_IG_NORMAL]: /https:\/\/www\.instagram\.com\/(?:[\w-]+\/)?(?:p|reel)\/[\w-]+\/?/g,
     [TYPE_IG_STORY]: /https:\/\/www\.instagram\.com\/stories\/[\w.-]+(?:\/[\w-]+)?\/?/g,
     [TYPE_X]: /https:\/\/x\.com\/[\w-]+\/status\/[\d]+\/?/g,
+    [TYPE_YT]: /https:\/\/www\.youtube\.com\/(?:watch\?v=|shorts\/)([\w-]+)/g,
+    [TYPE_STREAM]: /https:\/\/(?:www\.)?(kick\.com|twitch\.tv)\/([\w-]+)/g,
 };
 
 bot.onText(/https:\/\//, async (msg, match) => {
@@ -35,6 +39,12 @@ bot.onText(/https:\/\//, async (msg, match) => {
                     break;
                 case TYPE_X:
                     typeTxt = 'X';
+                    break;
+                case TYPE_YT:
+                    typeTxt = 'YT';
+                    break;
+                case TYPE_STREAM:
+                    typeTxt = 'STREAM';
                     break;
                 case TYPE_IG_NORMAL:
                 default:
@@ -70,48 +80,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
         let resps = await crawler.getImage(targets, downloadRemote);
         // console.log('resps:', resps);
         if (Object.keys(resps).length !== 0) {
-            if (downloadRemote) {
-                let resTxt = '';
-                for (const resp of resps) {
-                    if (resp.isDone && resp.data.length > 0) {
-                        resTxt += `${resp.target} 下載完成\n`;
-                    } else {
-                        resTxt += `${resp.target} 下載失敗\n`;
-                    }
-                }
-
-                await bot.sendMessage(chatId, resTxt, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
-            } else {
-                for (const resp of resps) {
-                    if (resp.isDone && resp.data.length > 0) {
-                        let sendTwitLink = [];
-                        for (const link of resp.data) {
-                            // console.log('link:', link);
-                            // 推特有多種大小，抓最大就好
-                            if (resp.type == TYPE_X) {
-                                let tmpLink = link.split('?')[0];
-                                if (sendTwitLink.includes(tmpLink)) {
-                                    continue;
-                                }
-                                sendTwitLink.push(tmpLink);
-                            }
-
-                            if (urlOnly) {
-                                await bot.sendMessage(chatId, link);
-                            } else {
-                                try {
-                                    await bot.sendDocument(chatId, link);
-                                } catch (error) {
-                                    console.log(`[ERROR] sendDocument error: ${error}`);
-                                    await bot.sendMessage(chatId, link);
-                                }
-                            }
-                        }
-                    } else {
-                        await bot.sendMessage(chatId, `${resp.target} 下載失敗`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
-                    }
-                }
-            }
+            sendMessages(msg, resps, downloadRemote, urlOnly);
         } else {
             bot.sendMessage(chatId, '沒東西啦 !!', { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
         }
@@ -141,3 +110,56 @@ bot.onText(/\/help/, (msg) => {
 
 \- 一次傳入多個連結請用「\*換行\*」分開`, { parse_mode: 'Markdown' });
 });
+
+async function sendMessages(msg, datas, downloadRemote = false, urlOnly = false) {
+    const chatId = msg.chat.id;
+    if (downloadRemote) {
+        let resTxt = '';
+        for (const data of datas) {
+            if (data.isDone && data.data.length > 0) {
+                resTxt += `${data.target} 下載完成\n`;
+            } else {
+                resTxt += `${data.target} 下載失敗\n`;
+            }
+        }
+
+        await bot.sendMessage(chatId, resTxt, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+    } else {
+        for (const data of datas) {
+            if (data.isDone && data.data.length > 0) {
+                let sendTwitLink = [];
+                for (const link of data.data) {
+                    // console.log('link:', link);
+                    // 推特有多種大小，抓最大就好
+                    if (data.type == TYPE_X) {
+                        let tmpLink = link.split('?')[0];
+                        if (sendTwitLink.includes(tmpLink)) {
+                            continue;
+                        }
+                        sendTwitLink.push(tmpLink);
+                    }
+
+                    if (urlOnly) {
+                        await bot.sendMessage(chatId, link);
+                    } else if (data.type == TYPE_YT || data.type == TYPE_STREAM) {
+                        await bot.sendMessage(chatId, `${data.target} 下載完成\n`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+                    } else {
+                        try {
+                            await bot.sendDocument(chatId, link);
+                        } catch (error) {
+                            console.log(`[ERROR] sendDocument error: ${error}`);
+                            await bot.sendMessage(chatId, link);
+                        }
+                    }
+                }
+            } else if (data.type == TYPE_X) {
+                let tmpData = [];
+                tmpData[data.target] = data;
+                let resp = await crawler.getImage(tmpData, downloadRemote, true);
+                sendMessages(msg, resp, true);
+            } else {
+                await bot.sendMessage(chatId, `${data.target} 下載失敗`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+            }
+        }
+    }
+}
