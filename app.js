@@ -69,8 +69,8 @@ bot.onText(/https:\/\//, async (msg, match) => {
         let urlOnly = /--s/i.test(chatMsg);
 
         // console.log(targets);
-        console.log('downloadRemote:', downloadRemote);
-        console.log('urlOnly:', urlOnly);
+        // console.log('downloadRemote:', downloadRemote);
+        // console.log('urlOnly:', urlOnly);
 
         if (Object.keys(targets).length === 0) {
             throw new Error(`[${logName}] 目前不支援該網址 ${chatMsg}`);
