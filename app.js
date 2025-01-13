@@ -125,19 +125,19 @@ bot.onText(/\/help/, (msg) => {
     const chatId = msg.chat.id;
     bot.sendMessage(chatId, `
 \- Instagram 照片、影片：
-    - https://www.instagram.com/p/[貼文 ID]/
-    - https://www.instagram.com/reel/[貼文 ID]/
+    - https://www.instagram.com/p/\[貼文ID\]/
+    - https://www.instagram.com/reel/\[貼文ID\]/
 
 \- Instagram 限動：
-    - https://www.instagram.com/stories/[用戶名稱]/
-    - https://www.instagram.com/stories/[用戶名稱]/[貼文 ID]/
+    - https://www.instagram.com/stories/\[用戶名稱\]/
+    - https://www.instagram.com/stories/\[用戶名稱\]/\[貼文ID\]/
 
 \- X(Twitter) 圖片、影片：
-    - https://x.com/[用戶名稱]/status/[貼文 ID]/
+    - https://x.com/[用戶名稱]/status/\[貼文ID\]/
 
 \- 預設下載到 Telegram：
-    - 下載到遠端主機，訊息帶 --r
-    - 獲取圖片網址，訊息帶 --s
+    - 下載到遠端主機，訊息帶「--r」
+    - 獲取圖片網址，訊息帶「--s」
 
 \- 一次傳入多個連結請用「\*換行\*」分開`, { parse_mode: 'Markdown' });
 });
