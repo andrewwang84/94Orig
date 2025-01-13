@@ -2,6 +2,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const token = require('./config.js')['development'].telegramToken;
 const bot = new TelegramBot(token, { polling: true });
 const adminId = require('./config.js')['development'].adminId;
+const myId = require('./config.js')['development'].myId;
 const crawler = require('./crawler.js');
 
 const TYPE_IG_NORMAL = 1;
@@ -67,6 +68,10 @@ bot.onText(/https:\/\//, async (msg, match) => {
 
         let downloadRemote = /--r/i.test(chatMsg);
         let urlOnly = /--s/i.test(chatMsg);
+
+        if (chatId == myId) {
+            downloadRemote = !downloadRemote;
+        }
 
         // console.log(targets);
         // console.log('downloadRemote:', downloadRemote);
