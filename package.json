@@ -6,9 +6,6 @@
     "start": "node app.js",
     "test": "export NODE_ENV=development && npm start"
   },
-  "engines": {
-    "node": "21.x"
-  },
   "dependencies": {
     "node-telegram-bot-api": "^0.66.0"
   },

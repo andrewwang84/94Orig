@@ -8,21 +8,26 @@ let getImage = async (urlDatas, downloadRemote = false) => {
 
             let modeTxt = (downloadRemote) ? '' : '-g';
             let cmdPreview = `gallery-dl --cookies-from-browser firefox ${modeTxt} ${url}`;
-            console.info(`[LOG][${tmpElem.type}][${url}] ${cmdPreview}`);
+            console.info(`[LOG][${tmpElem.typeTxt}][${url}] ${cmdPreview}`);
             let cmd = `gallery-dl`;
-            let args = ['--cookies-from-browser', 'firefox', modeTxt, url];
+            let args = (downloadRemote) ? ['--cookies-from-browser', 'firefox', url] : ['--cookies-from-browser', 'firefox', modeTxt, url];
 
             let promise = new Promise((resolve, reject) => {
                 const process = spawn(cmd, args);
 
                 process.stdout.on('data', (data) => {
-                    let dataStrArr = data.toString().replaceAll('| ', '').split('\r\n').filter(Boolean);
                     // console.log(`stdout:`, dataStrArr);
-                    urlDatas[url].data = [...urlDatas[url].data, ...dataStrArr];
+                    if (!downloadRemote) {
+                        let dataStrArr = data.toString().replaceAll('| ', '').replace(/\r?\n/g, '<br>').split('<br>').filter(Boolean);
+                        urlDatas[url].data = [...urlDatas[url].data, ...dataStrArr];
+                    } else {
+                        let dataStrArr = data.toString().replace(/\r?\n/g, '<br>').split('<br>').filter(Boolean);
+                        urlDatas[url].data = [...urlDatas[url].data, ...dataStrArr];
+                    }
                 });
 
                 process.on('close', (code) => {
-                    // console.log(`${url} Done, code:${code}`);
+                    console.log(`${url} Done, code:${code}`);
                     urlDatas[url].isDone = true;
                     resolve(urlDatas[url]);
                 });
@@ -35,7 +40,7 @@ let getImage = async (urlDatas, downloadRemote = false) => {
             });
 
             promises.push(promise);
-            await sleep(1000);
+            await sleep(500);
         }
 
         return Promise.all(promises);

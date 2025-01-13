@@ -44,7 +44,8 @@ bot.onText(/https:\/\//, async (msg, match) => {
             if (regex.test(chatMsg)) {
                 for (const target of chatMsg.match(regex)) {
                     let tmpData = {
-                        'type': typeTxt,
+                        'type': type,
+                        'typeTxt': typeTxt,
                         'target': target,
                         'isDone': false,
                         'data': []
@@ -69,33 +70,45 @@ bot.onText(/https:\/\//, async (msg, match) => {
         let resps = await crawler.getImage(targets, downloadRemote);
         // console.log('resps:', resps);
         if (Object.keys(resps).length !== 0) {
-            for (const resp of resps) {
-
-            }
-            let resArr = [];
-            for (let i = 0; i < resp.length; i++) {
-                resArr = resArr.concat(resp[i]);
-            }
-
-            for (var i = 0; i < resArr.length; i++) {
-                if (resArr[i] != '') {
-                    if (/mp4|jpe?g|png|heic/.test(resArr[i]) && adminId.includes(chatId)) {
-                        try {
-                            if (/dst-webp/.test(resArr[i])) {
-                                await bot.sendMessage(chatId, resArr[i], { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
-                            } else {
-                                await bot.sendDocument(chatId, resArr[i]);
-                            }
-                        } catch (error) {
-                            console.log(`[ERROR] sendDocument error: ${error}`);
-                            await bot.sendMessage(chatId, resArr[i]);
-                        }
-                    } else if (/\[ADMIN\]/.test(resArr[i])) {
-                        await bot.sendMessage(adminId[0], resArr[i]);
-                    } else if (/blob/.test(resArr[i])) {
-                        await bot.sendMessage(chatId, 'Get Blob, https://twitter.com/twicebot_/media', { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+            if (downloadRemote) {
+                let resTxt = '';
+                for (const resp of resps) {
+                    if (resp.isDone && resp.data.length > 0) {
+                        resTxt += `${resp.target} 下載完成\n`;
                     } else {
-                        await bot.sendMessage(chatId, resArr[i], { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+                        resTxt += `${resp.target} 下載失敗\n`;
+                    }
+                }
+
+                await bot.sendMessage(chatId, resTxt, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+            } else {
+                for (const resp of resps) {
+                    if (resp.isDone && resp.data.length > 0) {
+                        let sendTwitLink = [];
+                        for (const link of resp.data) {
+                            // console.log('link:', link);
+                            // 推特有多種大小，抓最大就好
+                            if (resp.type == TYPE_X) {
+                                let tmpLink = link.split('?')[0];
+                                if (sendTwitLink.includes(tmpLink)) {
+                                    continue;
+                                }
+                                sendTwitLink.push(tmpLink);
+                            }
+
+                            if (urlOnly) {
+                                await bot.sendMessage(chatId, link);
+                            } else {
+                                try {
+                                    await bot.sendDocument(chatId, link);
+                                } catch (error) {
+                                    console.log(`[ERROR] sendDocument error: ${error}`);
+                                    await bot.sendMessage(chatId, link);
+                                }
+                            }
+                        }
+                    } else {
+                        await bot.sendMessage(chatId, `${resp.target} 下載失敗`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
                     }
                 }
             }
