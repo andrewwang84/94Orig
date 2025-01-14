@@ -80,12 +80,11 @@ bot.onText(/https:\/\//, async (msg, match) => {
                     if (intType == TYPE_IG_NORMAL || intType == TYPE_IG_STORY || intType == TYPE_IG_STORY) {
                         imgTargets[target] = tmpData;
                     } else if (intType == TYPE_STREAM) {
-                        let replyMsg = await bot.sendMessage(chatId, `${target}\n\n即將開始下載......`, { is_disabled: true, reply_to_message_id: msgId, allow_sending_without_reply: true });
+                        let replyMsg = await bot.sendMessage(chatId, `${target}\n\n即將開始下載...`, { is_disabled: true, reply_to_message_id: msgId, allow_sending_without_reply: true });
                         let replyMsgId = replyMsg.message_id;
                         tmpData['chatId'] = chatId;
                         tmpData['replyMsgId'] = replyMsgId;
                         if (streamRunningQueue.length >= 1) {
-                            console.log('streamRunningQueue:', streamRunningQueue);
                             streamQueue.push(tmpData);
                         } else {
                             streamRunningQueue.push(tmpData);
@@ -93,12 +92,11 @@ bot.onText(/https:\/\//, async (msg, match) => {
                         }
                         streamTargets[target] = tmpData;
                     } else {
-                        let replyMsg = await bot.sendMessage(chatId, `${target}\n\n即將開始下載......`, { is_disabled: true, reply_to_message_id: msgId, allow_sending_without_reply: true });
+                        let replyMsg = await bot.sendMessage(chatId, `${target}\n\n即將開始下載...`, { is_disabled: true, reply_to_message_id: msgId, allow_sending_without_reply: true });
                         let replyMsgId = replyMsg.message_id;
                         tmpData['chatId'] = chatId;
                         tmpData['replyMsgId'] = replyMsgId;
                         if (videoRunningQueue.length >= 2) {
-                            console.log('videoRunningQueue:', videoRunningQueue);
                             videoQueue.push(tmpData);
                         } else {
                             videoRunningQueue.push(tmpData);
@@ -199,7 +197,7 @@ async function sendMessages(msg, datas, downloadRemote = false, urlOnly = false)
                     }
                 }
             } else if (data.type == TYPE_X) {
-                let replyMsg = await bot.sendMessage(chatId, `${data.target}\n\n即將開始下載......`, { is_disabled: true, reply_to_message_id: msgId, allow_sending_without_reply: true });
+                let replyMsg = await bot.sendMessage(chatId, `${data.target}\n\n即將開始下載...`, { is_disabled: true, reply_to_message_id: msgId, allow_sending_without_reply: true });
                 let replyMsgId = replyMsg.message_id;
                 data['chatId'] = chatId;
                 data['replyMsgId'] = replyMsgId;
@@ -305,64 +303,121 @@ async function getVideo(urlData) {
         let cmdPreview = `yt-dlp ${cookiesTxt} ${cookiesTxt2} ${outputTxt} ${outputTxt2} ${url}`;
         console.info(`[LOG][${urlData.typeTxt}][${url}] ${cmdPreview}`);
 
-        await bot.editMessageText(`${urlData.target}\n\n開始下載......`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
+        await bot.editMessageText(`${url}\n\n開始下載...`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
 
-        return new Promise((resolve, reject) => {
-            const process = spawn(cmd, args);
+        const process = spawn(cmd, args);
+        let vidFormat = '';
+        let progressFlag = false;
+        let currentProgress = 0;
+        let streamStart = false;
+        process.stdout.on('data', async (data) => {
+            // console.log(`stdout:`, data.toString());
+            let dataStr = data.toString();
+            if (urlData.type == TYPE_YT || urlData.type == TYPE_X) {
+                // 先獲取影片格式
+                if (vidFormat == '') {
+                    let tmpVidF = dataStr.match(/format\(s\):\s(\S+)\+/);
+                    if (tmpVidF != null) {
+                        vidFormat = tmpVidF[1];
+                    }
+                // 有影片格式但是目標影片還沒開始下載
+                } else if (progressFlag == false) {
+                    let tmpVidF = dataStr.match(/\.f(\S+)\./);
+                    if (tmpVidF != null) {
+                        progressFlag = (tmpVidF[1] == vidFormat);
+                    }
+                // 開始下載
+                } else if (currentProgress <= 100) {
+                    let tmpProgress = dataStr.match(/(\d+\.\d+)% /);
+                    if (tmpProgress != null) {
+                        let tmpCurrentProgress = Math.round(parseFloat(tmpProgress[1]) / 10) * 10;
+                        if (currentProgress < tmpCurrentProgress) {
+                            currentProgress = tmpCurrentProgress;
+                            let progress = await getProgressEmoji(currentProgress);
+                            await bot.editMessageText(`${url}\n\n下載進度：[${progress}]`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
 
-            let vidFormat = '';
-            let progressFlag = false;
-            let currentProgress = 0;
-            process.stdout.on('data', async (data) => {
-                console.log(`stdout:`, data.toString());
-                let dataStr = data.toString();
-                if (urlData.type == TYPE_YT) {
-                    // 先獲取影片格式
-                    if (vidFormat == '') {
-                        let tmpVidF = dataStr.match(/:\s(\d+)\+/);
-                        if (tmpVidF != null) {
-                            vidFormat = tmpVidF[1];
-                        }
-                    // 有影片格式但是目標影片還沒開始下載
-                    } else if (progressFlag == false) {
-                        let tmpVidF = dataStr.match(/\.f(\d+)\./);
-                        if (tmpVidF != null) {
-                            progressFlag = (tmpVidF[1] == vidFormat);
-                        }
-                    // 開始下載
-                    } else if (currentProgress <= 100) {
-                        let tmpProgress = dataStr.match(/(\d+\.\d+)% /);
-                        if (tmpProgress != null) {
-                            let tmpCurrentProgress = Math.round(parseFloat(tmpProgress[1]) / 10) * 10;
-                            if (currentProgress < tmpCurrentProgress) {
-                                currentProgress = tmpCurrentProgress;
-                                console.log(`currentProgress:`, currentProgress);
-                                let progress = await getProgressEmoji(currentProgress);
-                                await bot.editMessageText(`${urlData.target}\n\n下載進度：[${progress}]`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
+                            if (currentProgress == 100) {
+                                await bot.editMessageText(`${url}\n\n下載進度：[${progress}]\n\n下載即將完成，請稍候...`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
                             }
                         }
                     }
-                } else if (urlData.type == TYPE_X) {
-
-                } else {
-
                 }
-            });
+            }
+        });
 
-            // process.stderr.on('data', (data) => {
-            //     console.log(`stderr:`, data.toString());
-            // });
+        process.stderr.on('data', async (data) => {
+            let dataStr = data.toString();
+            // console.log(`stderr:`, dataStr);
+            if (/^ERROR:/.test(dataStr)) {
+                console.log(`${url} Error: ${dataStr}}`);
+                await bot.editMessageText(`${url}\n\n下載發生錯誤：${dataStr}`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
+            }
 
-            process.on('close', async (code) => {
-                console.log(`${url} Done, code:${code}`);
-                let progress = (urlData.type == TYPE_STREAM) ? '' : `下載進度：[${ await getProgressEmoji(100) }]\n\n`;
-                await bot.editMessageText(`${urlData.target}\n\n${progress}下載完成！`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
-            });
+            if (urlData.type == TYPE_STREAM) {
+                if (streamStart == false) {
+                    let tmpStreamStart = /frame= /.test(dataStr);
+                    if (tmpStreamStart == true) {
+                        streamStart = true;
+                        await bot.editMessageText(`${url}\n\n直播下載中...`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
+                    }
+                }
+            }
+        });
 
-            process.on('error', async (err) => {
-                console.error(`${url} error: ${err.message}`);
-                await bot.editMessageText(`${urlData.target}\n\n下載發生錯誤：${err}`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
-            });
+        process.on('close', async (code) => {
+            // console.log(`${url} Done, code:${code}`);
+            if (code == 0) {
+                let progress = (urlData.type == TYPE_STREAM) ? '' : `下載進度：[${await getProgressEmoji(100)}]\n\n`;
+                await bot.editMessageText(`${url}\n\n${progress}下載完成！`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
+            }
+
+            if (urlData.type == TYPE_STREAM) {
+                streamRunningQueue = [];
+                if (streamQueue.length > 0) {
+                    let tmpData = streamQueue.shift();
+                    streamRunningQueue.push(tmpData);
+                    getVideo(tmpData);
+                }
+            } else {
+                for (const k in videoRunningQueue) {
+                    if (videoRunningQueue[k].target == url) {
+                        videoRunningQueue.splice(k, 1);
+
+                        if (videoQueue.length > 0) {
+                            let tmpData = videoQueue.shift();
+                            videoRunningQueue.push(tmpData);
+                            getVideo(tmpData);
+                        }
+                        break;
+                    }
+                }
+            }
+        });
+
+        process.on('error', async (err) => {
+            // console.error(`${url} error: ${err.message}`);
+            await bot.editMessageText(`${url}\n\n下載發生錯誤：${err}`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
+            if (urlData.type == TYPE_STREAM) {
+                streamRunningQueue = [];
+                if (streamQueue.length > 0) {
+                    let tmpData = streamQueue.shift();
+                    streamRunningQueue.push(tmpData);
+                    getVideo(tmpData);
+                }
+            } else {
+                for (const k in videoRunningQueue) {
+                    if (videoRunningQueue[k].target == url) {
+                        videoRunningQueue.splice(k, 1);
+
+                        if (videoQueue.length > 0) {
+                            let tmpData = videoQueue.shift();
+                            videoRunningQueue.push(tmpData);
+                            getVideo(tmpData);
+                        }
+                        break;
+                    }
+                }
+            }
         });
     } catch (error) {
         console.error(`error:`, error);
