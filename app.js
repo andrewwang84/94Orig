@@ -303,7 +303,7 @@ async function getVideo(urlData) {
         let cmdPreview = `yt-dlp ${cookiesTxt} ${cookiesTxt2} ${outputTxt} ${outputTxt2} ${url}`;
         console.info(`[LOG][${urlData.typeTxt}][${url}] ${cmdPreview}`);
 
-        await bot.editMessageText(`${url}\n\n開始下載...`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
+        await bot.editMessageText(`${url}\n\n開始下載...`, { is_disabled: true, chat_id: urlData.chatId, message_id: urlData.replyMsgId });
 
         const process = spawn(cmd, args);
         let vidFormat = '';
@@ -334,10 +334,10 @@ async function getVideo(urlData) {
                         if (currentProgress < tmpCurrentProgress) {
                             currentProgress = tmpCurrentProgress;
                             let progress = await getProgressEmoji(currentProgress);
-                            await bot.editMessageText(`${url}\n\n下載進度：[${progress}]`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
+                            await bot.editMessageText(`${url}\n\n下載進度：[${progress}]`, { is_disabled: true, chat_id: urlData.chatId, message_id: urlData.replyMsgId });
 
                             if (currentProgress == 100) {
-                                await bot.editMessageText(`${url}\n\n下載進度：[${progress}]\n\n下載即將完成，請稍候...`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
+                                await bot.editMessageText(`${url}\n\n下載進度：[${progress}]\n\n下載即將完成，請稍候...`, { is_disabled: true, chat_id: urlData.chatId, message_id: urlData.replyMsgId });
                             }
                         }
                     }
@@ -350,7 +350,7 @@ async function getVideo(urlData) {
             // console.log(`stderr:`, dataStr);
             if (/^ERROR:/.test(dataStr)) {
                 console.log(`${url} Error: ${dataStr}}`);
-                await bot.editMessageText(`${url}\n\n下載發生錯誤：${dataStr}`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
+                await bot.editMessageText(`${url}\n\n下載發生錯誤：${dataStr}`, { is_disabled: true, chat_id: urlData.chatId, message_id: urlData.replyMsgId });
             }
 
             if (urlData.type == TYPE_STREAM) {
@@ -358,7 +358,7 @@ async function getVideo(urlData) {
                     let tmpStreamStart = /frame= /.test(dataStr);
                     if (tmpStreamStart == true) {
                         streamStart = true;
-                        await bot.editMessageText(`${url}\n\n直播下載中...`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
+                        await bot.editMessageText(`${url}\n\n直播下載中...`, { is_disabled: true, chat_id: urlData.chatId, message_id: urlData.replyMsgId });
                     }
                 }
             }
@@ -368,7 +368,7 @@ async function getVideo(urlData) {
             // console.log(`${url} Done, code:${code}`);
             if (code == 0) {
                 let progress = (urlData.type == TYPE_STREAM) ? '' : `下載進度：[${await getProgressEmoji(100)}]\n\n`;
-                await bot.editMessageText(`${url}\n\n${progress}下載完成！`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
+                await bot.editMessageText(`${url}\n\n${progress}下載完成！`, { is_disabled: true, chat_id: urlData.chatId, message_id: urlData.replyMsgId });
             }
 
             if (urlData.type == TYPE_STREAM) {
@@ -396,7 +396,7 @@ async function getVideo(urlData) {
 
         process.on('error', async (err) => {
             // console.error(`${url} error: ${err.message}`);
-            await bot.editMessageText(`${url}\n\n下載發生錯誤：${err}`, { chat_id: urlData.chatId, message_id: urlData.replyMsgId });
+            await bot.editMessageText(`${url}\n\n下載發生錯誤：${err}`, { is_disabled: true, chat_id: urlData.chatId, message_id: urlData.replyMsgId });
             if (urlData.type == TYPE_STREAM) {
                 streamRunningQueue = [];
                 if (streamQueue.length > 0) {
