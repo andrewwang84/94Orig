@@ -1,4 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api');
+const treeKill = require('tree-kill');
 const token = require('./config.js')['development'].telegramToken;
 const bot = new TelegramBot(token, { polling: true });
 const adminId = require('./config.js')['development'].adminId;
@@ -132,6 +133,28 @@ bot.onText(/https:\/\//, async (msg, match) => {
     }
 });
 
+bot.onText(/\/stop/, async (msg) => {
+    const chatId = msg.chat.id;
+    if (msg.reply_to_message == undefined) {
+        await bot.sendMessage(chatId, `找不到對應的下載！`, { is_disabled: true, reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        return;
+    }
+
+    const stopChatId = msg.reply_to_message.message_id;
+    for (const data of streamRunningQueue) {
+        if (data.replyMsgId == stopChatId && data.process) {
+            treeKill(data.process.pid, 'SIGINT', async (err) => {
+                if (err) {
+                    await bot.sendMessage(chatId, `停止 ${data.target} 下載失敗！`, { is_disabled: true, reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+                } else {
+                    await bot.sendMessage(chatId, `已停止 ${data.target} 下載作業！`, { is_disabled: true, reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+                }
+            });
+            return;
+        }
+    }
+});
+
 bot.onText(/\/help/, (msg) => {
     const chatId = msg.chat.id;
     bot.sendMessage(chatId, `
@@ -153,11 +176,18 @@ bot.onText(/\/help/, (msg) => {
 - 一次傳入多個連結請用「<strong>換行</strong>」分開`, { parse_mode: 'HTML' });
 });
 
+bot.onText(/\/get_my_id/, async (msg) => {
+    const chatId = msg.chat.id;
+    console.log('msg', msg);
+    let replyMsg = await bot.sendMessage(chatId, chatId, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+    console.log('replyMsg', replyMsg);
+});
+
 async function sendMessages(msg, datas, downloadRemote = false, urlOnly = false) {
     const chatId = msg.chat.id;
     const msgId = msg.message_id;
     if (chatId != myId) {
-        await bot.sendMessage(chatId, '嗚吱！');
+        await bot.sendMessage(chatId, '🐵:嗚吱！');
     }
     if (downloadRemote) {
         let resTxt = '';
@@ -202,7 +232,6 @@ async function sendMessages(msg, datas, downloadRemote = false, urlOnly = false)
                 data['chatId'] = chatId;
                 data['replyMsgId'] = replyMsgId;
                 if (videoRunningQueue.length >= 2) {
-                    console.log('videoRunningQueue:', videoRunningQueue);
                     videoQueue.push(data);
                 } else {
                     videoRunningQueue.push(data);
@@ -214,13 +243,6 @@ async function sendMessages(msg, datas, downloadRemote = false, urlOnly = false)
         }
     }
 }
-
-bot.onText(/\/get_my_id/, async (msg) => {
-    const chatId = msg.chat.id;
-    console.log('msg', msg);
-    let replyMsg = await bot.sendMessage(chatId, chatId, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
-    console.log('replyMsg', replyMsg);
-});
 
 async function getImage(urlDatas, downloadRemote = false) {
     try {
@@ -306,6 +328,7 @@ async function getVideo(urlData) {
         await bot.editMessageText(`${url}\n\n開始下載...`, { is_disabled: true, chat_id: urlData.chatId, message_id: urlData.replyMsgId });
 
         const process = spawn(cmd, args);
+        urlData.process = process;
         let vidFormat = '';
         let progressFlag = false;
         let currentProgress = 0;
@@ -372,7 +395,7 @@ async function getVideo(urlData) {
             }
 
             if (urlData.type == TYPE_STREAM) {
-                streamRunningQueue = [];
+                streamRunningQueue.pop();
                 if (streamQueue.length > 0) {
                     let tmpData = streamQueue.shift();
                     streamRunningQueue.push(tmpData);
@@ -398,7 +421,7 @@ async function getVideo(urlData) {
             // console.error(`${url} error: ${err.message}`);
             await bot.editMessageText(`${url}\n\n下載發生錯誤：${err}`, { is_disabled: true, chat_id: urlData.chatId, message_id: urlData.replyMsgId });
             if (urlData.type == TYPE_STREAM) {
-                streamRunningQueue = [];
+                streamRunningQueue.shift();
                 if (streamQueue.length > 0) {
                     let tmpData = streamQueue.shift();
                     streamRunningQueue.push(tmpData);
@@ -408,7 +431,6 @@ async function getVideo(urlData) {
                 for (const k in videoRunningQueue) {
                     if (videoRunningQueue[k].target == url) {
                         videoRunningQueue.splice(k, 1);
-
                         if (videoQueue.length > 0) {
                             let tmpData = videoQueue.shift();
                             videoRunningQueue.push(tmpData);
@@ -419,6 +441,14 @@ async function getVideo(urlData) {
                 }
             }
         });
+
+        if (urlData.type == TYPE_STREAM) {
+            for (const k in streamRunningQueue) {
+                if (streamRunningQueue[k].target == url) {
+                    streamRunningQueue[k].process = process;
+                }
+            }
+        }
     } catch (error) {
         console.error(`error:`, error);
         return;
