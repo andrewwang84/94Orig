@@ -78,7 +78,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
                         'isDone': false,
                         'data': []
                     };
-                    if (intType == TYPE_IG_NORMAL || intType == TYPE_IG_STORY || intType == TYPE_IG_STORY) {
+                    if (intType == TYPE_IG_NORMAL || intType == TYPE_IG_STORY || intType == TYPE_X) {
                         imgTargets[target] = tmpData;
                     } else if (intType == TYPE_STREAM) {
                         let replyMsg = await bot.sendMessage(chatId, `${target}\n\n即將開始下載...`, { is_disabled: true, reply_to_message_id: msgId, allow_sending_without_reply: true });
