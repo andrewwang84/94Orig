@@ -11,12 +11,14 @@ const TYPE_IG_STORY = 2;
 const TYPE_X = 3;
 const TYPE_YT = 4;
 const TYPE_STREAM = 5;
+const TYPE_M3U8 = 6;
 const patterns = {
     [TYPE_IG_NORMAL]: /https:\/\/www\.instagram\.com\/(?:[\w-]+\/)?(?:p|reel)\/[\w-]+\/?/g,
     [TYPE_IG_STORY]: /https:\/\/www\.instagram\.com\/stories\/[\w.-]+(?:\/[\w-]+)?\/?/g,
     [TYPE_X]: /https:\/\/x\.com\/[\w-]+\/status\/[\d]+\/?/g,
     [TYPE_YT]: /https:\/\/www\.youtube\.com\/(?:watch\?v=|shorts\/)([\w-]+)/g,
     [TYPE_STREAM]: /https:\/\/(?:www\.)?(kick\.com|twitch\.tv)\/([\w-]+)/g,
+    [TYPE_M3U8]: /https:\/\/.+\.m3u8/g,
 };
 
 const videoQueue = [];
@@ -64,6 +66,9 @@ bot.onText(/https:\/\//, async (msg, match) => {
                 case TYPE_STREAM:
                     typeTxt = 'STREAM';
                     break;
+                case TYPE_M3U8:
+                    typeTxt = 'M3U8';
+                    break;
                 case TYPE_IG_NORMAL:
                 default:
                     typeTxt = 'IG';
@@ -80,7 +85,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
                     };
                     if (intType == TYPE_IG_NORMAL || intType == TYPE_IG_STORY || intType == TYPE_X) {
                         imgTargets[target] = tmpData;
-                    } else if (intType == TYPE_STREAM) {
+                    } else if (intType == TYPE_STREAM || intType == TYPE_M3U8) {
                         let replyMsg = await bot.sendMessage(chatId, `${target}\n\n即將開始下載...`, { is_disabled: true, reply_to_message_id: msgId, allow_sending_without_reply: true });
                         let replyMsgId = replyMsg.message_id;
                         tmpData['chatId'] = chatId;
@@ -336,7 +341,7 @@ async function getVideo(urlData) {
             outputTxt = '-o';
             outputTxt2 = '%(uploader_id)s_%(id)s_%(upload_date>%y%m%d|0)s.%(ext)s';
             args = [cookiesTxt, cookiesTxt2, outputTxt, outputTxt2, url];
-        } else if (urlData.type == TYPE_STREAM) {
+        } else if (urlData.type == TYPE_STREAM || urlData.type == TYPE_M3U8) {
             cookiesTxt = '--cookies-from-browser';
             cookiesTxt2 = 'firefox';
             args = [cookiesTxt, cookiesTxt2, url];
@@ -397,7 +402,7 @@ async function getVideo(urlData) {
                 await bot.editMessageText(`${url}\n\n下載發生錯誤：${dataStr}`, { is_disabled: true, chat_id: urlData.chatId, message_id: urlData.replyMsgId });
             }
 
-            if (urlData.type == TYPE_STREAM) {
+            if (urlData.type == TYPE_STREAM || urlData.type == TYPE_M3U8) {
                 if (streamStart == false) {
                     let tmpStreamStart = /frame= /.test(dataStr);
                     if (tmpStreamStart == true) {
@@ -411,11 +416,11 @@ async function getVideo(urlData) {
         process.on('close', async (code) => {
             // console.log(`${url} Done, code:${code}`);
             if (code == 0) {
-                let progress = (urlData.type == TYPE_STREAM) ? '' : `下載進度：[${await getProgressEmoji(100)}]\n\n`;
+                let progress = (urlData.type == TYPE_STREAM || urlData.type == TYPE_M3U8) ? '' : `下載進度：[${await getProgressEmoji(100)}]\n\n`;
                 await bot.editMessageText(`${url}\n\n${progress}下載完成！`, { is_disabled: true, chat_id: urlData.chatId, message_id: urlData.replyMsgId });
             }
 
-            if (urlData.type == TYPE_STREAM) {
+            if (urlData.type == TYPE_STREAM || urlData.type == TYPE_M3U8) {
                 streamRunningQueue.pop();
                 if (streamQueue.length > 0) {
                     let tmpData = streamQueue.shift();
@@ -441,7 +446,7 @@ async function getVideo(urlData) {
         process.on('error', async (err) => {
             // console.error(`${url} error: ${err.message}`);
             await bot.editMessageText(`${url}\n\n下載發生錯誤：${err}`, { is_disabled: true, chat_id: urlData.chatId, message_id: urlData.replyMsgId });
-            if (urlData.type == TYPE_STREAM) {
+            if (urlData.type == TYPE_STREAM || urlData.type == TYPE_M3U8) {
                 streamRunningQueue.shift();
                 if (streamQueue.length > 0) {
                     let tmpData = streamQueue.shift();
@@ -463,7 +468,7 @@ async function getVideo(urlData) {
             }
         });
 
-        if (urlData.type == TYPE_STREAM) {
+        if (urlData.type == TYPE_STREAM || urlData.type == TYPE_M3U8) {
             for (const k in streamRunningQueue) {
                 if (streamRunningQueue[k].target == url) {
                     streamRunningQueue[k].process = process;
