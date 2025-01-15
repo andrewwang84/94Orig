@@ -194,12 +194,25 @@ async function sendMessages(msg, datas, downloadRemote = false, urlOnly = false)
         for (const data of datas) {
             if (data.isDone && data.data.length > 0) {
                 resTxt += `${data.target} 下載完成\n`;
+            } else if (data.type == TYPE_X) {
+                let replyMsg = await bot.sendMessage(chatId, `${data.target}\n\n即將開始下載...`, { is_disabled: true, reply_to_message_id: msgId, allow_sending_without_reply: true });
+                let replyMsgId = replyMsg.message_id;
+                data['chatId'] = chatId;
+                data['replyMsgId'] = replyMsgId;
+                if (videoRunningQueue.length >= 2) {
+                    videoQueue.push(data);
+                } else {
+                    videoRunningQueue.push(data);
+                    getVideo(data);
+                }
             } else {
                 resTxt += `${data.target} 下載失敗\n`;
             }
         }
 
-        await bot.sendMessage(chatId, resTxt, {is_disabled: true, reply_to_message_id: msgId, allow_sending_without_reply: true });
+        if (resTxt != '') {
+            await bot.sendMessage(chatId, resTxt, {is_disabled: true, reply_to_message_id: msgId, allow_sending_without_reply: true });
+        }
     } else {
         for (const data of datas) {
             if (data.isDone && data.data.length > 0) {
@@ -334,8 +347,8 @@ async function getVideo(urlData) {
         let currentProgress = 0;
         let streamStart = false;
         process.stdout.on('data', async (data) => {
-            // console.log(`stdout:`, data.toString());
             let dataStr = data.toString();
+            // console.log(`stdout:`, dataStr);
             if (urlData.type == TYPE_YT || urlData.type == TYPE_X) {
                 // 先獲取影片格式
                 if (vidFormat == '') {
