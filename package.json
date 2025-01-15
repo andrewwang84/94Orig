@@ -7,8 +7,8 @@
     "test": "export NODE_ENV=development && npm start"
   },
   "dependencies": {
-    "node-telegram-bot-api": "^0.66.0",
-    "tree-kill": "^1.2.2"
+    "kill-with-style": "^1.1.0",
+    "node-telegram-bot-api": "^0.66.0"
   },
   "description": "service to return original instagram and twitter image to user",
   "keywords": [

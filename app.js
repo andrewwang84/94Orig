@@ -1,5 +1,5 @@
 const TelegramBot = require('node-telegram-bot-api');
-const treeKill = require('tree-kill');
+const kill = require('kill-with-style');
 const token = require('./config.js')['development'].telegramToken;
 const bot = new TelegramBot(token, { polling: true });
 const adminId = require('./config.js')['development'].adminId;
@@ -143,13 +143,21 @@ bot.onText(/\/stop/, async (msg) => {
     const stopChatId = msg.reply_to_message.message_id;
     for (const data of streamRunningQueue) {
         if (data.replyMsgId == stopChatId && data.process) {
-            treeKill(data.process.pid, 'SIGINT', async (err) => {
+            kill(data.process.pid, {
+                signal: ["SIGINT", "SIGKILL"],
+                retryCount: 1,
+                // 等待兩分鐘
+                retryInterval: 120000,
+                // 等待五分鐘
+                timeout: 300000
+            },async (err) => {
                 if (err) {
-                    await bot.sendMessage(chatId, `停止 ${data.target} 下載失敗！`, { is_disabled: true, reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
-                } else {
-                    await bot.sendMessage(chatId, `已停止 ${data.target} 下載作業！`, { is_disabled: true, reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+                    await bot.sendMessage(chatId, `停止 ${data.target} 下載失敗！`, { is_disabled: true, reply_to_message_id: data.replyMsgId, allow_sending_without_reply: true });
                 }
+
+                await bot.sendMessage(chatId, `已停止 ${data.target} 下載作業！`, { is_disabled: true, reply_to_message_id: data.replyMsgId, allow_sending_without_reply: true });
             });
+
             return;
         }
     }
