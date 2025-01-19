@@ -272,7 +272,7 @@ async function sendMessages(msg, datas, downloadRemote = false, urlOnly = false)
 
 async function getImage(urlDatas, downloadRemote = false) {
     try {
-        let promises = [];
+        let results = [];
         for (const url in urlDatas) {
             let tmpElem = urlDatas[url];
 
@@ -313,11 +313,11 @@ async function getImage(urlDatas, downloadRemote = false) {
                 });
             });
 
-            promises.push(promise);
+            let result = await promise;
+            results.push(result);
             await sleep(500);
         }
-
-        return Promise.all(promises);
+        return results;
     } catch (error) {
         return new Promise(function (resolve, reject) {
             reject(error);
