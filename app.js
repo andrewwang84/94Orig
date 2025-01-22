@@ -16,7 +16,7 @@ const patterns = {
     [TYPE_IG_NORMAL]: /https:\/\/www\.instagram\.com\/(?:[\w-]+\/)?(?:p|reel)\/[\w-]+\/?/g,
     [TYPE_IG_STORY]: /https:\/\/www\.instagram\.com\/stories\/[\w.-]+(?:\/[\w-]+)?\/?/g,
     [TYPE_X]: /https:\/\/x\.com\/[\w-]+\/status\/[\d]+\/?/g,
-    [TYPE_YT]: /https:\/\/www\.youtube\.com\/(?:watch\?v=|shorts\/)([\w-]+)/g,
+    [TYPE_YT]: /https:\/\/(?:www\.youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)[\w-]+/g,
     [TYPE_STREAM]: /https:\/\/(?:www\.)?(kick\.com|twitch\.tv)\/([\w-]+)/g,
     [TYPE_M3U8]: /https:\/\/.+\.m3u8/g,
 };
