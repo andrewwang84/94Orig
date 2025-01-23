@@ -12,6 +12,7 @@ const TYPE_X = 3;
 const TYPE_YT = 4;
 const TYPE_STREAM = 5;
 const TYPE_M3U8 = 6;
+const TYPE_NAVER = 7;
 const patterns = {
     [TYPE_IG_NORMAL]: /https:\/\/www\.instagram\.com\/(?:[\w-]+\/)?(?:p|reel)\/[\w-]+\/?/g,
     [TYPE_IG_STORY]: /https:\/\/www\.instagram\.com\/stories\/[\w.-]+(?:\/[\w-]+)?\/?/g,
@@ -19,6 +20,7 @@ const patterns = {
     [TYPE_YT]: /https:\/\/(?:www\.youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)[\w-]+/g,
     [TYPE_STREAM]: /https:\/\/(?:www\.)?(kick\.com|twitch\.tv)\/([\w-]+)/g,
     [TYPE_M3U8]: /https:\/\/.+\.m3u8/g,
+    [TYPE_NAVER]: /https:\/\/blog\.naver\.com\/\S+\/\d+/g,
 };
 
 const videoQueue = [];
@@ -69,6 +71,9 @@ bot.onText(/https:\/\//, async (msg, match) => {
                 case TYPE_M3U8:
                     typeTxt = 'M3U8';
                     break;
+                case TYPE_NAVER:
+                    typeTxt = 'IMG';
+                    break;
                 case TYPE_IG_NORMAL:
                 default:
                     typeTxt = 'IG';
@@ -83,7 +88,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
                         'isDone': false,
                         'data': []
                     };
-                    if (intType == TYPE_IG_NORMAL || intType == TYPE_IG_STORY || intType == TYPE_X) {
+                    if (intType == TYPE_IG_NORMAL || intType == TYPE_IG_STORY || intType == TYPE_X || TYPE_NAVER) {
                         imgTargets[target] = tmpData;
                     } else if (intType == TYPE_STREAM || intType == TYPE_M3U8) {
                         let replyMsg = await bot.sendMessage(chatId, `${target}\n\n即將開始下載...`, { is_disabled: true, reply_to_message_id: msgId, allow_sending_without_reply: true });
