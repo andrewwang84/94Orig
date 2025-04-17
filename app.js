@@ -320,7 +320,7 @@ async function getImage(urlDatas, downloadRemote = false) {
 
             let result = await promise;
             results.push(result);
-            await sleep(500);
+            await sleep(Math.floor(Math.random() * (2500 - 500 + 1)) + 500);
         }
         return results;
     } catch (error) {
