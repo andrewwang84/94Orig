@@ -3,8 +3,20 @@ const kill = require('kill-with-style');
 const token = require('./config.js')['development'].telegramToken;
 const bot = new TelegramBot(token, { polling: true });
 const adminId = require('./config.js')['development'].adminId;
+const galleryDlListPath = require('./config.js')['development'].galleryDlListPath;
+const ytDlListPath = require('./config.js')['development'].ytDlListPath;
 const myId = require('./config.js')['development'].myId;
 const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+if (!fs.existsSync(galleryDlListPath)) {
+    fs.mkdirSync(path.dirname(galleryDlListPath), { recursive: true });
+}
+if (!fs.existsSync(ytDlListPath)) {
+    fs.mkdirSync(path.dirname(ytDlListPath), { recursive: true });
+}
+const absoluteGalleryDlListPath = path.resolve(galleryDlListPath);
+const absoluteYtDlListPath = path.resolve(ytDlListPath);
 
 const TYPE_IG_NORMAL = 1;
 const TYPE_IG_STORY = 2;
@@ -38,11 +50,10 @@ bot.onText(/https:\/\//, async (msg, match) => {
     let chatMsg = match.input;
 
     try {
-        if (!adminId.includes(chatId)) {
-            console.info(`[LOG][${chatId}][${logName}] Not Admin - ${chatMsg}`);
-            await bot.sendMessage(chatId, `
-親愛的 ${logName} 您好，本 bot 目前不開放所有人使用
-請將 <strong>「${chatId}」</strong> 私訊給本 bot 作者來獲取使用權限，謝謝`, { reply_to_message_id: msgId, allow_sending_without_reply: true, parse_mode: 'HTML' });
+        if (/\/gal/.test(chatMsg) || /\/ytd/.test(chatMsg)) {
+            return;
+        }
+        if (await checkCanUse(chatId, msgId, logName, chatMsg) === false) {
             return;
         }
 
@@ -140,6 +151,218 @@ bot.onText(/https:\/\//, async (msg, match) => {
     } catch (error) {
         console.error(`[ERROR][Telegram] ${error}`);
         bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+    }
+});
+
+bot.onText(/\/gal\s/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const msgId = msg.message_id;
+    let logName = msg.from.username || msg.from.first_name || msg.from.id;
+    let chatMsg = match.input;
+
+    try {
+        if (await checkCanUse(chatId, msgId, logName, chatMsg) === false) {
+            return;
+        }
+
+        console.log(`[LOG][Telegram][gal] ${logName}`);
+
+        let urls = chatMsg.match(/https?:\/\/[^\s]+/g);
+        if (!urls || urls.length === 0) {
+            throw new Error(`[${logName}] 沒有發現任何網址`);
+        }
+
+        let galleryDlListStream = fs.createWriteStream(absoluteGalleryDlListPath, { flags: 'a' });
+        for (const url of urls) {
+            if (!/^https?:\/\//.test(url)) {
+                continue;
+            }
+            galleryDlListStream.write(`${url}\n`);
+        }
+
+        bot.sendMessage(chatId, `gallery-dl 網址寫入完成！`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+    } catch (error) {
+        console.error(`[ERROR][Telegram] ${error}`);
+        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+    }
+});
+
+bot.onText(/^\/gal_get$/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const msgId = msg.message_id;
+    let logName = msg.from.username || msg.from.first_name || msg.from.id;
+    let chatMsg = match.input;
+
+    try {
+        if (await checkCanUse(chatId, msgId, logName, chatMsg) === false) {
+            return;
+        }
+
+        console.log(`[LOG][Telegram][gal_get] ${logName}`);
+
+        let list = fs.readFileSync(absoluteGalleryDlListPath, { encoding: 'utf8', flag: 'r' });
+        if (list.length === 0) {
+            bot.sendMessage(chatId, `目前沒有任何網址！`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+            return;
+        }
+        bot.sendMessage(chatId, list, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+    } catch (error) {
+        console.error(`[ERROR][Telegram] ${error}`);
+        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+    }
+});
+
+bot.onText(/^\/gal_run$/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const msgId = msg.message_id;
+    let logName = msg.from.username || msg.from.first_name || msg.from.id;
+    let chatMsg = match.input;
+
+    try {
+        if (await checkCanUse(chatId, msgId, logName, chatMsg) === false) {
+            return;
+        }
+
+        console.log(`[LOG][Telegram][gal_run] ${logName}`);
+
+        let startMsg = bot.sendMessage(chatId, `gal 開始下載...`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        let startMsgId = startMsg.message_id;
+
+        const process = spawn('dgal', []);
+        process.stdout.on('data', async (data) => {
+            // let dataStr = data.toString();
+            // console.log(`stdout:`, dataStr);
+        });
+
+        process.stderr.on('data', async (data) => {
+            let dataStr = data.toString();
+            if (/^ERROR:/.test(dataStr)) {
+                console.log(`Error: ${dataStr}}`);
+                await bot.editMessageText(`gal 下載發生錯誤：${dataStr}`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
+            }
+        });
+
+        process.on('close', async (code) => {
+            // console.log(`${url} Done, code:${code}`);
+            if (code == 0) {
+                await bot.editMessageText(`gal 下載完成！`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
+            }
+        });
+
+        process.on('error', async (err) => {
+            // console.error(`${url} error: ${err.message}`);
+            await bot.editMessageText(`gal 下載發生錯誤：${err}`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
+        });
+
+    } catch (error) {
+        console.error(`[ERROR][Telegram] ${error}`);
+        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: chatId, allow_sending_without_reply: true });
+    }
+});
+
+bot.onText(/\/ytd\s/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const msgId = msg.message_id;
+    let logName = msg.from.username || msg.from.first_name || msg.from.id;
+    let chatMsg = match.input;
+
+    try {
+        if (await checkCanUse(chatId, msgId, logName, chatMsg) === false) {
+            return;
+        }
+
+        console.log(`[LOG][Telegram][ytd] ${logName}`);
+
+        let urls = chatMsg.match(/https?:\/\/[^\s]+/g);
+        if (!urls || urls.length === 0) {
+            throw new Error(`[${logName}] 沒有發現任何網址`);
+        }
+
+        let ytDlListStream = fs.createWriteStream(absoluteYtDlListPath, { flags: 'a' });
+        for (const url of urls) {
+            if (!/^https?:\/\//.test(url)) {
+                continue;
+            }
+            ytDlListStream.write(`${url}\n`);
+        }
+
+        bot.sendMessage(chatId, `yt-dlp 網址寫入完成！`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+    } catch (error) {
+        console.error(`[ERROR][Telegram] ${error}`);
+        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+    }
+});
+
+bot.onText(/^\/ytd_get$/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const msgId = msg.message_id;
+    let logName = msg.from.username || msg.from.first_name || msg.from.id;
+    let chatMsg = match.input;
+
+    try {
+        if (await checkCanUse(chatId, msgId, logName, chatMsg) === false) {
+            return;
+        }
+
+        console.log(`[LOG][Telegram][ytd_get] ${logName}`);
+
+        let list = fs.readFileSync(absoluteYtDlListPath, { encoding: 'utf8', flag: 'r' });
+        if (list.length === 0) {
+            bot.sendMessage(chatId, `目前沒有任何網址！`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+            return;
+        }
+        bot.sendMessage(chatId, list, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+    } catch (error) {
+        console.error(`[ERROR][Telegram] ${error}`);
+        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+    }
+});
+
+bot.onText(/^\/ytd_run$/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const msgId = msg.message_id;
+    let logName = msg.from.username || msg.from.first_name || msg.from.id;
+    let chatMsg = match.input;
+
+    try {
+        if (await checkCanUse(chatId, msgId, logName, chatMsg) === false) {
+            return;
+        }
+
+        console.log(`[LOG][Telegram][ytd_run] ${logName}`);
+
+        let startMsg = bot.sendMessage(chatId, `ytd 開始下載...`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        let startMsgId = startMsg.message_id;
+
+        const process = spawn('dytyt', []);
+        process.stdout.on('data', async (data) => {
+            // let dataStr = data.toString();
+            // console.log(`stdout:`, dataStr);
+        });
+
+        process.stderr.on('data', async (data) => {
+            let dataStr = data.toString();
+            if (/^ERROR:/.test(dataStr)) {
+                console.log(`Error: ${dataStr}}`);
+                await bot.editMessageText(`ytd 下載發生錯誤：${dataStr}`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
+            }
+        });
+
+        process.on('close', async (code) => {
+            // console.log(`${url} Done, code:${code}`);
+            if (code == 0) {
+                await bot.editMessageText(`ytd 下載完成！`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
+            }
+        });
+
+        process.on('error', async (err) => {
+            // console.error(`${url} error: ${err.message}`);
+            await bot.editMessageText(`ytd 下載發生錯誤：${err}`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
+        });
+
+    } catch (error) {
+        console.error(`[ERROR][Telegram] ${error}`);
+        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: chatId, allow_sending_without_reply: true });
     }
 });
 
@@ -499,4 +722,20 @@ function getProgressEmoji(progress) {
     return new Promise(function (resolve, reject) {
         resolve(res);
     });
+}
+
+async function checkCanUse(chatId, msgId, logName, chatMsg) {
+    return new Promise(async (resolve, reject) => {
+        if (!adminId.includes(chatId)) {
+            console.info(`[LOG][${chatId}][${logName}] Not Admin - ${chatMsg}`);
+            await bot.sendMessage(chatId, `
+親愛的 ${logName} 您好，本 bot 目前不開放所有人使用
+請將 <strong>「${chatId}」</strong> 私訊給本 bot 作者來獲取使用權限，謝謝`, { reply_to_message_id: msgId, allow_sending_without_reply: true, parse_mode: 'HTML' });
+
+            resolve(false);
+        } else {
+            resolve(true);
+        }
+    });
+
 }
