@@ -10,10 +10,14 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 if (!fs.existsSync(galleryDlListPath)) {
+    console.log(`[LOG] gallery-dl list path not exists, create it: ${galleryDlListPath}`);
     fs.mkdirSync(path.dirname(galleryDlListPath), { recursive: true });
+    fs.writeFileSync(galleryDlListPath, '');
 }
 if (!fs.existsSync(ytDlListPath)) {
+    console.log(`[LOG] yt-dlp list path not exists, create it: ${ytDlListPath}`);
     fs.mkdirSync(path.dirname(ytDlListPath), { recursive: true });
+    fs.writeFileSync(ytDlListPath, '');
 }
 const absoluteGalleryDlListPath = path.resolve(galleryDlListPath);
 const absoluteYtDlListPath = path.resolve(ytDlListPath);
@@ -154,7 +158,7 @@ bot.onText(/https:\/\//, async (msg, match) => {
     }
 });
 
-bot.onText(/\/gal\s/, async (msg, match) => {
+bot.onText(/^\/gal\s/, async (msg, match) => {
     const chatId = msg.chat.id;
     const msgId = msg.message_id;
     let logName = msg.from.username || msg.from.first_name || msg.from.id;
@@ -180,10 +184,10 @@ bot.onText(/\/gal\s/, async (msg, match) => {
             galleryDlListStream.write(`${url}\n`);
         }
 
-        bot.sendMessage(chatId, `gallery-dl 網址寫入完成！`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        bot.sendMessage(chatId, `gallery-dl 網址寫入完成！`, { reply_to_message_id: msgId, allow_sending_without_reply: true });
     } catch (error) {
-        console.error(`[ERROR][Telegram] ${error}`);
-        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        console.error(error);
+        bot.sendMessage(chatId, error, { reply_to_message_id: msgId, allow_sending_without_reply: true });
     }
 });
 
@@ -202,13 +206,13 @@ bot.onText(/^\/gal_get$/, async (msg, match) => {
 
         let list = fs.readFileSync(absoluteGalleryDlListPath, { encoding: 'utf8', flag: 'r' });
         if (list.length === 0) {
-            bot.sendMessage(chatId, `目前沒有任何網址！`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+            bot.sendMessage(chatId, `目前沒有任何網址！`, { reply_to_message_id: msgId, allow_sending_without_reply: true });
             return;
         }
-        bot.sendMessage(chatId, list, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        bot.sendMessage(chatId, list, { reply_to_message_id: msgId, allow_sending_without_reply: true });
     } catch (error) {
-        console.error(`[ERROR][Telegram] ${error}`);
-        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        console.error(error);
+        bot.sendMessage(chatId, error, { reply_to_message_id: msgId, allow_sending_without_reply: true });
     }
 });
 
@@ -225,42 +229,89 @@ bot.onText(/^\/gal_run$/, async (msg, match) => {
 
         console.log(`[LOG][Telegram][gal_run] ${logName}`);
 
-        let startMsg = bot.sendMessage(chatId, `gal 開始下載...`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        let cmd = `yt-dlp`;
+        let args = ['-a', absoluteYtDlListPath, '--mark-watched'];
+
+        let startMsg = await bot.sendMessage(chatId, `gallery-dl 開始下載...`, { reply_to_message_id: msgId, allow_sending_without_reply: true });
         let startMsgId = startMsg.message_id;
 
-        const process = spawn('dgal', []);
+        let progressTxt = '下載進度:';
+        let currentVid = '';
+        let currentProgress = 0;
+
+        const process = spawn(cmd, args);
         process.stdout.on('data', async (data) => {
-            // let dataStr = data.toString();
+            let dataStr = data.toString();
             // console.log(`stdout:`, dataStr);
+            // 新下載
+            if (/\[info\] \S+: Downloading/.test(dataStr)) {
+                let videoId = dataStr.match(/\[info\] (\S+): Downloading/)[1];
+                currentVid = videoId;
+                progressTxt += `\n${videoId}: ${await getProgressEmoji(0)}`;
+                await bot.editMessageText(progressTxt, { chat_id: chatId, message_id: startMsgId });
+            } else if (/\[download\]\s+\d+\.\d+% of/.test(dataStr) && currentProgress < 100) { // 下載進度
+                let tmpProgress = dataStr.match(/\[download\]\s+(\d+\.\d+)% of/);
+                if (tmpProgress != null) {
+                    let tmpCurrentProgress = Math.round(parseFloat(tmpProgress[1]) / 10) * 10;
+                    if (currentProgress < tmpCurrentProgress) {
+                        currentProgress = tmpCurrentProgress;
+                        let progress = await getProgressEmoji(currentProgress);
+                        let tmpRegex = new RegExp(`\n${currentVid}: \\S+$`);
+                        progressTxt = progressTxt.replace(tmpRegex, `\n${currentVid}: ${progress}`);
+                        if (currentProgress == 100) {
+                            progressTxt += ` 下載即將完成，影片合併中...`;
+                        }
+
+                        await bot.editMessageText(progressTxt, { chat_id: chatId, message_id: startMsgId });
+                    }
+                }
+            } else if (new RegExp(`Deleting original file .*_(${currentVid})_`).test(dataStr) && currentProgress == 100) { // 下載完成
+                let tmpRegex = new RegExp(`\n${currentVid}: \\S+ \\S+$`);
+                progressTxt = progressTxt.replace(tmpRegex, `\n✅ ${currentVid}: ${await getProgressEmoji(100)}`);
+
+                currentVid = '';
+                currentProgress = 0;
+
+                await bot.editMessageText(progressTxt, { chat_id: chatId, message_id: startMsgId });
+            } else if (new RegExp(`[download] .*_(${currentVid})_.* has already been downloaded`).test(dataStr)) { // 檔案已存在
+                let tmpRegex = new RegExp(`\n${currentVid}: \\S+$`);
+                progressTxt = progressTxt.replace(tmpRegex, `\n❌ ${currentVid}: 檔案已存在`);
+                currentVid = '';
+                currentProgress = 0;
+                await bot.editMessageText(progressTxt, { chat_id: chatId, message_id: startMsgId });
+            }
         });
 
         process.stderr.on('data', async (data) => {
             let dataStr = data.toString();
             if (/^ERROR:/.test(dataStr)) {
-                console.log(`Error: ${dataStr}}`);
-                await bot.editMessageText(`gal 下載發生錯誤：${dataStr}`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
+                console.log(dataStr);
+                await bot.editMessageText(progressTxt + `\ngallery-dl 下載發生錯誤：${dataStr}`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
             }
         });
 
         process.on('close', async (code) => {
-            // console.log(`${url} Done, code:${code}`);
+            // console.log(`Done, code:${code}`);
             if (code == 0) {
-                await bot.editMessageText(`gal 下載完成！`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
+                await bot.editMessageText(progressTxt + `\n\n列表下載完成！`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
+                progressTxt = '下載進度:';
+                currentVid = '';
+                currentProgress = 0;
             }
         });
 
         process.on('error', async (err) => {
-            // console.error(`${url} error: ${err.message}`);
-            await bot.editMessageText(`gal 下載發生錯誤：${err}`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
+            console.error(`${err.message}`);
+            await bot.editMessageText(progressTxt + `\ngallery-dl 下載發生錯誤：${err}`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
         });
 
     } catch (error) {
-        console.error(`[ERROR][Telegram] ${error}`);
-        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: chatId, allow_sending_without_reply: true });
+        console.error(error);
+        bot.sendMessage(chatId, error, { reply_to_message_id: msgId, allow_sending_without_reply: true });
     }
 });
 
-bot.onText(/\/ytd\s/, async (msg, match) => {
+bot.onText(/^\/ytd\s/, async (msg, match) => {
     const chatId = msg.chat.id;
     const msgId = msg.message_id;
     let logName = msg.from.username || msg.from.first_name || msg.from.id;
@@ -286,10 +337,10 @@ bot.onText(/\/ytd\s/, async (msg, match) => {
             ytDlListStream.write(`${url}\n`);
         }
 
-        bot.sendMessage(chatId, `yt-dlp 網址寫入完成！`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        bot.sendMessage(chatId, `yt-dlp 網址寫入完成！`, { reply_to_message_id: msgId, allow_sending_without_reply: true });
     } catch (error) {
-        console.error(`[ERROR][Telegram] ${error}`);
-        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        console.error(error);
+        bot.sendMessage(chatId, error, { reply_to_message_id: msgId, allow_sending_without_reply: true });
     }
 });
 
@@ -308,13 +359,13 @@ bot.onText(/^\/ytd_get$/, async (msg, match) => {
 
         let list = fs.readFileSync(absoluteYtDlListPath, { encoding: 'utf8', flag: 'r' });
         if (list.length === 0) {
-            bot.sendMessage(chatId, `目前沒有任何網址！`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+            bot.sendMessage(chatId, `目前沒有任何網址！`, { reply_to_message_id: msgId, allow_sending_without_reply: true });
             return;
         }
-        bot.sendMessage(chatId, list, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        bot.sendMessage(chatId, list, { reply_to_message_id: msgId, allow_sending_without_reply: true });
     } catch (error) {
-        console.error(`[ERROR][Telegram] ${error}`);
-        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        console.error(error);
+        bot.sendMessage(chatId, error, { reply_to_message_id: msgId, allow_sending_without_reply: true });
     }
 });
 
@@ -331,38 +382,105 @@ bot.onText(/^\/ytd_run$/, async (msg, match) => {
 
         console.log(`[LOG][Telegram][ytd_run] ${logName}`);
 
-        let startMsg = bot.sendMessage(chatId, `ytd 開始下載...`, { reply_to_message_id: msg.message_id, allow_sending_without_reply: true });
+        let cmd = `yt-dlp`;
+        let args = ['-a', absoluteYtDlListPath, '--mark-watched'];
+
+        let startMsg = await bot.sendMessage(chatId, `yt-dlp 開始下載...`, { reply_to_message_id: msgId, allow_sending_without_reply: true });
         let startMsgId = startMsg.message_id;
 
-        const process = spawn('dytyt', []);
+        let progressTxt = '下載進度:';
+        let currentVid = '';
+        let currentProgress = 0;
+
+        const process = spawn(cmd, args);
         process.stdout.on('data', async (data) => {
-            // let dataStr = data.toString();
+            let dataStr = data.toString();
             // console.log(`stdout:`, dataStr);
+            // 新下載
+            if (/\[info\] \S+: Downloading/.test(dataStr)) {
+                let videoId = dataStr.match(/\[info\] (\S+): Downloading/)[1];
+                currentVid = videoId;
+                progressTxt += `\n${videoId}: ${await getProgressEmoji(0)}`;
+                await bot.editMessageText(progressTxt, { chat_id: chatId, message_id: startMsgId });
+            } else if (/\[download\]\s+\d+\.\d+% of/.test(dataStr) && currentProgress < 100) { // 下載進度
+                let tmpProgress = dataStr.match(/\[download\]\s+(\d+\.\d+)% of/);
+                if (tmpProgress != null) {
+                    let tmpCurrentProgress = Math.round(parseFloat(tmpProgress[1]) / 10) * 10;
+                    if (currentProgress < tmpCurrentProgress) {
+                        currentProgress = tmpCurrentProgress;
+                        let progress = await getProgressEmoji(currentProgress);
+                        let tmpRegex = new RegExp(`\n${currentVid}: \\S+$`);
+                        progressTxt = progressTxt.replace(tmpRegex, `\n${currentVid}: ${progress}`);
+                        if (currentProgress == 100) {
+                            progressTxt += ` 下載即將完成，影片合併中...`;
+                        }
+
+                        await bot.editMessageText(progressTxt, { chat_id: chatId, message_id: startMsgId });
+                    }
+                }
+            } else if (new RegExp(`Deleting original file .*_(${currentVid})_`).test(dataStr) && currentProgress == 100) { // 下載完成
+                let tmpRegex = new RegExp(`\n${currentVid}: \\S+ \\S+$`);
+                progressTxt = progressTxt.replace(tmpRegex, `\n✅ ${currentVid}: ${await getProgressEmoji(100)}`);
+
+                currentVid = '';
+                currentProgress = 0;
+
+                await bot.editMessageText(progressTxt, { chat_id: chatId, message_id: startMsgId });
+            } else if (new RegExp(`[download] .*_(${currentVid})_.* has already been downloaded`).test(dataStr)) { // 檔案已存在
+                let tmpRegex = new RegExp(`\n${currentVid}: \\S+$`);
+                progressTxt = progressTxt.replace(tmpRegex, `\n❌ ${currentVid}: 檔案已存在`);
+                currentVid = '';
+                currentProgress = 0;
+                await bot.editMessageText(progressTxt, { chat_id: chatId, message_id: startMsgId });
+            }
         });
 
         process.stderr.on('data', async (data) => {
             let dataStr = data.toString();
             if (/^ERROR:/.test(dataStr)) {
-                console.log(`Error: ${dataStr}}`);
-                await bot.editMessageText(`ytd 下載發生錯誤：${dataStr}`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
+                console.log(dataStr);
+                await bot.editMessageText(progressTxt + `\nyt-dlp 下載發生錯誤：${dataStr}`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
             }
         });
 
         process.on('close', async (code) => {
-            // console.log(`${url} Done, code:${code}`);
+            // console.log(`Done, code:${code}`);
             if (code == 0) {
-                await bot.editMessageText(`ytd 下載完成！`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
+                await bot.editMessageText(progressTxt + `\n\n列表下載完成！`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
+                progressTxt = '下載進度:';
+                currentVid = '';
+                currentProgress = 0;
             }
         });
 
         process.on('error', async (err) => {
-            // console.error(`${url} error: ${err.message}`);
-            await bot.editMessageText(`ytd 下載發生錯誤：${err}`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
+            console.error(`${err.message}`);
+            await bot.editMessageText(progressTxt + `\nyt-dlp 下載發生錯誤：${err}`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
         });
-
     } catch (error) {
-        console.error(`[ERROR][Telegram] ${error}`);
-        bot.sendMessage(chatId, `出錯了: ${error}`, { reply_to_message_id: chatId, allow_sending_without_reply: true });
+        console.error(error);
+        bot.sendMessage(chatId, error, { reply_to_message_id: msgId, allow_sending_without_reply: true });
+    }
+});
+
+bot.onText(/^\/ytd_purge$/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const msgId = msg.message_id;
+    let logName = msg.from.username || msg.from.first_name || msg.from.id;
+    let chatMsg = match.input;
+
+    try {
+        if (await checkCanUse(chatId, msgId, logName, chatMsg) === false) {
+            return;
+        }
+
+        console.log(`[LOG][Telegram][ytd_purge] ${logName}`);
+
+        fs.writeFileSync(absoluteYtDlListPath, '');
+        bot.sendMessage(chatId, `yt-dlp 下載列表已清空！`, { reply_to_message_id: msgId, allow_sending_without_reply: true });
+    } catch (error) {
+        console.error(error);
+        bot.sendMessage(chatId, error, { reply_to_message_id: msgId, allow_sending_without_reply: true });
     }
 });
 
@@ -414,7 +532,11 @@ bot.onText(/\/help/, (msg) => {
     - 下載到遠端主機，訊息帶「--r」
     - 獲取圖片網址，訊息帶「--s」
 
-- 一次傳入多個連結請用「<strong>換行</strong>」分開`, { parse_mode: 'HTML' });
+- 一次傳入多個連結請用「<strong>換行</strong>」分開
+
+- /gal [連結]：將連結寫入 gallery-dl 下載列表
+
+- /ytd [連結]：將連結寫入 yt-dlp 下載列表`, { parse_mode: 'HTML' });
 });
 
 bot.onText(/\/get_my_id/, async (msg) => {
