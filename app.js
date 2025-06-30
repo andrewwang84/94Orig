@@ -229,55 +229,22 @@ bot.onText(/^\/gal_run$/, async (msg, match) => {
 
         console.log(`[LOG][Telegram][gal_run] ${logName}`);
 
-        let cmd = `yt-dlp`;
-        let args = ['-a', absoluteYtDlListPath, '--mark-watched'];
+        let cmd = `gallery-dl`;
+        let args = ['--cookies-from-browser', 'firefox', '-I', absoluteGalleryDlListPath];
 
-        let startMsg = await bot.sendMessage(chatId, `gallery-dl 開始下載...`, { reply_to_message_id: msgId, allow_sending_without_reply: true });
+        let startMsg = await bot.sendMessage(chatId, `gallery-dl 開始下載...`);
         let startMsgId = startMsg.message_id;
 
         let progressTxt = '下載進度:';
-        let currentVid = '';
-        let currentProgress = 0;
 
         const process = spawn(cmd, args);
         process.stdout.on('data', async (data) => {
             let dataStr = data.toString();
-            // console.log(`stdout:`, dataStr);
-            // 新下載
-            if (/\[info\] \S+: Downloading/.test(dataStr)) {
-                let videoId = dataStr.match(/\[info\] (\S+): Downloading/)[1];
-                currentVid = videoId;
-                progressTxt += `\n${videoId}: ${await getProgressEmoji(0)}`;
-                await bot.editMessageText(progressTxt, { chat_id: chatId, message_id: startMsgId });
-            } else if (/\[download\]\s+\d+\.\d+% of/.test(dataStr) && currentProgress < 100) { // 下載進度
-                let tmpProgress = dataStr.match(/\[download\]\s+(\d+\.\d+)% of/);
-                if (tmpProgress != null) {
-                    let tmpCurrentProgress = Math.round(parseFloat(tmpProgress[1]) / 10) * 10;
-                    if (currentProgress < tmpCurrentProgress) {
-                        currentProgress = tmpCurrentProgress;
-                        let progress = await getProgressEmoji(currentProgress);
-                        let tmpRegex = new RegExp(`\n${currentVid}: \\S+$`);
-                        progressTxt = progressTxt.replace(tmpRegex, `\n${currentVid}: ${progress}`);
-                        if (currentProgress == 100) {
-                            progressTxt += ` 下載即將完成，影片合併中...`;
-                        }
+            // console.log(`stdout: ${dataStr}`);
 
-                        await bot.editMessageText(progressTxt, { chat_id: chatId, message_id: startMsgId });
-                    }
-                }
-            } else if (new RegExp(`Deleting original file .*_(${currentVid})_`).test(dataStr) && currentProgress == 100) { // 下載完成
-                let tmpRegex = new RegExp(`\n${currentVid}: \\S+ \\S+$`);
-                progressTxt = progressTxt.replace(tmpRegex, `\n✅ ${currentVid}: ${await getProgressEmoji(100)}`);
-
-                currentVid = '';
-                currentProgress = 0;
-
-                await bot.editMessageText(progressTxt, { chat_id: chatId, message_id: startMsgId });
-            } else if (new RegExp(`[download] .*_(${currentVid})_.* has already been downloaded`).test(dataStr)) { // 檔案已存在
-                let tmpRegex = new RegExp(`\n${currentVid}: \\S+$`);
-                progressTxt = progressTxt.replace(tmpRegex, `\n❌ ${currentVid}: 檔案已存在`);
-                currentVid = '';
-                currentProgress = 0;
+            if (/([^\\\/]+)\n$/.test(dataStr)) {
+                let tmpFileName = dataStr.match(/([^\\\/]+)\n$/)[1];
+                progressTxt += `\n✅ ${tmpFileName}`;
                 await bot.editMessageText(progressTxt, { chat_id: chatId, message_id: startMsgId });
             }
         });
@@ -294,9 +261,6 @@ bot.onText(/^\/gal_run$/, async (msg, match) => {
             // console.log(`Done, code:${code}`);
             if (code == 0) {
                 await bot.editMessageText(progressTxt + `\n\n列表下載完成！`, { is_disabled: true, chat_id: chatId, message_id: startMsgId });
-                progressTxt = '下載進度:';
-                currentVid = '';
-                currentProgress = 0;
             }
         });
 
@@ -385,7 +349,7 @@ bot.onText(/^\/ytd_run$/, async (msg, match) => {
         let cmd = `yt-dlp`;
         let args = ['-a', absoluteYtDlListPath, '--mark-watched'];
 
-        let startMsg = await bot.sendMessage(chatId, `yt-dlp 開始下載...`, { reply_to_message_id: msgId, allow_sending_without_reply: true });
+        let startMsg = await bot.sendMessage(chatId, `yt-dlp 開始下載...`);
         let startMsgId = startMsg.message_id;
 
         let progressTxt = '下載進度:';
