@@ -1,5 +1,8 @@
 var cred = {
     telegramToken: "",
-    botName: ""
+    adminId: [],
+    myId: '',
+    galleryDlListPath: '',
+    ytDlListPath: '',
 }
 module.exports = cred;
