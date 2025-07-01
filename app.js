@@ -181,7 +181,7 @@ bot.onText(/^\/gal\s/, async (msg, match) => {
             if (!/^https?:\/\//.test(url)) {
                 continue;
             }
-            galleryDlListStream.write(`${url}\n`);
+            galleryDlListStream.write(`${url.split('?')[0]}\n`);
         }
 
         bot.sendMessage(chatId, `gallery-dl 網址寫入完成！`, { reply_to_message_id: msgId, allow_sending_without_reply: true });
