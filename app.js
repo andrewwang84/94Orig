@@ -5,6 +5,7 @@ const bot = new TelegramBot(token, { polling: true });
 const adminId = require('./config.js')['development'].adminId;
 const galleryDlListPath = require('./config.js')['development'].galleryDlListPath;
 const ytDlListPath = require('./config.js')['development'].ytDlListPath;
+const ytDl2ListPath = require('./config.js')['development'].ytDl2ListPath;
 const myId = require('./config.js')['development'].myId;
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -19,8 +20,14 @@ if (!fs.existsSync(ytDlListPath)) {
     fs.mkdirSync(path.dirname(ytDlListPath), { recursive: true });
     fs.writeFileSync(ytDlListPath, '');
 }
+if (!fs.existsSync(ytDl2ListPath)) {
+    console.log(`[LOG] yt-dlp list2 path not exists, create it: ${ytDl2ListPath}`);
+    fs.mkdirSync(path.dirname(ytDl2ListPath), { recursive: true });
+    fs.writeFileSync(ytDl2ListPath, '');
+}
 const absoluteGalleryDlListPath = path.resolve(galleryDlListPath);
 const absoluteYtDlListPath = path.resolve(ytDlListPath);
+const absoluteYtDl2ListPath = path.resolve(ytDl2ListPath);
 
 const TYPE_IG_NORMAL = 1;
 const TYPE_IG_STORY = 2;
@@ -294,11 +301,15 @@ bot.onText(/^\/ytd\s/, async (msg, match) => {
         }
 
         let ytDlListStream = fs.createWriteStream(absoluteYtDlListPath, { flags: 'a' });
+        let ytDl2ListStream = fs.createWriteStream(absoluteYtDl2ListPath, { flags: 'a' });
+        ytDl2ListStream.write(`\n\n#${new Date().toLocaleDateString()}\n`);
+
         for (const url of urls) {
             if (!/^https?:\/\//.test(url)) {
                 continue;
             }
             ytDlListStream.write(`${url}\n`);
+            ytDl2ListStream.write(`${url}\n`);
         }
 
         bot.sendMessage(chatId, `yt-dlp 網址寫入完成！`, { reply_to_message_id: msgId, allow_sending_without_reply: true });

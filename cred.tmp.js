@@ -4,5 +4,6 @@ var cred = {
     myId: '',
     galleryDlListPath: '',
     ytDlListPath: '',
+    ytDl2ListPath: '',
 }
 module.exports = cred;
