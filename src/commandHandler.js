@@ -311,17 +311,19 @@ class CommandHandler {
 
                 ytDl2ListStream.write(`\n\n#${new Date().toLocaleDateString()}\n`);
 
+                let urlCount = 0;
                 for (const url of urls) {
                     if (!/^https?:\/\//.test(url)) {
                         continue;
                     }
                     ytDlListStream.write(`${url}\n`);
                     ytDl2ListStream.write(`${url}\n`);
+                    urlCount++;
                 }
 
                 await this.bot.sendMessage(
                     chatId,
-                    'yt-dlp 網址寫入完成！',
+                    `✅ 網址已加入 yt-dlp 下載列表: ${urlCount} 個網址\n💡 使用 /ytd_run 執行下載`,
                     {
                         reply_to_message_id: msgId,
                         allow_sending_without_reply: true
@@ -389,16 +391,18 @@ class CommandHandler {
             }
 
             const listStream = fs.createWriteStream(listPath, { flags: 'a' });
+            let urlCount = 0;
             for (const url of urls) {
                 if (!/^https?:\/\//.test(url)) {
                     continue;
                 }
                 listStream.write(`${url.split('?')[0]}\n`);
+                urlCount++;
             }
 
             await this.bot.sendMessage(
                 chatId,
-                `${toolName} 網址寫入完成！`,
+                `✅ 網址已加入 ${toolName} 下載列表: ${urlCount} 個網址\n💡 使用 /gal_run 或 /ytd_run 執行下載`,
                 {
                     reply_to_message_id: msgId,
                     allow_sending_without_reply: true
@@ -487,7 +491,7 @@ class CommandHandler {
 
             await this.bot.sendMessage(
                 chatId,
-                `${toolName} 下載列表已清空！`,
+                `✅ ${toolName} 下載列表已清空！`,
                 {
                     reply_to_message_id: msgId,
                     allow_sending_without_reply: true
