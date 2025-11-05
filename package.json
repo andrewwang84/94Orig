@@ -9,7 +9,7 @@
   "dependencies": {
     "better-sqlite3": "^12.4.1",
     "kill-with-style": "^1.1.0",
-    "node-telegram-bot-api": "^0.63.0"
+    "node-telegram-bot-api": "^0.66.0"
   },
   "description": "service to return original instagram and twitter image to user",
   "keywords": [
