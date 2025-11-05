@@ -67,3 +67,11 @@ ssh.exe.stackdump
 downloads/
 tmp.html
 tmp.log
+
+# Test files
+test-modules.js
+
+# Database files
+data/*
+*.db
+*.db-journal

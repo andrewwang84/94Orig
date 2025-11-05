@@ -7,6 +7,7 @@
     "test": "export NODE_ENV=development && npm start"
   },
   "dependencies": {
+    "better-sqlite3": "^12.4.1",
     "kill-with-style": "^1.1.0",
     "node-telegram-bot-api": "^0.66.0"
   },
