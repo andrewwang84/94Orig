@@ -592,14 +592,21 @@ class CommandHandler {
             }
 
             const process = spawn(cmd, args);
+            let stdoutBuffer = ''; // 用於累積未完成的行
 
             process.stdout.on('data', (data) => {
                 const dataStr = data.toString();
-                const lines = dataStr.split(/\r?\n/).filter(Boolean);
+                stdoutBuffer += dataStr;
+
+                // 分割成行，保留最後一個未完成的行
+                const lines = stdoutBuffer.split(/\r?\n/);
+                stdoutBuffer = lines.pop() || ''; // 保留最後一個可能未完成的行
 
                 for (const line of lines) {
-                    // 檢查是否為檔案路徑
-                    if (line.includes('/') && !line.includes('|')) {
+                    if (!line.trim()) continue; // 跳過空行
+
+                    // 檢查是否為檔案路徑 (支援 Windows 和 Unix 路徑)
+                    if ((line.includes('/') || line.includes('\\')) && !line.includes('|')) {
                         // 移除可能的 # 前綴
                         let filePath = line.trim().replace(/^#\s*/, '');
 
@@ -623,6 +630,18 @@ class CommandHandler {
             });
 
             process.on('close', async (code) => {
+                // 處理緩衝區中剩餘的資料
+                if (stdoutBuffer.trim()) {
+                    const line = stdoutBuffer.trim();
+                    if ((line.includes('/') || line.includes('\\')) && !line.includes('|')) {
+                        let filePath = line.replace(/^#\s*/, '');
+                        if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(filePath)) {
+                            downloadedFiles.push(filePath);
+                            console.log(`[LOG] 下載檔案: ${filePath}`);
+                        }
+                    }
+                }
+
                 // 延遲一下,確保所有 stdout 事件都被處理完
                 await new Promise(resolve => setTimeout(resolve, 100));
 

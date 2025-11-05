@@ -94,15 +94,23 @@ class ImageDownloader {
         return new Promise((resolve, reject) => {
             const process = spawn(cmd, args);
             const localFiles = [];
+            let stdoutBuffer = ''; // 用於累積未完成的行
 
             process.stdout.on('data', (data) => {
                 const dataStr = data.toString();
-                const lines = dataStr.split(/\r?\n/).filter(Boolean);
+                stdoutBuffer += dataStr;
+
+                // 分割成行，保留最後一個未完成的行
+                const lines = stdoutBuffer.split(/\r?\n/);
+                stdoutBuffer = lines.pop() || ''; // 保留最後一個可能未完成的行
 
                 for (const line of lines) {
+                    if (!line.trim()) continue; // 跳過空行
+
                     // 捕獲檔案路徑（gallery-dl 下載時會輸出完整路徑）
                     // 例如: /path/to/file.jpg 或 # /path/to/file.jpg
-                    if (line.includes('/') && !line.includes('|')) {
+                    // 支援 Windows 和 Unix 路徑
+                    if ((line.includes('/') || line.includes('\\')) && !line.includes('|')) {
                         // 移除可能的 # 前綴和空格
                         let trimmedLine = line.trim().replace(/^#\s*/, '');
 
@@ -111,12 +119,24 @@ class ImageDownloader {
                             localFiles.push(trimmedLine);
                         }
                     }
-                }
 
-                urlData.data = [...urlData.data, ...lines];
+                    urlData.data.push(line);
+                }
             });
 
             process.on('close', (code) => {
+                // 處理緩衝區中剩餘的資料
+                if (stdoutBuffer.trim()) {
+                    const line = stdoutBuffer.trim();
+                    if ((line.includes('/') || line.includes('\\')) && !line.includes('|')) {
+                        let trimmedLine = line.replace(/^#\s*/, '');
+                        if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(trimmedLine)) {
+                            localFiles.push(trimmedLine);
+                        }
+                    }
+                    urlData.data.push(line);
+                }
+
                 console.log(`${url} Done, code:${code}`);
 
                 // 檢查下載是否成功
