@@ -558,8 +558,6 @@ class CommandHandler {
 
                 // 寫回修改後的列表
                 fs.writeFileSync(this.filePaths.absoluteGalleryDlListPath, modifiedLines.join('\n'), 'utf-8');
-
-                console.log(`[LOG] 總共 ${totalUrls} 個 URL, ${cachedCount} 個已在快取中`);
             } catch (err) {
                 console.error('[ERROR] 處理 gallery-dl 列表失敗:', err);
             }
@@ -654,6 +652,7 @@ class CommandHandler {
                     if (this.downloadCache && activeUrls.length > 0) {
                         if (activeUrls.length === 1) {
                             // 只有一個 URL,所有檔案都屬於它
+                            urlFileMap.set(activeUrls[0], downloadedFiles);
                             this.downloadCache.setBatch(activeUrls[0], downloadedFiles);
                             savedCount = 1;
                         } else {
