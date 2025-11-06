@@ -6,6 +6,8 @@ module.exports = {
         watch: true,
         ignore_watch: [
             '^(?!app\.js$).+',
+            'data/**',
+            'data',
         ],
     }]
 };
