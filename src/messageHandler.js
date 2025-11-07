@@ -17,9 +17,8 @@ class MessageHandler {
      * @param {Object} msg - Telegram 訊息對象
      * @param {Array} datas - 數據數組
      * @param {boolean} downloadRemote - 是否下載到遠端
-     * @param {boolean} urlOnly - 是否僅發送 URL
      */
-    async sendMessages(msg, datas, downloadRemote = false, urlOnly = false) {
+    async sendMessages(msg, datas, downloadRemote = false) {
         const chatId = msg.chat.id;
         const msgId = msg.message_id;
 
@@ -31,7 +30,7 @@ class MessageHandler {
         if (downloadRemote) {
             await this._handleRemoteDownload(chatId, msgId, datas);
         } else {
-            await this._handleLocalDownload(chatId, msgId, datas, urlOnly);
+            await this._handleLocalDownload(chatId, msgId, datas);
         }
     }
 
@@ -67,18 +66,18 @@ class MessageHandler {
      * 處理本地下載（發送到 Telegram）
      * @private
      */
-    async _handleLocalDownload(chatId, msgId, datas, urlOnly) {
+    async _handleLocalDownload(chatId, msgId, datas) {
         for (const data of datas) {
             if (data.isDone) {
                 // 如果有本地檔案或從快取來的
                 if (data.localFiles && data.localFiles.length > 0) {
-                    await this._sendLocalFiles(chatId, msgId, data, urlOnly);
+                    await this._sendLocalFiles(chatId, msgId, data);
                 } else if (data.fromCache && data.data.length > 0) {
                     // 從快取來的檔案路徑在 data 陣列中
-                    await this._sendLocalFiles(chatId, msgId, { ...data, localFiles: data.data }, urlOnly);
+                    await this._sendLocalFiles(chatId, msgId, { ...data, localFiles: data.data });
                 } else if (data.data.length > 0) {
                     // 舊的 URL 模式（向後兼容）
-                    await this._sendMediaFiles(chatId, data, urlOnly);
+                    await this._sendMediaFiles(chatId, data);
                 } else {
                     // 沒有檔案可發送
                     await this.bot.sendMessage(
@@ -114,7 +113,7 @@ class MessageHandler {
      * 發送本地檔案
      * @private
      */
-    async _sendLocalFiles(chatId, msgId, data, urlOnly) {
+    async _sendLocalFiles(chatId, msgId, data) {
         const fs = require('fs');
         const uploadedFileIds = []; // 儲存上傳後的 fileId
         const url = data.originalUrls ? data.originalUrls[0] : null; // 取得原始 URL
@@ -133,9 +132,7 @@ class MessageHandler {
                     console.log(`[LOG][Cache] 使用 fileId[${i}]: ${fileIdToUse}`);
                 }
 
-                if (urlOnly) {
-                    await this.bot.sendMessage(chatId, filePath);
-                } else if (shouldUseFileId && fileIdToUse) {
+                if (shouldUseFileId && fileIdToUse) {
                     // 直接使用 fileId 發送，不需要重新上傳
                     await this.bot.sendDocument(chatId, fileIdToUse);
                     uploadedFileIds.push(fileIdToUse);
@@ -196,7 +193,7 @@ class MessageHandler {
      * 發送媒體文件（URL 模式 - 向後兼容）
      * @private
      */
-    async _sendMediaFiles(chatId, data, urlOnly) {
+    async _sendMediaFiles(chatId, data) {
         const sentTwitLinks = [];
 
         for (const link of data.data) {
@@ -209,26 +206,22 @@ class MessageHandler {
                 sentTwitLinks.push(tmpLink);
             }
 
-            if (urlOnly) {
+            try {
+                // 根據 URL 判斷 content type
+                const urlLower = link.toLowerCase();
+                let contentType = 'application/octet-stream';
+
+                if (urlLower.match(/\.(jpg|jpeg)(\?|$)/)) contentType = 'image/jpeg';
+                else if (urlLower.match(/\.png(\?|$)/)) contentType = 'image/png';
+                else if (urlLower.match(/\.gif(\?|$)/)) contentType = 'image/gif';
+                else if (urlLower.match(/\.webp(\?|$)/)) contentType = 'image/webp';
+                else if (urlLower.match(/\.mp4(\?|$)/)) contentType = 'video/mp4';
+                else if (urlLower.match(/\.webm(\?|$)/)) contentType = 'video/webm';
+
+                await this.bot.sendDocument(chatId, link, {}, { contentType });
+            } catch (error) {
+                console.log(`[ERROR] sendDocument error: ${error}`);
                 await this.bot.sendMessage(chatId, link);
-            } else {
-                try {
-                    // 根據 URL 判斷 content type
-                    const urlLower = link.toLowerCase();
-                    let contentType = 'application/octet-stream';
-
-                    if (urlLower.match(/\.(jpg|jpeg)(\?|$)/)) contentType = 'image/jpeg';
-                    else if (urlLower.match(/\.png(\?|$)/)) contentType = 'image/png';
-                    else if (urlLower.match(/\.gif(\?|$)/)) contentType = 'image/gif';
-                    else if (urlLower.match(/\.webp(\?|$)/)) contentType = 'image/webp';
-                    else if (urlLower.match(/\.mp4(\?|$)/)) contentType = 'video/mp4';
-                    else if (urlLower.match(/\.webm(\?|$)/)) contentType = 'video/webm';
-
-                    await this.bot.sendDocument(chatId, link, {}, { contentType });
-                } catch (error) {
-                    console.log(`[ERROR] sendDocument error: ${error}`);
-                    await this.bot.sendMessage(chatId, link);
-                }
             }
         }
     }

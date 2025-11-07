@@ -68,27 +68,23 @@ class CommandHandler {
                 }
 
                 // 解析選項
-                let downloadRemote = /--r/i.test(chatMsg);
-                const urlOnly = /--s/i.test(chatMsg);
-                const forceDownload = /--d/i.test(chatMsg); // 強制立即下載
+                const uploadToTg = /-u/i.test(chatMsg); // myId 專用：上傳到 TG
 
-                // 如果是 myId 且沒有 --d 選項，則加入列表而不是下載
-                if (chatId === this.config.myId && !forceDownload) {
+                // 如果是 myId 且沒有 -u 選項，則加入列表而不是下載
+                if (chatId === this.config.myId && !uploadToTg) {
                     await this._addUrlsToLists(chatId, msgId, imgTargets, vidTargets, streamTargets);
                     return;
                 }
 
-                // 如果是管理員，反轉 downloadRemote 選項
-                if (chatId === this.config.myId) {
-                    downloadRemote = !downloadRemote;
-                }
+                // 一般使用者和 myId 使用 -u 時，都下載並上傳到 TG
+                const downloadRemote = false; // 統一都上傳到 TG
 
                 // 處理圖片下載
                 if (Object.keys(imgTargets).length > 0) {
                     const results = await this.imageDownloader.download(imgTargets, downloadRemote);
 
                     if (results.length > 0) {
-                        await this.messageHandler.sendMessages(msg, results, downloadRemote, urlOnly);
+                        await this.messageHandler.sendMessages(msg, results, downloadRemote);
                     } else {
                         await this.bot.sendMessage(
                             chatId,
@@ -233,12 +229,12 @@ class CommandHandler {
         // 發送確認消息
         let confirmMsg = '';
         if (galCount > 0) {
-            confirmMsg = `✅ 網址已加入 gallery-dl 下載列表: ${galCount} 個網址\n`;
+            confirmMsg += `✅ 網址已加入 gallery-dl 下載列表: ${galCount} 個網址\n`;
         }
         if (ytdCount > 0) {
-            confirmMsg = `✅ 網址已加入 yt-dlp 下載列表: ${ytdCount} 個網址\n`;
+            confirmMsg += `✅ 網址已加入 yt-dlp 下載列表: ${ytdCount} 個網址\n`;
         }
-        confirmMsg += '💡 使用 --d 參數可以立即下載';
+        confirmMsg += '💡 使用 -u 參數可以立即下載並上傳';
 
         await this.bot.sendMessage(
             chatId,
@@ -954,16 +950,12 @@ class CommandHandler {
             if (isMyId) {
                 helpText += `
 <strong>📋 管理員模式：</strong>
-- 預設行為：直接發送網址會<strong>加入下載列表</strong>
-- 立即下載：訊息帶「--d」參數
-- 下載到遠端：訊息帶「--r」參數
-- 獲取網址：訊息帶「--s」參數
+- 預設行為：直接發送網址會<strong>加入 /gal 下載列表</strong>
+- 立即下載並上傳：訊息帶「-u」參數
 `;
             } else {
                 helpText += `
-- 預設下載到 Telegram
-- 下載到遠端主機：訊息帶「--r」
-- 獲取圖片網址：訊息帶「--s」
+- 預設下載並上傳到 Telegram
 `;
             }
 
