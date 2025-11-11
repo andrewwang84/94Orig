@@ -433,8 +433,18 @@ class CommandHandler {
 
             console.log(`[LOG][Telegram][${commandName}] ${logName}`);
 
-            const list = fs.readFileSync(listPath, { encoding: 'utf8', flag: 'r' });
-            if (list.length === 0) {
+            const fileContent = fs.readFileSync(listPath, { encoding: 'utf8', flag: 'r' });
+
+            // 過濾掉以 # 開頭的行（註解或已下載的項目）
+            const filteredLines = fileContent
+                .split('\n')
+                .filter(line => {
+                    const trimmedLine = line.trim();
+                    return trimmedLine.length > 0 && !trimmedLine.startsWith('#');
+                })
+                .join('\n');
+
+            if (filteredLines.length === 0) {
                 await this.bot.sendMessage(
                     chatId,
                     '目前沒有任何網址！',
@@ -448,7 +458,7 @@ class CommandHandler {
 
             await this.bot.sendMessage(
                 chatId,
-                list,
+                filteredLines,
                 {
                     reply_to_message_id: msgId,
                     allow_sending_without_reply: true
