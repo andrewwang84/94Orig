@@ -61,7 +61,8 @@ class UrlParser {
         return type === MEDIA_TYPES.IG_NORMAL ||
                type === MEDIA_TYPES.IG_STORY ||
                type === MEDIA_TYPES.X ||
-               type === MEDIA_TYPES.NAVER;
+               type === MEDIA_TYPES.NAVER ||
+               type === MEDIA_TYPES.TIKTOK_OTHER;
     }
 
     /**
@@ -69,7 +70,10 @@ class UrlParser {
      * @private
      */
     _isStreamType(type) {
-        return type === MEDIA_TYPES.STREAM || type === MEDIA_TYPES.M3U8;
+        return type === MEDIA_TYPES.STREAM ||
+               type === MEDIA_TYPES.M3U8 ||
+               type === MEDIA_TYPES.TIKTOK_LIVE ||
+               type === MEDIA_TYPES.TWITCH_LIVE;
     }
 
     /**

@@ -98,11 +98,33 @@ class CommandHandler {
                     }
                 }
 
-                // 處理影片下載
-                await this._handleVideoDownloads(chatId, msgId, vidTargets);
+                // 處理 TikTok 影片和直播、Twitch 直播（直接在此處理，不加入隊列）
+                const tiktokVideos = {};
+                const regularVideos = {};
 
-                // 處理直播下載
-                await this._handleStreamDownloads(chatId, msgId, streamTargets);
+                for (const target in vidTargets) {
+                    const data = vidTargets[target];
+                    if (data.type === 8) { // MEDIA_TYPES.TIKTOK_VIDEO
+                        tiktokVideos[target] = data;
+                    } else {
+                        regularVideos[target] = data;
+                    }
+                }
+
+                // 處理 TikTok 影片（不加入下載隊列，直接處理）
+                if (Object.keys(tiktokVideos).length > 0) {
+                    const tiktokResults = Object.values(tiktokVideos);
+                    await this.messageHandler.sendMessages(msg, tiktokResults, false);
+                }
+
+                // 處理一般影片下載
+                await this._handleVideoDownloads(chatId, msgId, regularVideos);
+
+                // 處理直播下載（TikTok Live 和 Twitch Live 返回指令）
+                if (Object.keys(streamTargets).length > 0) {
+                    const streamResults = Object.values(streamTargets);
+                    await this.messageHandler.sendMessages(msg, streamResults, false);
+                }
 
             } catch (error) {
                 console.error(`[ERROR][Telegram] ${error}`);
@@ -187,8 +209,10 @@ class CommandHandler {
      * @private
      */
     async _addUrlsToLists(chatId, msgId, imgTargets, vidTargets, streamTargets) {
+        const { MEDIA_TYPES } = require('./constants');
         let galCount = 0;
         let ytdCount = 0;
+        let streamlinkCommands = [];
 
         // 將圖片類 URL 加入 gallery-dl 列表
         if (Object.keys(imgTargets).length > 0) {
@@ -200,23 +224,40 @@ class CommandHandler {
             galListStream.end();
         }
 
-        // 將影片和直播類 URL 加入 yt-dlp 列表
-        const totalVideoUrls = Object.keys(vidTargets).length + Object.keys(streamTargets).length;
-        if (totalVideoUrls > 0) {
+        // 處理直播類 URL - 生成 streamlink 指令
+        const today = new Date();
+        const dateStr = `${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getDate().toString().padStart(2, '0')}${today.getHours().toString().padStart(2, '0')}`;
+
+        for (const url in streamTargets) {
+            const data = streamTargets[url];
+
+            if (data.type === MEDIA_TYPES.TWITCH_LIVE) {
+                // Twitch 直播
+                const channelMatch = url.match(/twitch\.tv\/([\w-]+)/);
+                const channel = channelMatch ? channelMatch[1] : 'channel';
+                const cmd = `streamlink --retry-streams 5 --retry-max 100 --retry-open 500 --stream-segment-attempts 10 --twitch-disable-ads "${url}" best -o "${dateStr} ${channel} twitch.ts"`;
+                streamlinkCommands.push(cmd);
+            } else if (data.type === MEDIA_TYPES.TIKTOK_LIVE) {
+                // TikTok 直播
+                const userMatch = url.match(/tiktok\.com\/@([\w.-]+)/);
+                const username = userMatch ? userMatch[1] : 'user';
+                const cmd = `streamlink --retry-streams 5 --retry-max 100 --retry-open 100 --stream-segment-attempts 10 "${url}" best -o "${dateStr} @${username} tiktok.ts"`;
+                streamlinkCommands.push(cmd);
+            }
+        }
+
+        // 將影片類 URL 加入 yt-dlp 列表（排除 TikTok 影片）
+        const regularVideos = Object.entries(vidTargets).filter(([url, data]) =>
+            data.type !== MEDIA_TYPES.TIKTOK_VIDEO
+        );
+
+        if (regularVideos.length > 0) {
             const ytdListStream = fs.createWriteStream(this.filePaths.absoluteYtDlListPath, { flags: 'a' });
             const ytd2ListStream = fs.createWriteStream(this.filePaths.absoluteYtDl2ListPath, { flags: 'a' });
 
             ytd2ListStream.write(`\n\n#${new Date().toLocaleDateString()}\n`);
 
-            // 加入影片 URL
-            for (const url in vidTargets) {
-                ytdListStream.write(`${url}\n`);
-                ytd2ListStream.write(`${url}\n`);
-                ytdCount++;
-            }
-
-            // 加入直播 URL
-            for (const url in streamTargets) {
+            for (const [url, data] of regularVideos) {
                 ytdListStream.write(`${url}\n`);
                 ytd2ListStream.write(`${url}\n`);
                 ytdCount++;
@@ -234,12 +275,21 @@ class CommandHandler {
         if (ytdCount > 0) {
             confirmMsg += `✅ 網址已加入 yt-dlp 下載列表: ${ytdCount} 個網址\n`;
         }
-        confirmMsg += '💡 使用 -u 參數可以立即下載並上傳';
+        if (streamlinkCommands.length > 0) {
+            confirmMsg += `\n📺 直播指令:\n`;
+            for (const cmd of streamlinkCommands) {
+                confirmMsg += `\`${cmd}\`\n`;
+            }
+        }
+        if (galCount > 0 || ytdCount > 0) {
+            confirmMsg += '\n💡 使用 -u 參數可以立即下載並上傳';
+        }
 
         await this.bot.sendMessage(
             chatId,
             confirmMsg,
             {
+                parse_mode: 'Markdown',
                 reply_to_message_id: msgId,
                 allow_sending_without_reply: true
             }

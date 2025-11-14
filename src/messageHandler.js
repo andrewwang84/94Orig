@@ -1,4 +1,5 @@
 const { MEDIA_TYPES } = require('./constants');
+const TikTokDownloader = require('./tiktokDownloader');
 
 /**
  * 消息處理器
@@ -10,6 +11,7 @@ class MessageHandler {
         this.videoDownloader = videoDownloader;
         this.downloadQueue = downloadQueue;
         this.downloadCache = downloadCache;
+        this.tiktokDownloader = new TikTokDownloader();
     }
 
     /**
@@ -68,6 +70,18 @@ class MessageHandler {
      */
     async _handleLocalDownload(chatId, msgId, datas) {
         for (const data of datas) {
+            // 處理 TikTok 影片
+            if (data.type === MEDIA_TYPES.TIKTOK_VIDEO) {
+                await this._handleTikTokVideo(chatId, msgId, data);
+                continue;
+            }
+
+            // 處理直播指令回傳
+            if (data.type === MEDIA_TYPES.TIKTOK_LIVE || data.type === MEDIA_TYPES.TWITCH_LIVE) {
+                await this._handleLiveStreamCommand(chatId, msgId, data);
+                continue;
+            }
+
             if (data.isDone) {
                 // 如果有本地檔案或從快取來的
                 if (data.localFiles && data.localFiles.length > 0) {
@@ -223,6 +237,91 @@ class MessageHandler {
                 console.log(`[ERROR] sendDocument error: ${error}`);
                 await this.bot.sendMessage(chatId, link);
             }
+        }
+    }
+
+    /**
+     * 處理 TikTok 影片下載
+     * @private
+     */
+    async _handleTikTokVideo(chatId, msgId, data) {
+        try {
+            await this.bot.sendMessage(
+                chatId,
+                `${data.target}\n\n開始下載 TikTok 影片...`,
+                {
+                    reply_to_message_id: msgId,
+                    allow_sending_without_reply: true
+                }
+            );
+
+            const result = await this.tiktokDownloader.downloadVideo(data.target);
+
+            if (result.success && result.filePath) {
+                await this.bot.sendVideo(
+                    chatId,
+                    result.filePath,
+                    {
+                        caption: result.videoInfo.title,
+                        reply_to_message_id: msgId,
+                        allow_sending_without_reply: true
+                    }
+                );
+            } else {
+                await this.bot.sendMessage(
+                    chatId,
+                    `${data.target}\n\n下載失敗: ${result.error || '未知錯誤'}`,
+                    {
+                        reply_to_message_id: msgId,
+                        allow_sending_without_reply: true
+                    }
+                );
+            }
+        } catch (error) {
+            console.error('[ERROR] TikTok 影片處理失敗:', error);
+            await this.bot.sendMessage(
+                chatId,
+                `${data.target}\n\n下載失敗: ${error.message}`,
+                {
+                    reply_to_message_id: msgId,
+                    allow_sending_without_reply: true
+                }
+            );
+        }
+    }
+
+    /**
+     * 處理直播指令回傳
+     * @private
+     */
+    async _handleLiveStreamCommand(chatId, msgId, data) {
+        const today = new Date();
+        const dateStr = `${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getDate().toString().padStart(2, '0')}${today.getHours().toString().padStart(2, '0')}`;
+
+        let command = '';
+
+        if (data.type === MEDIA_TYPES.TWITCH_LIVE) {
+            // Twitch 直播
+            const channelMatch = data.target.match(/twitch\.tv\/([\w-]+)/);
+            const channel = channelMatch ? channelMatch[1] : 'channel';
+            command = `streamlink --retry-streams 5 --retry-max 100 --retry-open 500 --stream-segment-attempts 10 --twitch-disable-ads "${data.target}" best -o "${dateStr} ${channel} twitch.ts"`;
+        } else if (data.type === MEDIA_TYPES.TIKTOK_LIVE) {
+            // TikTok 直播
+            const userMatch = data.target.match(/tiktok\.com\/@([\w.-]+)/);
+            const username = userMatch ? userMatch[1] : 'user';
+            command = `streamlink --retry-streams 5 --retry-max 100 --retry-open 100 --stream-segment-attempts 10 "${data.target}" best -o "${dateStr} @${username} tiktok.ts"`;
+        }
+
+        if (command) {
+            await this.bot.sendMessage(
+                chatId,
+                `\`${command}\``,
+                {
+                    parse_mode: 'Markdown',
+                    reply_to_message_id: msgId,
+                    allow_sending_without_reply: true
+                }
+            );
         }
     }
 }

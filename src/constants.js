@@ -8,7 +8,11 @@ const MEDIA_TYPES = {
     YT: 4,
     STREAM: 5,
     M3U8: 6,
-    NAVER: 7
+    NAVER: 7,
+    TIKTOK_VIDEO: 8,
+    TIKTOK_LIVE: 9,
+    TWITCH_LIVE: 10,
+    TIKTOK_OTHER: 11  // 其他 TikTok 連結，使用 gallery-dl
 };
 
 /**
@@ -21,7 +25,11 @@ const MEDIA_TYPE_LABELS = {
     [MEDIA_TYPES.YT]: 'YT',
     [MEDIA_TYPES.STREAM]: 'STREAM',
     [MEDIA_TYPES.M3U8]: 'M3U8',
-    [MEDIA_TYPES.NAVER]: 'IMG'
+    [MEDIA_TYPES.NAVER]: 'IMG',
+    [MEDIA_TYPES.TIKTOK_VIDEO]: 'TikTok Video',
+    [MEDIA_TYPES.TIKTOK_LIVE]: 'TikTok Live',
+    [MEDIA_TYPES.TWITCH_LIVE]: 'Twitch Live',
+    [MEDIA_TYPES.TIKTOK_OTHER]: 'TikTok'
 };
 
 /**
@@ -32,9 +40,13 @@ const URL_PATTERNS = {
     [MEDIA_TYPES.IG_STORY]: /https:\/\/www\.instagram\.com\/stories\/[\w.-]+(?:\/[\w-]+)?\/?/g,
     [MEDIA_TYPES.X]: /https:\/\/x\.com\/[\w-]+\/status\/[\d]+\/?/g,
     [MEDIA_TYPES.YT]: /https:\/\/(?:www\.youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)[\w-]+/g,
-    [MEDIA_TYPES.STREAM]: /https:\/\/(?:www\.)?(kick\.com|twitch\.tv)\/([\w-]+)/g,
+    [MEDIA_TYPES.STREAM]: /https:\/\/(?:www\.)?(kick\.com)\/([\w-]+)/g,
     [MEDIA_TYPES.M3U8]: /https:\/\/.+\.m3u8/g,
-    [MEDIA_TYPES.NAVER]: /https:\/\/blog\.naver\.com\/\S+\/\d+/g
+    [MEDIA_TYPES.NAVER]: /https:\/\/blog\.naver\.com\/\S+\/\d+/g,
+    [MEDIA_TYPES.TIKTOK_VIDEO]: /https:\/\/(?:www\.)?tiktok\.com\/@[\w.-]+\/video\/\d+/g,
+    [MEDIA_TYPES.TIKTOK_LIVE]: /https:\/\/(?:www\.)?tiktok\.com\/@[\w.-]+\/live\/?/g,
+    [MEDIA_TYPES.TWITCH_LIVE]: /https:\/\/(?:www\.)?twitch\.tv\/([\w-]+)/g,
+    [MEDIA_TYPES.TIKTOK_OTHER]: /https:\/\/(?:www\.)?tiktok\.com\/(?!@[\w.-]+\/video\/\d+)(?!@[\w.-]+\/live).+/g
 };
 
 /**
