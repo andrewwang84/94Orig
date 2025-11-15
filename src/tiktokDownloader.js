@@ -103,12 +103,16 @@ class TikTokDownloader {
 
         // 提取影片 ID
         const videoIdMatch = videoUrl.match(/\/video\/(\d+)/);
-        const videoId = videoIdMatch ? videoIdMatch[1] : 'unknown';
+        const videoId = videoIdMatch ? videoIdMatch[1] : data.data.detail.id;
 
         return {
             id: videoId,
             title: data.data.detail.title || 'untitled',
-            link: data.data.detail.download_url || data.data.detail.play_url
+            link: data.data.detail.download_url || data.data.detail.play_url,
+            author: {
+                unique_id: data.data.detail.author.unique_id
+            },
+            create_time: data.data.detail.create_time
         };
     }
 
@@ -128,38 +132,25 @@ class TikTokDownloader {
             throw new Error('URL 未返回影片內容');
         }
 
-        // 清理檔案名稱
-        let title = videoInfo.title
-            .replace(/[^a-zA-Z0-9\-\_#\(\)\@ ]/gi, '')
-            .replace(/\# /gi, ' ')
-            .replace(/ {2,5}/gi, ' ')
-            .replace(/ +\@ +/gi, '@')
-            .trim();
+        // Convert timestamp to YYYYMMDD format
+        const date = new Date(videoInfo.create_time * 1000);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const dateStr = `${year}${month}${day}`;
 
-        // 使用影片 ID 作為臨時檔名
-        const tempFileName = `${videoInfo.id}.mp4`;
-        const finalFileName = `${title}.mp4`;
-
-        // 限制檔名長度
-        let actualFileName = finalFileName;
-        if (finalFileName.length > 200) {
-            const overflow = finalFileName.length - 200;
-            title = title.slice(0, -overflow);
-            actualFileName = `${title}.mp4`;
-        }
-
-        const tempFilePath = path.join(process.cwd(), tempFileName);
-        const finalFilePath = path.join(process.cwd(), actualFileName);
+        const fileName = `${videoInfo.author.unique_id}_${videoInfo.id}_${dateStr}.mp4`;
+        const filePath = path.join('E:/User/Downloads/ff', fileName);
 
         // 檢查檔案是否已存在
-        if (fs.existsSync(finalFilePath)) {
-            console.log(`[LOG] 影片已存在: ${actualFileName}`);
-            return finalFilePath;
+        if (fs.existsSync(filePath)) {
+            console.log(`[LOG] 影片已存在: ${fileName}`);
+            return filePath;
         }
 
         // 下載檔案
         const readableStream = Readable.from(response.body);
-        const fileStream = fs.createWriteStream(tempFilePath);
+        const fileStream = fs.createWriteStream(filePath);
 
         readableStream.pipe(fileStream);
 
@@ -169,13 +160,8 @@ class TikTokDownloader {
             fileStream.on('error', reject);
         });
 
-        // 重新命名檔案（如果檔名不同）
-        if (tempFilePath !== finalFilePath) {
-            fs.renameSync(tempFilePath, finalFilePath);
-        }
-
-        console.log(`[LOG] TikTok 影片下載完成: ${actualFileName}`);
-        return finalFilePath;
+        console.log(`[LOG] TikTok 影片下載完成: ${fileName}`);
+        return filePath;
     }
 
     /**
