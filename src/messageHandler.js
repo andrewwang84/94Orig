@@ -41,9 +41,20 @@ class MessageHandler {
      * @private
      */
     async _handleRemoteDownload(chatId, msgId, datas) {
-        let resultText = '';
-
         for (const data of datas) {
+            // TikTok 影片特殊處理
+            if (data.type === MEDIA_TYPES.TIKTOK_VIDEO) {
+                await this._handleTikTokVideoRemote(chatId, msgId, data);
+                continue;
+            }
+        }
+
+        // 處理其他類型的遠端下載結果
+        let resultText = '';
+        for (const data of datas) {
+            if (data.type === MEDIA_TYPES.TIKTOK_VIDEO) {
+                continue; // 已經處理過了
+            }
             if (data.isDone && data.data.length > 0) {
                 resultText += `${data.target} 下載完成\n`;
             } else {
@@ -51,7 +62,7 @@ class MessageHandler {
             }
         }
 
-        if (resultText !== '') {
+        if (resultText.trim() !== '') {
             await this.bot.sendMessage(
                 chatId,
                 resultText,
@@ -61,6 +72,8 @@ class MessageHandler {
                     allow_sending_without_reply: true
                 }
             );
+        } else {
+            console.log('[WARNING] resultText 為空，不發送訊息');
         }
     }
 
@@ -70,9 +83,9 @@ class MessageHandler {
      */
     async _handleLocalDownload(chatId, msgId, datas) {
         for (const data of datas) {
-            // 處理 TikTok 影片
+            // 處理 TikTok 影片（上傳到 Telegram）
             if (data.type === MEDIA_TYPES.TIKTOK_VIDEO) {
-                await this._handleTikTokVideo(chatId, msgId, data);
+                await this._handleTikTokVideoUpload(chatId, msgId, data);
                 continue;
             }
 
@@ -241,10 +254,10 @@ class MessageHandler {
     }
 
     /**
-     * 處理 TikTok 影片下載
+     * 處理 TikTok 影片下載並上傳到 Telegram
      * @private
      */
-    async _handleTikTokVideo(chatId, msgId, data) {
+    async _handleTikTokVideoUpload(chatId, msgId, data) {
         try {
             await this.bot.sendMessage(
                 chatId,
@@ -258,11 +271,12 @@ class MessageHandler {
             const result = await this.tiktokDownloader.downloadVideo(data.target);
 
             if (result.success && result.filePath) {
+                const caption = result.videoInfo && result.videoInfo.title ? result.videoInfo.title : data.target;
                 await this.bot.sendVideo(
                     chatId,
                     result.filePath,
                     {
-                        caption: result.videoInfo.title,
+                        caption: caption,
                         reply_to_message_id: msgId,
                         allow_sending_without_reply: true
                     }
@@ -282,6 +296,49 @@ class MessageHandler {
             await this.bot.sendMessage(
                 chatId,
                 `${data.target}\n\n下載失敗: ${error.message}`,
+                {
+                    reply_to_message_id: msgId,
+                    allow_sending_without_reply: true
+                }
+            );
+        }
+    }
+
+    /**
+     * 處理 TikTok 影片下載（僅遠端下載）
+     * @private
+     */
+    async _handleTikTokVideoRemote(chatId, msgId, data) {
+        try {
+            console.log(`[LOG] 開始遠端下載 TikTok 影片: ${JSON.stringify(data)}`);
+
+            const result = await this.tiktokDownloader.downloadVideo(data.target);
+            console.log(`[LOG] TikTok 影片下載結果: ${JSON.stringify(result)}`);
+
+            if (result.success && result.filePath) {
+                await this.bot.sendMessage(
+                    chatId,
+                    `${data.target}\n\n✅ 下載完成！\n檔案: ${require('path').basename(result.filePath)}`,
+                    {
+                        reply_to_message_id: msgId,
+                        allow_sending_without_reply: true
+                    }
+                );
+            } else {
+                await this.bot.sendMessage(
+                    chatId,
+                    `${data.target}\n\n❌ 下載失敗: ${result.error || '未知錯誤'}`,
+                    {
+                        reply_to_message_id: msgId,
+                        allow_sending_without_reply: true
+                    }
+                );
+            }
+        } catch (error) {
+            console.error('[ERROR] TikTok 影片遠端下載失敗:', error);
+            await this.bot.sendMessage(
+                chatId,
+                `${data.target}\n\n❌ 下載失敗: ${error.message}`,
                 {
                     reply_to_message_id: msgId,
                     allow_sending_without_reply: true

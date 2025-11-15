@@ -55,26 +55,30 @@ class TikTokDownloader {
         formData.append('url', videoUrl);
         formData.append('web', '1');
 
-        const response = await fetch('https://www.tikwm.com/api/video/task/submit', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Referer': 'https://www.tikwm.com/originalDownloader.html'
-            },
-            body: formData.toString()
-        });
+        try {
+            const response = await fetch('https://www.tikwm.com/api/video/task/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Referer': 'https://www.tikwm.com/originalDownloader.html'
+                },
+                body: formData.toString()
+            });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data.code !== 0) {
+                throw new Error(data.msg || '提交任務失敗');
+            }
+
+            return data.data.task_id;
+        } catch (error) {
+            throw error;
         }
-
-        const data = await response.json();
-
-        if (data.code !== 0) {
-            throw new Error(data.msg || '提交任務失敗');
-        }
-
-        return data.data.task_id;
     }
 
     /**
@@ -82,38 +86,42 @@ class TikTokDownloader {
      * @private
      */
     async _getTaskResult(taskId, videoUrl) {
-        const response = await fetch(
-            `https://www.tikwm.com/api/video/task/result?task_id=${taskId}`,
-            {
-                headers: {
-                    'Referer': 'https://www.tikwm.com/originalDownloader.html'
+        try {
+            const response = await fetch(
+                `https://www.tikwm.com/api/video/task/result?task_id=${taskId}`,
+                {
+                    headers: {
+                        'Referer': 'https://www.tikwm.com/originalDownloader.html'
+                    }
                 }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        );
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+
+            if (data.code !== 0 || !data.data || !data.data.detail) {
+                throw new Error('無法取得影片詳細資訊');
+            }
+
+            // 提取影片 ID
+            const videoIdMatch = videoUrl.match(/\/video\/(\d+)/);
+            const videoId = videoIdMatch ? videoIdMatch[1] : data.data.detail.id;
+
+            return {
+                id: videoId,
+                title: data.data.detail.title || 'untitled',
+                link: data.data.detail.download_url || data.data.detail.play_url,
+                author: {
+                    unique_id: data.data.detail.author.unique_id
+                },
+                create_time: data.data.detail.create_time
+            };
+        } catch (error) {
+            throw error;
         }
-
-        const data = await response.json();
-
-        if (data.code !== 0 || !data.data || !data.data.detail) {
-            throw new Error('無法取得影片詳細資訊');
-        }
-
-        // 提取影片 ID
-        const videoIdMatch = videoUrl.match(/\/video\/(\d+)/);
-        const videoId = videoIdMatch ? videoIdMatch[1] : data.data.detail.id;
-
-        return {
-            id: videoId,
-            title: data.data.detail.title || 'untitled',
-            link: data.data.detail.download_url || data.data.detail.play_url,
-            author: {
-                unique_id: data.data.detail.author.unique_id
-            },
-            create_time: data.data.detail.create_time
-        };
     }
 
     /**
@@ -121,47 +129,51 @@ class TikTokDownloader {
      * @private
      */
     async _downloadVideoFile(videoInfo) {
-        const response = await fetch(videoInfo.link);
+        try {
+            const response = await fetch(videoInfo.link);
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-        const contentType = response.headers.get('content-type');
-        if (contentType !== 'video/mp4' && contentType !== 'application/octet-stream') {
-            throw new Error('URL 未返回影片內容');
-        }
+            const contentType = response.headers.get('content-type');
+            if (contentType !== 'video/mp4' && contentType !== 'application/octet-stream') {
+                throw new Error('URL 未返回影片內容');
+            }
 
-        // Convert timestamp to YYYYMMDD format
-        const date = new Date(videoInfo.create_time * 1000);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const dateStr = `${year}${month}${day}`;
+            // Convert timestamp to YYYYMMDD format
+            const date = new Date(videoInfo.create_time * 1000);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const dateStr = `${year}${month}${day}`;
 
-        const fileName = `${videoInfo.author.unique_id}_${videoInfo.id}_${dateStr}.mp4`;
-        const filePath = path.join('E:/User/Downloads/ff', fileName);
+            const fileName = `${videoInfo.author.unique_id}_${videoInfo.id}_${dateStr}.mp4`;
+            const filePath = path.join('E:/User/Downloads/ff', fileName);
 
-        // 檢查檔案是否已存在
-        if (fs.existsSync(filePath)) {
-            console.log(`[LOG] 影片已存在: ${fileName}`);
+            // 檢查檔案是否已存在
+            if (fs.existsSync(filePath)) {
+                console.log(`[LOG] 影片已存在: ${fileName}`);
+                return filePath;
+            }
+
+            // 下載檔案
+            const readableStream = Readable.from(response.body);
+            const fileStream = fs.createWriteStream(filePath);
+
+            readableStream.pipe(fileStream);
+
+            // 等待寫入完成
+            await new Promise((resolve, reject) => {
+                fileStream.on('close', resolve);
+                fileStream.on('error', reject);
+            });
+
+            console.log(`[LOG] TikTok 影片下載完成: ${fileName}`);
             return filePath;
+        } catch (error) {
+            throw error;
         }
-
-        // 下載檔案
-        const readableStream = Readable.from(response.body);
-        const fileStream = fs.createWriteStream(filePath);
-
-        readableStream.pipe(fileStream);
-
-        // 等待寫入完成
-        await new Promise((resolve, reject) => {
-            fileStream.on('close', resolve);
-            fileStream.on('error', reject);
-        });
-
-        console.log(`[LOG] TikTok 影片下載完成: ${fileName}`);
-        return filePath;
     }
 
     /**

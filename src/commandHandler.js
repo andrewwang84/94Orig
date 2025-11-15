@@ -72,7 +72,7 @@ class CommandHandler {
 
                 // 如果是 myId 且沒有 -u 選項，則加入列表而不是下載
                 if (chatId === this.config.myId && !uploadToTg) {
-                    await this._addUrlsToLists(chatId, msgId, imgTargets, vidTargets, streamTargets);
+                    await this._addUrlsToLists(msg, chatId, msgId, imgTargets, vidTargets, streamTargets);
                     return;
                 }
 
@@ -111,10 +111,11 @@ class CommandHandler {
                     }
                 }
 
-                // 處理 TikTok 影片（不加入下載隊列，直接處理）
+                // 處理 TikTok 影片
+                // downloadRemote 為 true 表示只下載到遠端（不上傳到 TG）
                 if (Object.keys(tiktokVideos).length > 0) {
                     const tiktokResults = Object.values(tiktokVideos);
-                    await this.messageHandler.sendMessages(msg, tiktokResults, false);
+                    await this.messageHandler.sendMessages(msg, tiktokResults, downloadRemote);
                 }
 
                 // 處理一般影片下載
@@ -208,7 +209,7 @@ class CommandHandler {
      * 將 URL 加入對應的下載列表（myId 專用）
      * @private
      */
-    async _addUrlsToLists(chatId, msgId, imgTargets, vidTargets, streamTargets) {
+    async _addUrlsToLists(msg, chatId, msgId, imgTargets, vidTargets, streamTargets) {
         const { MEDIA_TYPES } = require('./constants');
         let galCount = 0;
         let ytdCount = 0;
@@ -251,6 +252,11 @@ class CommandHandler {
             data.type !== MEDIA_TYPES.TIKTOK_VIDEO
         );
 
+        // 處理 TikTok 影片（遠端下載）
+        const tiktokVideos = Object.entries(vidTargets).filter(([url, data]) =>
+            data.type === MEDIA_TYPES.TIKTOK_VIDEO
+        );
+
         if (regularVideos.length > 0) {
             const ytdListStream = fs.createWriteStream(this.filePaths.absoluteYtDlListPath, { flags: 'a' });
             const ytd2ListStream = fs.createWriteStream(this.filePaths.absoluteYtDl2ListPath, { flags: 'a' });
@@ -267,6 +273,16 @@ class CommandHandler {
             ytd2ListStream.end();
         }
 
+        // 處理 TikTok 影片：直接下載（不加入列表）
+        if (tiktokVideos.length > 0) {
+            for (const [url, data] of tiktokVideos) {
+                // 異步下載 TikTok 影片
+                this.messageHandler.sendMessages(msg, [data], true).catch(err => {
+                    console.error(`[ERROR] TikTok 下載失敗: ${err}`);
+                });
+            }
+        }
+
         // 發送確認消息
         let confirmMsg = '';
         if (galCount > 0) {
@@ -274,6 +290,9 @@ class CommandHandler {
         }
         if (ytdCount > 0) {
             confirmMsg += `✅ 網址已加入 yt-dlp 下載列表: ${ytdCount} 個網址\n`;
+        }
+        if (tiktokVideos.length > 0) {
+            confirmMsg += `🎵 開始下載 TikTok 影片: ${tiktokVideos.length} 個影片\n`;
         }
         if (streamlinkCommands.length > 0) {
             confirmMsg += `\n📺 直播指令:\n`;
@@ -285,15 +304,17 @@ class CommandHandler {
             confirmMsg += '\n💡 使用 -u 參數可以立即下載並上傳';
         }
 
-        await this.bot.sendMessage(
-            chatId,
-            confirmMsg,
-            {
-                parse_mode: 'Markdown',
-                reply_to_message_id: msgId,
-                allow_sending_without_reply: true
-            }
-        );
+        if (confirmMsg.trim() !== '') {
+            await this.bot.sendMessage(
+                chatId,
+                confirmMsg,
+                {
+                    parse_mode: 'Markdown',
+                    reply_to_message_id: msgId,
+                    allow_sending_without_reply: true
+                }
+            );
+        }
     }
 
     /**
