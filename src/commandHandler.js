@@ -699,12 +699,16 @@ class CommandHandler {
                 }
             });            process.stderr.on('data', async (data) => {
                 const dataStr = data.toString();
+                console.error(`[ERROR] gallery-dl stderr: ${dataStr}`);
                 if (/^ERROR:/.test(dataStr)) {
-                    console.log(dataStr);
-                    await this.bot.editMessageText(
-                        progressTxt + `\ngallery-dl 下載發生錯誤：${dataStr}`,
-                        { is_disabled: true, chat_id: chatId, message_id: startMsgId }
-                    );
+                    try {
+                        await this.bot.editMessageText(
+                            `❌ gallery-dl 下載發生錯誤：\n${dataStr}`,
+                            { chat_id: chatId, message_id: startMsgId }
+                        );
+                    } catch (e) {
+                        console.error('[ERROR] 無法更新錯誤訊息:', e.message);
+                    }
                 }
             });
 
@@ -804,13 +808,24 @@ class CommandHandler {
                         '✅ 列表下載完成！(沒有新下載)',
                         { chat_id: chatId, message_id: startMsgId }
                     );
+                } else {
+                    // 非 0 的 exit code
+                    console.error(`[ERROR] gallery-dl exit code: ${code}`);
+                    await this.bot.editMessageText(
+                        `❌ gallery-dl 執行失敗 (exit code: ${code})`,
+                        { chat_id: chatId, message_id: startMsgId }
+                    );
                 }
             });            process.on('error', async (err) => {
-                console.error(`${err.message}`);
-                await this.bot.editMessageText(
-                    progressTxt + `\ngallery-dl 下載發生錯誤：${err}`,
-                    { is_disabled: true, chat_id: chatId, message_id: startMsgId }
-                );
+                console.error(`[ERROR] gallery-dl process error: ${err.message}`);
+                try {
+                    await this.bot.editMessageText(
+                        `❌ gallery-dl 執行錯誤：${err.message}`,
+                        { chat_id: chatId, message_id: startMsgId }
+                    );
+                } catch (e) {
+                    console.error('[ERROR] 無法更新錯誤訊息:', e.message);
+                }
             });
 
         } catch (error) {
