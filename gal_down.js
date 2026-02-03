@@ -32,6 +32,13 @@ function isTwitterUrl(url) {
 }
 
 /**
+ * 檢查 URL 是否為 Weibo
+ */
+function isWeiboUrl(url) {
+    return /(m\.)?weibo\.(com|cn)|video\.weibo\.com/i.test(url);
+}
+
+/**
  * 主函數
  */
 async function main() {
@@ -98,6 +105,16 @@ async function main() {
         if (isTwitterUrl(normalizedUrl)) {
             console.log(`[X/Twitter] ${normalizedUrl}`);
             console.log(`   ⏭️  跳過快取檢查 (X 連結不使用快取)`);
+            modifiedLines.push(normalizedUrl);
+            xSkipCount++;
+            processCount++;
+            continue;
+        }
+
+        // Weibo 的 URL 不檢查快取，直接加入
+        if (isWeiboUrl(normalizedUrl)) {
+            console.log(`[Weibo] ${normalizedUrl}`);
+            console.log(`   ⏭️  跳過快取檢查 (Weibo 連結不使用快取)`);
             modifiedLines.push(normalizedUrl);
             xSkipCount++;
             processCount++;

@@ -62,7 +62,8 @@ class UrlParser {
                type === MEDIA_TYPES.IG_STORY ||
                type === MEDIA_TYPES.X ||
                type === MEDIA_TYPES.NAVER ||
-               type === MEDIA_TYPES.TIKTOK_OTHER;
+               type === MEDIA_TYPES.TIKTOK_OTHER ||
+               type === MEDIA_TYPES.WEIBO;
     }
 
     /**

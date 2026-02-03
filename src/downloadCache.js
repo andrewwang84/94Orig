@@ -63,13 +63,28 @@ class DownloadCache {
     /**
      * 檢查 URL 是否應該被快取
      * Instagram Stories 沒有編號的不快取
+     * X/Twitter 和 Weibo 不快取
      * @param {string} url - 完整 URL
      * @returns {boolean}
      */
     shouldCache(url) {
         // Instagram Stories 沒有特定貼文 ID 的不快取
         const storiesPattern = /^https:\/\/www\.instagram\.com\/stories\/[\w.-]+\/?$/;
-        return !storiesPattern.test(url);
+        if (storiesPattern.test(url)) {
+            return false;
+        }
+
+        // X/Twitter 不快取
+        if (/(twitter\.com|x\.com)/i.test(url)) {
+            return false;
+        }
+
+        // Weibo 不快取
+        if (/(m\.)?weibo\.(com|cn)|video\.weibo\.com/i.test(url)) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

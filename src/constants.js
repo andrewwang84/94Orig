@@ -12,7 +12,8 @@ const MEDIA_TYPES = {
     TIKTOK_VIDEO: 8,
     TIKTOK_LIVE: 9,
     TWITCH_LIVE: 10,
-    TIKTOK_OTHER: 11  // 其他 TikTok 連結，使用 gallery-dl
+    TIKTOK_OTHER: 11,  // 其他 TikTok 連結，使用 gallery-dl
+    WEIBO: 12  // Weibo 連結，使用 gallery-dl
 };
 
 /**
@@ -29,7 +30,8 @@ const MEDIA_TYPE_LABELS = {
     [MEDIA_TYPES.TIKTOK_VIDEO]: 'TikTok Video',
     [MEDIA_TYPES.TIKTOK_LIVE]: 'TikTok Live',
     [MEDIA_TYPES.TWITCH_LIVE]: 'Twitch Live',
-    [MEDIA_TYPES.TIKTOK_OTHER]: 'TikTok'
+    [MEDIA_TYPES.TIKTOK_OTHER]: 'TikTok',
+    [MEDIA_TYPES.WEIBO]: 'Weibo'
 };
 
 /**
@@ -46,7 +48,8 @@ const URL_PATTERNS = {
     [MEDIA_TYPES.TIKTOK_VIDEO]: /https:\/\/(?:www\.)?tiktok\.com\/@[\w.-]+\/video\/\d+/g,
     [MEDIA_TYPES.TIKTOK_LIVE]: /https:\/\/(?:www\.)?tiktok\.com\/@[\w.-]+\/live\/?/g,
     [MEDIA_TYPES.TWITCH_LIVE]: /https:\/\/(?:www\.)?twitch\.tv\/([\w-]+)/g,
-    [MEDIA_TYPES.TIKTOK_OTHER]: /https:\/\/(?:www\.)?tiktok\.com\/(?!@[\w.-]+\/video\/\d+)(?!@[\w.-]+\/live).+/g
+    [MEDIA_TYPES.TIKTOK_OTHER]: /https:\/\/(?:www\.)?tiktok\.com\/(?!@[\w.-]+\/video\/\d+)(?!@[\w.-]+\/live).+/g,
+    [MEDIA_TYPES.WEIBO]: /https:\/\/(?:m\.weibo\.cn\/detail\/\d+|weibo\.com\/\d+\/\d+|video\.weibo\.com\/show\?fid=[\w:]+)/g
 };
 
 /**
