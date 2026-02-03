@@ -7,7 +7,7 @@ const fs = require('fs');
  * 用於儲存已下載的媒體資訊，避免重複下載
  */
 class DownloadCache {
-    constructor(dbPath = './download_cache.db') {
+    constructor(dbPath = path.join(__dirname, '../data/download_cache.db')) {
         this.dbPath = dbPath;
         this.db = null;
         this._initialize();

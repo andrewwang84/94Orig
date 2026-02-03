@@ -9,5 +9,12 @@ module.exports = {
             'data/**',
             'data',
         ],
+        // 開機自動重啟相關設定
+        autorestart: true,
+        max_restarts: 10,
+        min_uptime: "10s",
+        restart_delay: 5000,
+        // 錯誤重啟設定
+        exp_backoff_restart_delay: 100,
     }]
 };

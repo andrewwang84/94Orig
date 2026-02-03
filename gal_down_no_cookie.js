@@ -140,7 +140,7 @@ async function main() {
 
     // 執行 gallery-dl
     console.log('開始執行 gallery-dl...');
-    console.log(`   指令: gallery-dl --cookies-from-browser firefox -I ${inputFile}`);
+    console.log(`   指令: gallery-dl -I ${inputFile}`);
     console.log('');
 
     const downloadedFiles = [];
@@ -154,7 +154,7 @@ async function main() {
         }
     }
 
-    const childProcess = spawn('gallery-dl', ['--cookies-from-browser', 'firefox', '-I', inputFile]);
+    const childProcess = spawn('gallery-dl', ['-I', inputFile]);
     let stdoutBuffer = '';
 
     childProcess.stdout.on('data', (data) => {

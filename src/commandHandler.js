@@ -129,14 +129,22 @@ class CommandHandler {
 
             } catch (error) {
                 console.error(`[ERROR][Telegram] ${error}`);
-                await this.bot.sendMessage(
-                    chatId,
-                    `出錯了: ${error}`,
-                    {
-                        reply_to_message_id: msgId,
-                        allow_sending_without_reply: true
+
+                // 只對白名單用戶發送錯誤訊息
+                if (this.config.adminId.includes(chatId)) {
+                    try {
+                        await this.bot.sendMessage(
+                            chatId,
+                            `出錯了: ${error}`,
+                            {
+                                reply_to_message_id: msgId,
+                                allow_sending_without_reply: true
+                            }
+                        );
+                    } catch (sendError) {
+                        console.error(`[ERROR][Telegram] Failed to send error message: ${sendError.message}`);
                     }
-                );
+                }
             }
         });
     }
@@ -219,7 +227,7 @@ class CommandHandler {
         if (Object.keys(imgTargets).length > 0) {
             const galListStream = fs.createWriteStream(this.filePaths.absoluteGalleryDlListPath, { flags: 'a' });
             for (const url in imgTargets) {
-                galListStream.write(`${url.split('?')[0]}\n`);
+                galListStream.write(`${url.split('?')[0].replace(/\/$/, '')}\n`);
                 galCount++;
             }
             galListStream.end();
@@ -398,14 +406,20 @@ class CommandHandler {
                 );
             } catch (error) {
                 console.error(error);
-                await this.bot.sendMessage(
-                    chatId,
-                    error.toString(),
-                    {
-                        reply_to_message_id: msgId,
-                        allow_sending_without_reply: true
+                if (this.config.adminId.includes(chatId)) {
+                    try {
+                        await this.bot.sendMessage(
+                            chatId,
+                            error.toString(),
+                            {
+                                reply_to_message_id: msgId,
+                                allow_sending_without_reply: true
+                            }
+                        );
+                    } catch (sendError) {
+                        console.error(`[ERROR] Failed to send error message: ${sendError.message}`);
                     }
-                );
+                }
             }
         });
 
@@ -463,7 +477,7 @@ class CommandHandler {
                 if (!/^https?:\/\//.test(url)) {
                     continue;
                 }
-                listStream.write(`${url.split('?')[0]}\n`);
+                listStream.write(`${url.split('?')[0].replace(/\/$/, '')}\n`);
                 urlCount++;
             }
 
@@ -477,14 +491,20 @@ class CommandHandler {
             );
         } catch (error) {
             console.error(error);
-            await this.bot.sendMessage(
-                chatId,
-                error.toString(),
-                {
-                    reply_to_message_id: msgId,
-                    allow_sending_without_reply: true
+            if (this.config.adminId.includes(chatId)) {
+                try {
+                    await this.bot.sendMessage(
+                        chatId,
+                        error.toString(),
+                        {
+                            reply_to_message_id: msgId,
+                            allow_sending_without_reply: true
+                        }
+                    );
+                } catch (sendError) {
+                    console.error(`[ERROR] Failed to send error message: ${sendError.message}`);
                 }
-            );
+            }
         }
     }
 
@@ -537,14 +557,20 @@ class CommandHandler {
             );
         } catch (error) {
             console.error(error);
-            await this.bot.sendMessage(
-                chatId,
-                error.toString(),
-                {
-                    reply_to_message_id: msgId,
-                    allow_sending_without_reply: true
+            if (this.config.adminId.includes(chatId)) {
+                try {
+                    await this.bot.sendMessage(
+                        chatId,
+                        error.toString(),
+                        {
+                            reply_to_message_id: msgId,
+                            allow_sending_without_reply: true
+                        }
+                    );
+                } catch (sendError) {
+                    console.error(`[ERROR] Failed to send error message: ${sendError.message}`);
                 }
-            );
+            }
         }
     }
 
@@ -576,14 +602,20 @@ class CommandHandler {
             );
         } catch (error) {
             console.error(error);
-            await this.bot.sendMessage(
-                chatId,
-                error.toString(),
-                {
-                    reply_to_message_id: msgId,
-                    allow_sending_without_reply: true
+            if (this.config.adminId.includes(chatId)) {
+                try {
+                    await this.bot.sendMessage(
+                        chatId,
+                        error.toString(),
+                        {
+                            reply_to_message_id: msgId,
+                            allow_sending_without_reply: true
+                        }
+                    );
+                } catch (sendError) {
+                    console.error(`[ERROR] Failed to send error message: ${sendError.message}`);
                 }
-            );
+            }
         }
     }
 
@@ -618,19 +650,22 @@ class CommandHandler {
 
                     // 檢查是否為 URL (非註解)
                     if (trimmed && trimmed.startsWith('http') && !line.trim().startsWith('#')) {
+                        const normalizedUrl = trimmed.replace(/\/$/, '');
                         totalUrls++;
 
                         // 檢查快取
                         if (this.downloadCache) {
-                            const cached = this.downloadCache.get(trimmed);
+                            const cached = this.downloadCache.get(normalizedUrl);
                             if (cached && cached.file_paths && cached.file_paths.length > 0) {
                                 // 快取存在且檔案都存在,註解此行
-                                console.log(`[LOG][Cache] 跳過已下載: ${trimmed}`);
-                                modifiedLines.push(`# ${line}`);
+                                console.log(`[LOG][Cache] 跳過已下載: ${normalizedUrl}`);
+                                modifiedLines.push(`# ${normalizedUrl}`);
                                 cachedCount++;
                                 continue;
                             }
                         }
+                        modifiedLines.push(normalizedUrl);
+                        continue;
                     }
 
                     // 保留原行
@@ -662,7 +697,7 @@ class CommandHandler {
                 for (const line of listLines) {
                     const trimmed = line.trim();
                     if (trimmed && trimmed.startsWith('http') && !line.trim().startsWith('#')) {
-                        activeUrls.push(trimmed);
+                        activeUrls.push(trimmed.replace(/\/$/, ''));
                     }
                 }
                 console.log(`[LOG] 列表中有 ${activeUrls.length} 個待下載的 URL`);
@@ -684,17 +719,19 @@ class CommandHandler {
                 for (const line of lines) {
                     if (!line.trim()) continue; // 跳過空行
 
-                    // 檢查是否為檔案路徑 (支援 Windows 和 Unix 路徑)
-                    if ((line.includes('/') || line.includes('\\')) && !line.includes('|')) {
-                        // 移除可能的 # 前綴
-                        let filePath = line.trim().replace(/^#\s*/, '');
+                    // 去除 ANSI color codes
+                    // eslint-disable-next-line no-control-regex
+                    const cleanLine = line.replace(/\x1B\[\d+m/g, '').trim();
 
-                        // 檢查是否為檔案路徑(包含檔案副檔名)
-                        if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(filePath)) {
-                            // 同步收集檔案,不更新 Telegram 訊息
-                            downloadedFiles.push(filePath);
-                            console.log(`[LOG] 下載檔案: ${filePath}`);
-                        }
+                    // 移除可能的 # 前綴
+                    let filePath = cleanLine.replace(/^#\s*/, '');
+
+                    // 檢查是否為檔案路徑(包含檔案副檔名)
+                    // 放寬條件：只要是支援的副檔名結尾，且不包含 pipe
+                    if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(filePath) && !filePath.includes('|')) {
+                        // 同步收集檔案,不更新 Telegram 訊息
+                        downloadedFiles.push(filePath);
+                        console.log(`[LOG] 下載檔案: ${filePath}`);
                     }
                 }
             });            process.stderr.on('data', async (data) => {
@@ -716,12 +753,13 @@ class CommandHandler {
                 // 處理緩衝區中剩餘的資料
                 if (stdoutBuffer.trim()) {
                     const line = stdoutBuffer.trim();
-                    if ((line.includes('/') || line.includes('\\')) && !line.includes('|')) {
-                        let filePath = line.replace(/^#\s*/, '');
-                        if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(filePath)) {
-                            downloadedFiles.push(filePath);
-                            console.log(`[LOG] 下載檔案: ${filePath}`);
-                        }
+                    // eslint-disable-next-line no-control-regex
+                    const cleanLine = line.replace(/\x1B\[\d+m/g, '').trim();
+                    let filePath = cleanLine.replace(/^#\s*/, '');
+
+                    if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(filePath) && !filePath.includes('|')) {
+                        downloadedFiles.push(filePath);
+                        console.log(`[LOG] 下載檔案: ${filePath}`);
                     }
                 }
 
@@ -830,14 +868,20 @@ class CommandHandler {
 
         } catch (error) {
             console.error(error);
-            await this.bot.sendMessage(
-                chatId,
-                error.toString(),
-                {
-                    reply_to_message_id: msgId,
-                    allow_sending_without_reply: true
+            if (this.config.adminId.includes(chatId)) {
+                try {
+                    await this.bot.sendMessage(
+                        chatId,
+                        error.toString(),
+                        {
+                            reply_to_message_id: msgId,
+                            allow_sending_without_reply: true
+                        }
+                    );
+                } catch (sendError) {
+                    console.error(`[ERROR] Failed to send error message: ${sendError.message}`);
                 }
-            );
+            }
         }
     }
 
@@ -950,14 +994,20 @@ class CommandHandler {
             });
         } catch (error) {
             console.error(error);
-            await this.bot.sendMessage(
-                chatId,
-                error.toString(),
-                {
-                    reply_to_message_id: msgId,
-                    allow_sending_without_reply: true
+            if (this.config.adminId.includes(chatId)) {
+                try {
+                    await this.bot.sendMessage(
+                        chatId,
+                        error.toString(),
+                        {
+                            reply_to_message_id: msgId,
+                            allow_sending_without_reply: true
+                        }
+                    );
+                } catch (sendError) {
+                    console.error(`[ERROR] Failed to send error message: ${sendError.message}`);
                 }
-            );
+            }
         }
     }
 

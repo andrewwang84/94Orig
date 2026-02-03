@@ -37,16 +37,8 @@ function getProgressEmoji(progress) {
  */
 async function checkCanUse(bot, chatId, msgId, logName, chatMsg, adminId) {
     if (!adminId.includes(chatId)) {
-        console.info(`[LOG][${chatId}][${logName}] Not Admin - ${chatMsg}`);
-        await bot.sendMessage(chatId, `
-親愛的 ${logName} 您好，本 bot 目前不開放所有人使用
-請將 <strong>「${chatId}」</strong> 私訊給本 bot 作者來獲取使用權限，謝謝`,
-            {
-                reply_to_message_id: msgId,
-                allow_sending_without_reply: true,
-                parse_mode: 'HTML'
-            }
-        );
+        console.info(`[LOG][${chatId}][${logName}] Not Admin - Ignoring message`);
+        // 靜默忽略非白名單用戶的訊息，不發送任何回應
         return false;
     }
     return true;
