@@ -36,15 +36,18 @@ class ImageDownloader {
     async download(urlDatas, downloadRemote = false) {
         try {
             const results = [];
+            console.log(`[ig_debug] ImageDownloader.download 開始處理 ${Object.keys(urlDatas).length} 個 URL`);
 
             for (const url in urlDatas) {
                 const urlData = urlDatas[url];
+                console.log(`[ig_debug] 處理 URL: ${url}, type: ${urlData.typeTxt}`);
 
                 // 先檢查快取（同步版本）
                 if (this.downloadCache) {
                     const cached = this.downloadCache.get(url);
                     if (cached && cached.file_paths && cached.file_paths.length > 0) {
                         console.log(`[LOG][Cache] 使用快取: ${url} (${cached.file_paths.length} 個檔案)`);
+                        console.log(`[ig_debug] 快取命中，file_paths: ${JSON.stringify(cached.file_paths)}`);
                         urlData.isDone = true;
                         urlData.data = cached.file_paths;
                         urlData.fromCache = true;
@@ -61,8 +64,10 @@ class ImageDownloader {
                 const args = ['--cookies-from-browser', 'firefox', url];
 
                 console.info(`[LOG][${urlData.typeTxt}][${url}] gallery-dl --cookies-from-browser firefox ${url}`);
+                console.log(`[ig_debug] 開始執行下載: ${url}`);
 
                 const result = await this._executeDownload(cmd, args, url, urlDatas[url]);
+                console.log(`[ig_debug] 下載完成，localFiles 數量: ${result.localFiles ? result.localFiles.length : 0}`);
 
                 // 為每個本地檔案添加對應的原始 URL
                 if (result.localFiles && result.localFiles.length > 0) {
@@ -73,7 +78,10 @@ class ImageDownloader {
 
                 // 儲存到快取（同步版本，同一 URL 的多個檔案一起儲存）
                 if (this.downloadCache && result.isDone && result.localFiles && result.localFiles.length > 0) {
+                    console.log(`[ig_debug] 準備保存到快取，URL: ${url}, 檔案數: ${result.localFiles.length}`);
+                    console.log(`[ig_debug] localFiles 內容: ${JSON.stringify(result.localFiles)}`);
                     this.downloadCache.setBatch(url, result.localFiles);
+                    console.log(`[ig_debug] setBatch 呼叫完成`);
                 }
 
                 // 隨機延遲，避免請求過於頻繁
@@ -117,6 +125,7 @@ class ImageDownloader {
                         // 檢查是否為檔案路徑（包含檔案副檔名）
                         if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(trimmedLine)) {
                             localFiles.push(trimmedLine);
+                            console.log(`[ig_debug] _executeDownload 捕獲檔案 #${localFiles.length}: ${trimmedLine}`);
                         }
                     }
 
@@ -132,12 +141,15 @@ class ImageDownloader {
                         let trimmedLine = line.replace(/^#\s*/, '');
                         if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(trimmedLine)) {
                             localFiles.push(trimmedLine);
+                            console.log(`[ig_debug] _executeDownload 緩衝區捕獲檔案: ${trimmedLine}`);
                         }
                     }
                     urlData.data.push(line);
                 }
 
                 console.log(`${url} Done, code:${code}`);
+                console.log(`[ig_debug] _executeDownload close 事件，code: ${code}, localFiles.length: ${localFiles.length}`);
+                console.log(`[ig_debug] _executeDownload 最終 localFiles: ${JSON.stringify(localFiles)}`);
 
                 // 檢查下載是否成功
                 if (code === 0 && localFiles.length > 0) {

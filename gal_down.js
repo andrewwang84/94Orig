@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 /**
  * 獨立下載腳本 - 支援從檔案讀取 URL 並使用快取
- * 使用方式: node standalone-download.js [url-list-file]
- * 範例: node standalone-download.js
- *       node standalone-download.js /e/User/Documents/BackupDoc/custom.txt
+ * 使用方式: node gal_down.js [url-list-file] [--no-cookie]
+ * 範例: node gal_down.js
+ *       node gal_down.js /e/User/Documents/BackupDoc/custom.txt
+ *       node gal_down.js --no-cookie
+ *       node gal_down.js /e/User/Documents/BackupDoc/custom.txt --no-cookie
  *
  * 如果不提供檔案路徑，會使用 config 中的 galleryDlListPath
+ * 使用 --no-cookie 參數時不會從瀏覽器讀取 cookies
  */
 
 const { spawn } = require('child_process');
@@ -32,8 +35,21 @@ function isTwitterUrl(url) {
  * 主函數
  */
 async function main() {
+    // 解析命令行參數
+    const args = process.argv.slice(2);
+    let inputFile = null;
+    let useCookie = true;
+
+    for (const arg of args) {
+        if (arg === '--no-cookie') {
+            useCookie = false;
+        } else if (!arg.startsWith('--')) {
+            inputFile = arg;
+        }
+    }
+
     // 使用提供的檔案路徑或使用 config 中的預設路徑
-    const inputFile = process.argv[2] || config.galleryDlListPath;
+    inputFile = inputFile || config.galleryDlListPath;
 
     // 檢查檔案是否存在
     if (!fs.existsSync(inputFile)) {
@@ -127,20 +143,10 @@ async function main() {
     console.log(`   X/Twitter (跳過快取): ${xSkipCount}`);
     console.log(`   待下載: ${processCount}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('');
-
-    if (processCount === 0) {
-        console.log('✅ 所有 Instagram URL 都已在快取中，無需下載！');
-        if (xSkipCount > 0) {
-            console.log(`   (${xSkipCount} 個 X 連結已跳過快取檢查)`);
-        }
-        downloadCache.close();
-        return;
-    }
-
-    // 執行 gallery-dl
-    console.log('開始執行 gallery-dl...');
-    console.log(`   指令: gallery-dl --cookies-from-browser firefox -I ${inputFile}`);
+    const galleryDlArgs = useCookie
+        ? ['--cookies-from-browser', 'firefox', '-I', inputFile]
+        : ['-I', inputFile];
+    console.log(`   指令: gallery-dl ${galleryDlArgs.join(' ')}`);
     console.log('');
 
     const downloadedFiles = [];

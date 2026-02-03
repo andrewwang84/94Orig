@@ -217,7 +217,12 @@ class DownloadCache {
      * @param {Array<string>} fileIds - Telegram file ID 陣列 (可選)
      */
     setBatch(url, filePaths, fileIds = null) {
+        console.log(`[ig_debug] setBatch 被呼叫，url: ${url}`);
+        console.log(`[ig_debug] setBatch filePaths 參數: ${JSON.stringify(filePaths)}`);
+        console.log(`[ig_debug] setBatch filePaths 類型: ${Array.isArray(filePaths) ? 'Array' : typeof filePaths}`);
+
         if (!this.shouldCache(url)) {
+            console.log(`[ig_debug] setBatch shouldCache 返回 false，跳過快取`);
             return;
         }
 
@@ -225,19 +230,37 @@ class DownloadCache {
         const pathArray = Array.isArray(filePaths) ? filePaths : [filePaths];
         const idArray = fileIds ? (Array.isArray(fileIds) ? fileIds : [fileIds]) : [];
 
+        console.log(`[ig_debug] setBatch cleanedUrl: ${cleanedUrl}`);
+        console.log(`[ig_debug] setBatch pathArray.length: ${pathArray.length}`);
+        console.log(`[ig_debug] setBatch pathArray 內容: ${JSON.stringify(pathArray)}`);
+
         try {
             const stmt = this.db.prepare(`
                 INSERT OR REPLACE INTO downloads (url, file_paths, file_ids, last_accessed)
                 VALUES (?, ?, ?, CURRENT_TIMESTAMP)
             `);
 
+            const jsonPaths = JSON.stringify(pathArray);
+            console.log(`[ig_debug] setBatch 準備寫入資料庫，JSON 字串長度: ${jsonPaths.length}`);
+
             stmt.run(
                 cleanedUrl,
-                JSON.stringify(pathArray),
+                jsonPaths,
                 idArray.length > 0 ? JSON.stringify(idArray) : null
             );
+
+            console.log(`[ig_debug] setBatch 資料庫寫入成功`);
+
+            // 驗證寫入
+            const verify = this.get(url);
+            if (verify) {
+                console.log(`[ig_debug] setBatch 驗證讀取，file_paths 數量: ${verify.file_paths ? verify.file_paths.length : 'null'}`);
+            } else {
+                console.log(`[ig_debug] setBatch 驗證讀取失敗，未找到記錄`);
+            }
         } catch (err) {
             console.error('[ERROR] 批量儲存快取失敗:', err);
+            console.error(`[ig_debug] setBatch 錯誤詳情:`, err);
         }
     }
 
