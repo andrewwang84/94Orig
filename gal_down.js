@@ -177,8 +177,13 @@ async function main() {
         }
     }
 
+    // 追蹤 gallery-dl 的 [N/M] URL 標記，對應檔案到 URL
+    const urlFileMap = new Map();
+    let currentUrl = null;
+
     const childProcess = spawn('gallery-dl', ['--cookies-from-browser', 'firefox', '-I', inputFile]);
     let stdoutBuffer = '';
+    let stderrBuffer = '';
 
     childProcess.stdout.on('data', (data) => {
         const dataStr = data.toString();
@@ -198,13 +203,38 @@ async function main() {
                 let filePath = line.trim().replace(/^#\s*/, '');
                 if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(filePath)) {
                     downloadedFiles.push(filePath);
+                    // 歸入當前 URL
+                    if (currentUrl && urlFileMap.has(currentUrl)) {
+                        urlFileMap.get(currentUrl).push(filePath);
+                    }
                 }
             }
         }
     });
 
     childProcess.stderr.on('data', (data) => {
-        console.error(data.toString());
+        const dataStr = data.toString();
+        stderrBuffer += dataStr;
+
+        const lines = stderrBuffer.split(/\r?\n/);
+        stderrBuffer = lines.pop() || '';
+
+        for (const line of lines) {
+            if (!line.trim()) continue;
+
+            // 偵測 gallery-dl 的 [N/M] URL 標記行
+            const urlMarker = line.trim().match(/^\[(\d+)\/(\d+)\]\s+(https?:\/\/.+)$/);
+            if (urlMarker) {
+                currentUrl = urlMarker[3].trim();
+                if (!urlFileMap.has(currentUrl)) {
+                    urlFileMap.set(currentUrl, []);
+                }
+                console.log(`[LOG][marker] 偵測到 URL 標記: ${currentUrl}`);
+            }
+
+            // 輸出 stderr 內容
+            console.error(line);
+        }
     });
 
     childProcess.on('close', (code) => {
@@ -215,6 +245,9 @@ async function main() {
                 let filePath = line.replace(/^#\s*/, '');
                 if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(filePath)) {
                     downloadedFiles.push(filePath);
+                    if (currentUrl && urlFileMap.has(currentUrl)) {
+                        urlFileMap.get(currentUrl).push(filePath);
+                    }
                 }
             }
         }
@@ -230,48 +263,22 @@ async function main() {
             console.log('');
             console.log('儲存 Instagram URL 到快取...');
 
-            if (activeUrls.length === 1) {
-                // 只有一個 URL，所有檔案都屬於它
+            // 如果沒有偵測到 [N/M] 標記（只有 1 個 URL 時可能不輸出標記），
+            // 將所有檔案歸到唯一的 activeUrl
+            console.log(`[LOG][cache] urlFileMap.size: ${urlFileMap.size}, activeUrls: ${activeUrls.length}, downloadedFiles: ${downloadedFiles.length}`);
+            if (urlFileMap.size === 0 && activeUrls.length === 1) {
                 const url = activeUrls[0];
                 if (isInstagramUrl(url)) {
-                    downloadCache.setBatch(url, downloadedFiles);
+                    urlFileMap.set(url, downloadedFiles);
+                }
+            }
+
+            // 統一使用 urlFileMap 儲存快取
+            for (const [url, filePaths] of urlFileMap.entries()) {
+                if (isInstagramUrl(url) && filePaths.length > 0) {
+                    downloadCache.setBatch(url, filePaths);
                     console.log(`   ✅ ${url}`);
-                    console.log(`      儲存了 ${downloadedFiles.length} 個檔案`);
-                }
-            } else {
-                // 多個 URL，根據檔案路徑推斷
-                const urlFileMap = new Map();
-
-                for (const filePath of downloadedFiles) {
-                    let matchedUrl = null;
-
-                    for (const url of activeUrls) {
-                        // 只處理 Instagram URL
-                        if (!isInstagramUrl(url)) continue;
-
-                        // Instagram: 檔案名包含貼文 ID
-                        const igMatch = url.match(/instagram\.com\/p\/([^\/\?]+)/);
-                        if (igMatch && filePath.includes(igMatch[1])) {
-                            matchedUrl = url;
-                            break;
-                        }
-                    }
-
-                    if (matchedUrl) {
-                        if (!urlFileMap.has(matchedUrl)) {
-                            urlFileMap.set(matchedUrl, []);
-                        }
-                        urlFileMap.get(matchedUrl).push(filePath);
-                    }
-                }
-
-                // 儲存到快取
-                for (const [url, filePaths] of urlFileMap.entries()) {
-                    if (filePaths.length > 0) {
-                        downloadCache.setBatch(url, filePaths);
-                        console.log(`   ✅ ${url}`);
-                        console.log(`      儲存了 ${filePaths.length} 個檔案`);
-                    }
+                    console.log(`      儲存了 ${filePaths.length} 個檔案`);
                 }
             }
         }

@@ -688,6 +688,7 @@ class CommandHandler {
             // 用於記錄每個 URL 下載的檔案路徑
             const urlFileMap = new Map(); // url -> [filePaths]
             const downloadedFiles = []; // 所有下載的檔案路徑
+            let currentUrl = null; // 追蹤 gallery-dl 的 [N/M] URL 標記
 
             // 讀取列表中未註解的 URL
             const activeUrls = [];
@@ -707,6 +708,7 @@ class CommandHandler {
 
             const process = spawn(cmd, args);
             let stdoutBuffer = ''; // 用於累積未完成的行
+            let stderrBuffer = '';
 
             process.stdout.on('data', (data) => {
                 const dataStr = data.toString();
@@ -731,21 +733,43 @@ class CommandHandler {
                     if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(filePath) && !filePath.includes('|')) {
                         // 同步收集檔案,不更新 Telegram 訊息
                         downloadedFiles.push(filePath);
+                        // 歸入當前 URL
+                        if (currentUrl && urlFileMap.has(currentUrl)) {
+                            urlFileMap.get(currentUrl).push(filePath);
+                        }
                         console.log(`[LOG] 下載檔案: ${filePath}`);
-                        console.log(`[ig_debug] /gal stdout 捕獲檔案 #${downloadedFiles.length}: ${filePath}`);
                     }
                 }
             });            process.stderr.on('data', async (data) => {
                 const dataStr = data.toString();
-                console.error(`[ERROR] gallery-dl stderr: ${dataStr}`);
-                if (/^ERROR:/.test(dataStr)) {
-                    try {
-                        await this.bot.editMessageText(
-                            `❌ gallery-dl 下載發生錯誤：\n${dataStr}`,
-                            { chat_id: chatId, message_id: startMsgId }
-                        );
-                    } catch (e) {
-                        console.error('[ERROR] 無法更新錯誤訊息:', e.message);
+                stderrBuffer += dataStr;
+
+                const stderrLines = stderrBuffer.split(/\r?\n/);
+                stderrBuffer = stderrLines.pop() || '';
+
+                for (const sline of stderrLines) {
+                    if (!sline.trim()) continue;
+
+                    // 偵測 gallery-dl 的 [N/M] URL 標記行
+                    const urlMarker = sline.trim().match(/^\[(\d+)\/(\d+)\]\s+(https?:\/\/.+)$/);
+                    if (urlMarker) {
+                        currentUrl = urlMarker[3].trim();
+                        if (!urlFileMap.has(currentUrl)) {
+                            urlFileMap.set(currentUrl, []);
+                        }
+                        console.log(`[LOG][marker] 偵測到 URL 標記: ${currentUrl}`);
+                    }
+
+                    console.error(sline);
+                    if (/^ERROR:/.test(sline)) {
+                        try {
+                            await this.bot.editMessageText(
+                                `❌ gallery-dl 下載發生錯誤：\n${sline}`,
+                                { chat_id: chatId, message_id: startMsgId }
+                            );
+                        } catch (e) {
+                            console.error('[ERROR] 無法更新錯誤訊息:', e.message);
+                        }
                     }
                 }
             });
@@ -760,6 +784,9 @@ class CommandHandler {
 
                     if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(filePath) && !filePath.includes('|')) {
                         downloadedFiles.push(filePath);
+                        if (currentUrl && urlFileMap.has(currentUrl)) {
+                            urlFileMap.get(currentUrl).push(filePath);
+                        }
                         console.log(`[LOG] 下載檔案: ${filePath}`);
                     }
                 }
@@ -767,9 +794,7 @@ class CommandHandler {
                 // 延遲一下,確保所有 stdout 事件都被處理完
                 await new Promise(resolve => setTimeout(resolve, 100));
 
-                console.log(`[ig_debug] /gal close 事件，code: ${code}, downloadedFiles.length: ${downloadedFiles.length}`);
-                console.log(`[ig_debug] /gal downloadedFiles 內容: ${JSON.stringify(downloadedFiles)}`);
-                console.log(`[ig_debug] /gal activeUrls.length: ${activeUrls.length}`);
+                console.log(`[LOG] /gal close，code: ${code}, 下載檔案數: ${downloadedFiles.length}, 活躍URL數: ${activeUrls.length}`);
 
                 if (code === 0 && downloadedFiles.length > 0) {
 
@@ -778,55 +803,18 @@ class CommandHandler {
                     let savedCount = 0;
 
                     if (this.downloadCache && activeUrls.length > 0) {
-                        console.log(`[ig_debug] /gal 準備保存到快取，activeUrls: ${JSON.stringify(activeUrls)}`);
-                        if (activeUrls.length === 1) {
-                            // 只有一個 URL,所有檔案都屬於它
-                            console.log(`[ig_debug] /gal 單個 URL 模式，URL: ${activeUrls[0]}`);
+                        // 如果沒有偵測到 [N/M] 標記（只有 1 個 URL 時可能不輸出標記），
+                        // 將所有檔案歸到唯一的 activeUrl
+                        console.log(`[LOG][cache] urlFileMap.size: ${urlFileMap.size}, activeUrls: ${activeUrls.length}, downloadedFiles: ${downloadedFiles.length}`);
+                        if (urlFileMap.size === 0 && activeUrls.length === 1) {
                             urlFileMap.set(activeUrls[0], downloadedFiles);
-                            console.log(`[ig_debug] /gal 呼叫 setBatch，檔案數: ${downloadedFiles.length}`);
-                            this.downloadCache.setBatch(activeUrls[0], downloadedFiles);
-                            savedCount = 1;
-                        } else {
-                            // 多個 URL,根據檔案路徑推斷
-                            console.log(`[ig_debug] /gal 多 URL 模式，開始匹配`);
-                            for (const filePath of downloadedFiles) {
-                                let matchedUrl = null;
-                                console.log(`[ig_debug] /gal 匹配檔案: ${filePath}`);
+                        }
 
-                                for (const url of activeUrls) {
-                                    // Instagram: 檔案名包含貼文 ID
-                                    const igMatch = url.match(/instagram\.com\/p\/([^\/\?]+)/);
-                                    if (igMatch && filePath.includes(igMatch[1])) {
-                                        matchedUrl = url;
-                                        console.log(`[ig_debug] /gal Instagram 匹配成功，URL: ${url}, 貼文ID: ${igMatch[1]}`);
-                                        break;
-                                    }
-
-                                    // Twitter/X: 檔案名包含 status ID
-                                    const xMatch = url.match(/\/status\/(\d+)/);
-                                    if (xMatch && filePath.includes(xMatch[1])) {
-                                        matchedUrl = url;
-                                        break;
-                                    }
-                                }
-
-                                if (matchedUrl) {
-                                    if (!urlFileMap.has(matchedUrl)) {
-                                        urlFileMap.set(matchedUrl, []);
-                                    }
-                                    urlFileMap.get(matchedUrl).push(filePath);
-                                }
-                            }
-
-                            // 儲存到快取
-                            console.log(`[ig_debug] /gal 多 URL 模式，urlFileMap.size: ${urlFileMap.size}`);
-                            for (const [url, filePaths] of urlFileMap.entries()) {
-                                console.log(`[ig_debug] /gal 處理 URL: ${url}, 檔案數: ${filePaths.length}`);
-                                if (filePaths.length > 0) {
-                                    console.log(`[ig_debug] /gal 呼叫 setBatch，URL: ${url}`);
-                                    this.downloadCache.setBatch(url, filePaths);
-                                    savedCount++;
-                                }
+                        // 統一使用 urlFileMap 儲存快取
+                        for (const [url, filePaths] of urlFileMap.entries()) {
+                            if (filePaths.length > 0) {
+                                this.downloadCache.setBatch(url, filePaths);
+                                savedCount++;
                             }
                         }
                     }
