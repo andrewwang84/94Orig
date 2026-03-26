@@ -62,25 +62,19 @@ class DownloadCache {
 
     /**
      * 檢查 URL 是否應該被快取
-     * Instagram Stories 沒有編號的不快取
-     * X/Twitter 和 Weibo 不快取
+     * 只有 Instagram 相關 URL 才快取（Stories 沒有編號的除外）
      * @param {string} url - 完整 URL
      * @returns {boolean}
      */
     shouldCache(url) {
+        // 只快取 Instagram URL
+        if (!/instagram\.com/i.test(url)) {
+            return false;
+        }
+
         // Instagram Stories 沒有特定貼文 ID 的不快取
         const storiesPattern = /^https:\/\/www\.instagram\.com\/stories\/[\w.-]+\/?$/;
         if (storiesPattern.test(url)) {
-            return false;
-        }
-
-        // X/Twitter 不快取
-        if (/(twitter\.com|x\.com)/i.test(url)) {
-            return false;
-        }
-
-        // Weibo 不快取
-        if (/(m\.)?weibo\.(com|cn)|video\.weibo\.com/i.test(url)) {
             return false;
         }
 
@@ -126,11 +120,23 @@ class DownloadCache {
                     return null;
                 }
 
-                // 檢查所有檔案是否都存在
+                // 有 fileId 就視為有效快取，不檢查本地檔案
+                if (fileIds.length > 0) {
+                    this._updateLastAccessed(cleanedUrl);
+                    console.log(`[LOG][Cache HIT - fileId] ${cleanedUrl} (${fileIds.length} 個 fileId)`);
+                    return {
+                        url: row.url,
+                        file_paths: filePaths,
+                        file_ids: fileIds,
+                        created_at: row.created_at,
+                        last_accessed: row.last_accessed
+                    };
+                }
+
+                // 沒有 fileId，檢查所有檔案是否都存在
                 const allFilesExist = filePaths.every(fp => fs.existsSync(fp));
 
                 if (allFilesExist && filePaths.length > 0) {
-                    // 更新最後訪問時間
                     this._updateLastAccessed(cleanedUrl);
 
                     console.log(`[LOG][Cache HIT] ${cleanedUrl} (${filePaths.length} 個檔案)`);
@@ -143,7 +149,6 @@ class DownloadCache {
                     };
                 } else {
                     console.log(`[LOG][Cache MISS - File Not Found] ${cleanedUrl}`);
-                    // 檔案不存在，刪除快取記錄
                     this.delete(cleanedUrl);
                     return null;
                 }
@@ -276,6 +281,38 @@ class DownloadCache {
         } catch (err) {
             console.error('[ERROR] 批量儲存快取失敗:', err);
             console.error(`[ig_debug] setBatch 錯誤詳情:`, err);
+        }
+    }
+
+    /**
+     * 清除快取中的 fileIds
+     * @param {string} url - 完整 URL
+     */
+    clearFileIds(url) {
+        if (!this.shouldCache(url)) return;
+        const cleanedUrl = this.cleanUrl(url);
+        try {
+            const stmt = this.db.prepare('UPDATE downloads SET file_ids = NULL, last_accessed = CURRENT_TIMESTAMP WHERE url = ?');
+            stmt.run(cleanedUrl);
+            console.log(`[LOG][Cache CLEAR fileIds] ${cleanedUrl}`);
+        } catch (err) {
+            console.error('[ERROR] 清除 fileIds 失敗:', err);
+        }
+    }
+
+    /**
+     * 清除快取中的 filePaths
+     * @param {string} url - 完整 URL
+     */
+    clearFilePaths(url) {
+        if (!this.shouldCache(url)) return;
+        const cleanedUrl = this.cleanUrl(url);
+        try {
+            const stmt = this.db.prepare('UPDATE downloads SET file_paths = ?, last_accessed = CURRENT_TIMESTAMP WHERE url = ?');
+            stmt.run('[]', cleanedUrl);
+            console.log(`[LOG][Cache CLEAR filePaths] ${cleanedUrl}`);
+        } catch (err) {
+            console.error('[ERROR] 清除 filePaths 失敗:', err);
         }
     }
 

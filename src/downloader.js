@@ -45,15 +45,15 @@ class ImageDownloader {
                 // 先檢查快取（同步版本）
                 if (this.downloadCache) {
                     const cached = this.downloadCache.get(url);
-                    if (cached && cached.file_paths && cached.file_paths.length > 0) {
-                        console.log(`[LOG][Cache] 使用快取: ${url} (${cached.file_paths.length} 個檔案)`);
-                        console.log(`[ig_debug] 快取命中，file_paths: ${JSON.stringify(cached.file_paths)}`);
+                    if (cached && ((cached.file_ids && cached.file_ids.length > 0) || (cached.file_paths && cached.file_paths.length > 0))) {
+                        const hasFileIds = cached.file_ids && cached.file_ids.length > 0;
+                        console.log(`[LOG][Cache] 使用快取: ${url} (${cached.file_paths.length} 個檔案, ${(cached.file_ids || []).length} 個 fileId)`);
                         urlData.isDone = true;
                         urlData.data = cached.file_paths;
                         urlData.fromCache = true;
                         urlData.localFiles = cached.file_paths;
                         urlData.cachedFileIds = cached.file_ids || [];
-                        urlData.originalUrls = cached.file_paths.map(() => url);
+                        urlData.originalUrls = (hasFileIds ? cached.file_ids : cached.file_paths).map(() => url);
                         results.push(urlData);
                         continue;
                     }

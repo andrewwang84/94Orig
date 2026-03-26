@@ -142,42 +142,43 @@ class MessageHandler {
      */
     async _sendLocalFiles(chatId, msgId, data) {
         const fs = require('fs');
-        const uploadedFileIds = []; // 儲存上傳後的 fileId
-        const url = data.originalUrls ? data.originalUrls[0] : null; // 取得原始 URL
+        const path = require('path');
+        const uploadedFileIds = [];
+        const url = data.originalUrls ? data.originalUrls[0] : null;
+        const hasFileIds = data.cachedFileIds && data.cachedFileIds.length > 0;
+        const hasLocalFiles = data.localFiles && data.localFiles.length > 0;
+        let fileIdFailed = false;
+        let localFileFailed = false;
 
-        for (let i = 0; i < data.localFiles.length; i++) {
-            const filePath = data.localFiles[i];
+        const count = hasFileIds ? data.cachedFileIds.length : (hasLocalFiles ? data.localFiles.length : 0);
 
-            try {
-                // 檢查是否有快取的 fileId (從 downloader 傳來的)
-                let shouldUseFileId = false;
-                let fileIdToUse = null;
+        for (let i = 0; i < count; i++) {
+            let sent = false;
 
-                if (data.cachedFileIds && data.cachedFileIds[i]) {
-                    shouldUseFileId = true;
-                    fileIdToUse = data.cachedFileIds[i];
-                    console.log(`[LOG][Cache] 使用 fileId[${i}]: ${fileIdToUse}`);
+            // 優先嘗試 fileId
+            if (hasFileIds && data.cachedFileIds[i]) {
+                try {
+                    console.log(`[LOG][Cache] 使用 fileId[${i}]: ${data.cachedFileIds[i]}`);
+                    await this.bot.sendDocument(chatId, data.cachedFileIds[i]);
+                    sent = true;
+                } catch (error) {
+                    console.log(`[ERROR] fileId 發送失敗 ${data.cachedFileIds[i]}: ${error}`);
+                    fileIdFailed = true;
                 }
+            }
 
-                if (shouldUseFileId && fileIdToUse) {
-                    // 直接使用 fileId 發送，不需要重新上傳
-                    await this.bot.sendDocument(chatId, fileIdToUse);
-                    uploadedFileIds.push(fileIdToUse);
-                } else {
-                    // 檢查檔案是否存在（這應該不會發生，因為下載器應該已經處理好）
+            // fileId 失敗或沒有 fileId，fallback 到本地檔案
+            if (!sent && hasLocalFiles && data.localFiles[i]) {
+                const filePath = data.localFiles[i];
+                try {
                     if (!fs.existsSync(filePath)) {
-                        console.log(`[ERROR] 下載檔案遺失: ${filePath}`);
                         throw new Error(`檔案不存在: ${filePath}`);
                     }
 
-                    // 使用檔案路徑上傳
                     console.log(`[LOG] 上傳檔案: ${filePath}`);
 
-                    // 根據副檔名判斷 content type
-                    const path = require('path');
                     const ext = path.extname(filePath).toLowerCase();
                     let contentType = 'application/octet-stream';
-
                     if (['.jpg', '.jpeg'].includes(ext)) contentType = 'image/jpeg';
                     else if (ext === '.png') contentType = 'image/png';
                     else if (ext === '.gif') contentType = 'image/gif';
@@ -186,33 +187,49 @@ class MessageHandler {
                     else if (ext === '.webm') contentType = 'video/webm';
 
                     const sentMessage = await this.bot.sendDocument(chatId, filePath, {}, { contentType });
+                    sent = true;
 
-                    // 上傳成功後，獲取 fileId
                     if (sentMessage && sentMessage.document && sentMessage.document.file_id) {
-                        const fileId = sentMessage.document.file_id;
-                        console.log(`[LOG] 獲得 fileId[${i}]: ${fileId}`);
-                        uploadedFileIds.push(fileId);
+                        console.log(`[LOG] 獲得 fileId[${i}]: ${sentMessage.document.file_id}`);
+                        uploadedFileIds.push(sentMessage.document.file_id);
                     }
+                } catch (error) {
+                    console.log(`[ERROR] 本地檔案發送失敗 ${filePath}: ${error}`);
+                    localFileFailed = true;
                 }
-            } catch (error) {
-                console.log(`[ERROR] 處理檔案失敗 ${filePath}: ${error}`);
+            }
 
-                // 發送錯誤訊息
-                const fileName = require('path').basename(filePath);
+            // 兩者都失敗，通知使用者
+            if (!sent) {
+                const label = (hasFileIds && data.cachedFileIds[i])
+                    ? data.cachedFileIds[i]
+                    : (hasLocalFiles && data.localFiles[i] ? path.basename(data.localFiles[i]) : 'unknown');
                 await this.bot.sendMessage(
                     chatId,
-                    `❌ 處理失敗: ${fileName}\n錯誤: ${error.message}`,
-                    {
-                        reply_to_message_id: msgId,
-                        allow_sending_without_reply: true
-                    }
+                    `❌ 發送失敗: ${label}`,
+                    { reply_to_message_id: msgId, allow_sending_without_reply: true }
                 );
             }
         }
 
-        // 所有檔案處理完後，統一更新快取的 fileIds
-        if (this.downloadCache && url && uploadedFileIds.length > 0) {
-            this.downloadCache.updateFileIds(url, uploadedFileIds);
+        // 根據失敗情形更新快取
+        if (this.downloadCache && url) {
+            if (fileIdFailed && localFileFailed) {
+                console.log(`[LOG][Cache] fileId 和本地檔案都失敗，刪除快取: ${url}`);
+                this.downloadCache.delete(url);
+            } else if (fileIdFailed) {
+                console.log(`[LOG][Cache] fileId 失敗，清除 fileId 資料: ${url}`);
+                if (uploadedFileIds.length > 0) {
+                    this.downloadCache.updateFileIds(url, uploadedFileIds);
+                } else {
+                    this.downloadCache.clearFileIds(url);
+                }
+            } else if (localFileFailed) {
+                console.log(`[LOG][Cache] 本地檔案失敗，清除 filePaths 資料: ${url}`);
+                this.downloadCache.clearFilePaths(url);
+            } else if (uploadedFileIds.length > 0) {
+                this.downloadCache.updateFileIds(url, uploadedFileIds);
+            }
         }
     }
 
