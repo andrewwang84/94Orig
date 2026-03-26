@@ -88,12 +88,12 @@ class DownloadCache {
     }
 
     /**
-     * 移除 URL 的 query string
+     * 移除 URL 的 query string 和尾端斜線
      * @param {string} url - 完整 URL
-     * @returns {string} 不含 query string 的 URL
+     * @returns {string} 正規化後的 URL
      */
     cleanUrl(url) {
-        return url.split('?')[0];
+        return url.split('?')[0].replace(/\/+$/, '');
     }
 
     /**

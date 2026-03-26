@@ -38,7 +38,7 @@ const MEDIA_TYPE_LABELS = {
  * URL 匹配模式
  */
 const URL_PATTERNS = {
-    [MEDIA_TYPES.IG_NORMAL]: /https:\/\/www\.instagram\.com\/(?:[\w-]+\/)?(?:p|reel)\/[\w-]+\/?/g,
+    [MEDIA_TYPES.IG_NORMAL]: /https:\/\/www\.instagram\.com\/(?:[\w-]+\/)?(?:p|reels|reel)\/[\w-]+\/?/g,
     [MEDIA_TYPES.IG_STORY]: /https:\/\/www\.instagram\.com\/stories\/[\w.-]+(?:\/[\w-]+)?\/?/g,
     [MEDIA_TYPES.X]: /https:\/\/x\.com\/[\w-]+\/status\/[\d]+\/?/g,
     [MEDIA_TYPES.YT]: /https:\/\/(?:www\.youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)[\w-]+/g,
