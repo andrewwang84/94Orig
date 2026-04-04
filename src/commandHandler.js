@@ -6,6 +6,7 @@ const { checkCanUse, getUserLogName, getProgressEmoji } = require('./utils');
 const UrlParser = require('./urlParser');
 const { ImageDownloader } = require('./downloader');
 const { DOWNLOAD_LIMITS, MEDIA_TYPES } = require('./constants');
+const OnceJapanDownloader = require('./onceJapanDownloader');
 
 /**
  * Bot 命令處理器
@@ -33,6 +34,8 @@ class CommandHandler {
         this._registerStopHandler();
         this._registerHelpHandler();
         this._registerGetMyIdHandler();
+        this._registerOjHandler();
+        this._registerOjTestHandler();
     }
 
     /**
@@ -1190,6 +1193,133 @@ class CommandHandler {
             );
 
             console.log('replyMsg', replyMsg);
+        });
+    }
+
+    /**
+     * 註冊 /oj 命令處理器（ONCE JAPAN 自動下載）
+     * @private
+     */
+    _registerOjTestHandler() {
+        this.bot.onText(/^\/oj_test$/, async (msg) => {
+            const chatId = msg.chat.id;
+            const msgId = msg.message_id;
+
+            if (chatId !== this.config.myId) return;
+
+            console.log(`[LOG][Telegram][oj_test] 開始 ONCE JAPAN 測試下載`);
+
+            let statusMsg;
+            try {
+                statusMsg = await this.bot.sendMessage(
+                    chatId,
+                    '⏳ ONCE JAPAN 測試下載（每站一篇，不寫入 DB）...',
+                    { reply_to_message_id: msgId, allow_sending_without_reply: true }
+                );
+
+                const ojDownloader = new OnceJapanDownloader(
+                    this.downloadCache,
+                    this.config.ojDownloadPath || undefined
+                );
+
+                const progressCallback = async (siteKey, title, count) => {
+                    try {
+                        await this.bot.editMessageText(
+                            `⏳ 測試中...
+正在處理: ${title} (${count} 張)`,
+                            { chat_id: chatId, message_id: statusMsg.message_id }
+                        );
+                    } catch (e) { /* ignore */ }
+                };
+
+                const allResults = await ojDownloader.crawlTest(progressCallback);
+                const resultMsg = '[TEST] ' + ojDownloader.formatResults(allResults);
+
+                await this.bot.editMessageText(
+                    resultMsg,
+                    { chat_id: chatId, message_id: statusMsg.message_id }
+                );
+            } catch (error) {
+                console.error(`[ERROR][OJ_TEST] /oj_test 執行失敗:`, error);
+                const errText = `❌ ONCE JAPAN 測試失敗: ${error.message}`;
+                if (statusMsg) {
+                    try {
+                        await this.bot.editMessageText(errText, {
+                            chat_id: chatId,
+                            message_id: statusMsg.message_id,
+                        });
+                    } catch (e) {
+                        await this.bot.sendMessage(chatId, errText);
+                    }
+                } else {
+                    await this.bot.sendMessage(chatId, errText);
+                }
+            }
+        });
+    }
+
+    _registerOjHandler() {
+        this.bot.onText(/^\/oj$/, async (msg) => {
+            const chatId = msg.chat.id;
+            const msgId = msg.message_id;
+
+            // 只有 myId 能觸發
+            if (chatId !== this.config.myId) {
+                return;
+            }
+
+            console.log(`[LOG][Telegram][oj] 開始 ONCE JAPAN 下載`);
+
+            let statusMsg;
+            try {
+                statusMsg = await this.bot.sendMessage(
+                    chatId,
+                    '⏳ ONCE JAPAN 下載開始...',
+                    { reply_to_message_id: msgId, allow_sending_without_reply: true }
+                );
+
+                const ojDownloader = new OnceJapanDownloader(
+                    this.downloadCache,
+                    this.config.ojDownloadPath || undefined
+                );
+
+                let currentSite = '';
+                const progressCallback = async (siteKey, title, count) => {
+                    if (siteKey !== currentSite) {
+                        currentSite = siteKey;
+                    }
+                    // 每個新項目更新進度訊息
+                    try {
+                        await this.bot.editMessageText(
+                            `⏳ ONCE JAPAN 下載中...\n正在處理: ${title} (${count} 張)`,
+                            { chat_id: chatId, message_id: statusMsg.message_id }
+                        );
+                    } catch (e) { /* ignore edit errors */ }
+                };
+
+                const allResults = await ojDownloader.crawlAll(progressCallback);
+                const resultMsg = ojDownloader.formatResults(allResults);
+
+                await this.bot.editMessageText(
+                    resultMsg,
+                    { chat_id: chatId, message_id: statusMsg.message_id }
+                );
+            } catch (error) {
+                console.error(`[ERROR][OJ] /oj 執行失敗:`, error);
+                const errText = `❌ ONCE JAPAN 下載失敗: ${error.message}`;
+                if (statusMsg) {
+                    try {
+                        await this.bot.editMessageText(errText, {
+                            chat_id: chatId,
+                            message_id: statusMsg.message_id,
+                        });
+                    } catch (e) {
+                        await this.bot.sendMessage(chatId, errText);
+                    }
+                } else {
+                    await this.bot.sendMessage(chatId, errText);
+                }
+            }
         });
     }
 }

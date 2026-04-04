@@ -55,6 +55,18 @@ class DownloadCache {
             `;
 
             this.db.exec(sql);
+
+            const ojSql = `
+                CREATE TABLE IF NOT EXISTS oj_downloads (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    site_key TEXT NOT NULL,
+                    detail_url TEXT UNIQUE NOT NULL,
+                    title TEXT,
+                    date TEXT,
+                    downloaded_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            `;
+            this.db.exec(ojSql);
         } catch (err) {
             console.error('[ERROR] 無法創建資料表:', err);
         }
@@ -394,6 +406,40 @@ class DownloadCache {
     /**
      * 關閉資料庫連接
      */
+    /**
+     * 檢查 OJ detail URL 是否已下載過
+     * @param {string} detailUrl
+     * @returns {boolean}
+     */
+    ojHasDownloaded(detailUrl) {
+        try {
+            const stmt = this.db.prepare('SELECT 1 FROM oj_downloads WHERE detail_url = ?');
+            return !!stmt.get(detailUrl);
+        } catch (err) {
+            console.error('[ERROR] ojHasDownloaded 失敗:', err);
+            return false;
+        }
+    }
+
+    /**
+     * 記錄 OJ 下載
+     * @param {string} siteKey - 站點識別 (w_member, oj_gallery, oj_blog, oj_mobile)
+     * @param {string} detailUrl - 詳情頁 URL
+     * @param {string} title - 標題
+     * @param {string} date - 日期
+     */
+    ojRecordDownload(siteKey, detailUrl, title, date) {
+        try {
+            const stmt = this.db.prepare(`
+                INSERT OR IGNORE INTO oj_downloads (site_key, detail_url, title, date)
+                VALUES (?, ?, ?, ?)
+            `);
+            stmt.run(siteKey, detailUrl, title || '', date || '');
+        } catch (err) {
+            console.error('[ERROR] ojRecordDownload 失敗:', err);
+        }
+    }
+
     close() {
         try {
             this.db.close();

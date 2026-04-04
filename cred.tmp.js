@@ -5,5 +5,6 @@ var cred = {
     galleryDlListPath: '',
     ytDlListPath: '',
     ytDl2ListPath: '',
+    ojDownloadPath: '',
 }
 module.exports = cred;
