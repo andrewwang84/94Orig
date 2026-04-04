@@ -5,6 +5,7 @@ const os = require('os');
 const { MEDIA_TYPES } = require('./constants');
 const { sleep, getProgressEmoji, getRandomDelay } = require('./utils');
 const ThreadsDownloader = require('./threadsDownloader');
+const AppFansDownloader = require('./appfansDownloader');
 
 /**
  * 下載隊列管理
@@ -30,6 +31,7 @@ class ImageDownloader {
     constructor(downloadCache = null) {
         this.downloadCache = downloadCache;
         this.threadsDownloader = new ThreadsDownloader();
+        this.appfansDownloader = new AppFansDownloader();
     }
 
     /**
@@ -87,6 +89,27 @@ class ImageDownloader {
                         this.downloadCache.setBatch(url, urlData.localFiles);
                     }
 
+                    await sleep(getRandomDelay());
+                    continue;
+                }
+
+                // AppFans 使用自訂下載器
+                if (urlData.type === MEDIA_TYPES.APPFANS) {
+                    console.info(`[LOG][${urlData.typeTxt}][${url}] 使用 AppFansDownloader`);
+                    const appfansResult = await this.appfansDownloader.downloadMedia(url);
+
+                    if (appfansResult.success && appfansResult.filePaths.length > 0) {
+                        urlData.isDone = true;
+                        urlData.data = appfansResult.filePaths;
+                        urlData.localFiles = appfansResult.filePaths;
+                        urlData.originalUrls = appfansResult.filePaths.map(() => url);
+                    } else {
+                        urlData.isDone = false;
+                        urlData.data = [];
+                        console.error(`[ERROR][AppFans] ${url}: ${appfansResult.error || '未知錯誤'}`);
+                    }
+
+                    results.push(urlData);
                     await sleep(getRandomDelay());
                     continue;
                 }

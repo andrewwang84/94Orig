@@ -80,7 +80,8 @@ class CommandHandler {
                     if (type === MEDIA_TYPES.THREADS) {
                         threadsTargets[url] = imgTargets[url];
                     } else if (type === MEDIA_TYPES.KRSITE || type === MEDIA_TYPES.FACEBOOK ||
-                               type === MEDIA_TYPES.PINTEREST || type === MEDIA_TYPES.REDDIT) {
+                               type === MEDIA_TYPES.PINTEREST || type === MEDIA_TYPES.REDDIT ||
+                               type === MEDIA_TYPES.APPFANS) {
                         directDownloadTargets[url] = imgTargets[url];
                     } else {
                         otherImgTargets[url] = imgTargets[url];

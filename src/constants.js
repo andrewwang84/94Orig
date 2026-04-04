@@ -18,7 +18,8 @@ const MEDIA_TYPES = {
     KRSITE: 14,  // 韓國網站，使用 krsite-dl
     FACEBOOK: 15,  // Facebook，使用 gallery-dl
     PINTEREST: 16,  // Pinterest，使用 gallery-dl
-    REDDIT: 17  // Reddit，使用 gallery-dl
+    REDDIT: 17,  // Reddit，使用 gallery-dl
+    APPFANS: 18  // app.fans，使用自訂下載器
 };
 
 /**
@@ -81,7 +82,8 @@ const MEDIA_TYPE_LABELS = {
     [MEDIA_TYPES.KRSITE]: 'KRSite',
     [MEDIA_TYPES.FACEBOOK]: 'Facebook',
     [MEDIA_TYPES.PINTEREST]: 'Pinterest',
-    [MEDIA_TYPES.REDDIT]: 'Reddit'
+    [MEDIA_TYPES.REDDIT]: 'Reddit',
+    [MEDIA_TYPES.APPFANS]: 'AppFans'
 };
 
 /**
@@ -115,7 +117,8 @@ const URL_PATTERNS = {
     [MEDIA_TYPES.KRSITE]: _buildKrsiteRegex(),
     [MEDIA_TYPES.FACEBOOK]: /https:\/\/(?:www\.)?facebook\.com\/\S+/g,
     [MEDIA_TYPES.PINTEREST]: /https:\/\/(?:www\.)?pinterest\.(?:com|co\.uk|ca|fr|de|jp|co\.kr)\/\S+/g,
-    [MEDIA_TYPES.REDDIT]: /https:\/\/(?:www\.)?reddit\.com\/\S+/g
+    [MEDIA_TYPES.REDDIT]: /https:\/\/(?:www\.)?reddit\.com\/\S+/g,
+    [MEDIA_TYPES.APPFANS]: /https:\/\/(?:www\.)?app\.fans\/community\/[\w-]+\/media\/[\w-]+\/?/g
 };
 
 /**
