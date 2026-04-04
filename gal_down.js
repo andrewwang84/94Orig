@@ -39,6 +39,27 @@ function isWeiboUrl(url) {
 }
 
 /**
+ * 檢查 URL 是否為 Facebook
+ */
+function isFacebookUrl(url) {
+    return /facebook\.com/i.test(url);
+}
+
+/**
+ * 檢查 URL 是否為 Pinterest
+ */
+function isPinterestUrl(url) {
+    return /pinterest\.(com|co\.uk|ca|fr|de|jp|co\.kr)/i.test(url);
+}
+
+/**
+ * 檢查 URL 是否為 Reddit
+ */
+function isRedditUrl(url) {
+    return /reddit\.com/i.test(url);
+}
+
+/**
  * 主函數
  */
 async function main() {
@@ -115,6 +136,36 @@ async function main() {
         if (isWeiboUrl(normalizedUrl)) {
             console.log(`[Weibo] ${normalizedUrl}`);
             console.log(`   ⏭️  跳過快取檢查 (Weibo 連結不使用快取)`);
+            modifiedLines.push(normalizedUrl);
+            xSkipCount++;
+            processCount++;
+            continue;
+        }
+
+        // Facebook 的 URL 不檢查快取，直接加入
+        if (isFacebookUrl(normalizedUrl)) {
+            console.log(`[Facebook] ${normalizedUrl}`);
+            console.log(`   ⏭️  跳過快取檢查 (Facebook 連結不使用快取)`);
+            modifiedLines.push(normalizedUrl);
+            xSkipCount++;
+            processCount++;
+            continue;
+        }
+
+        // Pinterest 的 URL 不檢查快取，直接加入
+        if (isPinterestUrl(normalizedUrl)) {
+            console.log(`[Pinterest] ${normalizedUrl}`);
+            console.log(`   ⏭️  跳過快取檢查 (Pinterest 連結不使用快取)`);
+            modifiedLines.push(normalizedUrl);
+            xSkipCount++;
+            processCount++;
+            continue;
+        }
+
+        // Reddit 的 URL 不檢查快取，直接加入
+        if (isRedditUrl(normalizedUrl)) {
+            console.log(`[Reddit] ${normalizedUrl}`);
+            console.log(`   ⏭️  跳過快取檢查 (Reddit 連結不使用快取)`);
             modifiedLines.push(normalizedUrl);
             xSkipCount++;
             processCount++;

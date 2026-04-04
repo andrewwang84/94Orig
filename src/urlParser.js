@@ -18,7 +18,11 @@ class UrlParser {
             const intType = parseInt(type);
             const typeTxt = MEDIA_TYPE_LABELS[intType];
 
+            // 重設 lastIndex，避免 /g flag 導致偶發漏匹配
+            regex.lastIndex = 0;
+
             if (regex.test(message)) {
+                regex.lastIndex = 0;
                 const matches = message.match(regex);
 
                 for (const target of matches) {
@@ -63,7 +67,12 @@ class UrlParser {
                type === MEDIA_TYPES.X ||
                type === MEDIA_TYPES.NAVER ||
                type === MEDIA_TYPES.TIKTOK_OTHER ||
-               type === MEDIA_TYPES.WEIBO;
+               type === MEDIA_TYPES.WEIBO ||
+               type === MEDIA_TYPES.THREADS ||
+               type === MEDIA_TYPES.KRSITE ||
+               type === MEDIA_TYPES.FACEBOOK ||
+               type === MEDIA_TYPES.PINTEREST ||
+               type === MEDIA_TYPES.REDDIT;
     }
 
     /**

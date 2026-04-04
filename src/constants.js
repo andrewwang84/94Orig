@@ -13,8 +13,53 @@ const MEDIA_TYPES = {
     TIKTOK_LIVE: 9,
     TWITCH_LIVE: 10,
     TIKTOK_OTHER: 11,  // 其他 TikTok 連結，使用 gallery-dl
-    WEIBO: 12  // Weibo 連結，使用 gallery-dl
+    WEIBO: 12,  // Weibo 連結，使用 gallery-dl
+    THREADS: 13,  // Threads 連結，使用自訂下載器
+    KRSITE: 14,  // 韓國網站，使用 krsite-dl
+    FACEBOOK: 15,  // Facebook，使用 gallery-dl
+    PINTEREST: 16,  // Pinterest，使用 gallery-dl
+    REDDIT: 17  // Reddit，使用 gallery-dl
 };
+
+/**
+ * krsite-dl 支援的域名列表
+ */
+const KRSITE_DOMAINS = [
+    'www.cosmopolitan.co.kr',
+    'www.dazedkorea.com',
+    'www.dispatch.co.kr',
+    'www.elle.co.kr',
+    'www.esquirekorea.co.kr',
+    'www.genie.co.kr',
+    'www.harpersbazaar.co.kr',
+    'enews.imbc.com',
+    'isplus.com',
+    'tv.jtbc.co.kr',
+    'k-odyssey.com',
+    'www.lofficielkorea.com',
+    'www.lofficielsingapore.com',
+    'www.marieclairekorea.com',
+    'with.mbc.co.kr',
+    'www.melon.com',
+    'nataliemu.com',
+    'post.naver.com',
+    'news.naver.com',
+    'newsjamm.co.kr',
+    'www.news1.kr',
+    'www.newsen.com',
+    'www.nonno.hpplus.jp',
+    'mikan-incomplete.com',
+    'osen.mt.co.kr',
+    'programs.sbs.co.kr',
+    'news.sbs.co.kr',
+    'sbskpop.kr',
+    'spur.hpplus.jp',
+    'www.topstarnews.net',
+    'tvreport.co.kr',
+    'www.vivi.tv',
+    'www.vogue.co.kr',
+    'www.wkorea.com'
+];
 
 /**
  * 媒體類型對應的文字描述
@@ -31,8 +76,24 @@ const MEDIA_TYPE_LABELS = {
     [MEDIA_TYPES.TIKTOK_LIVE]: 'TikTok Live',
     [MEDIA_TYPES.TWITCH_LIVE]: 'Twitch Live',
     [MEDIA_TYPES.TIKTOK_OTHER]: 'TikTok',
-    [MEDIA_TYPES.WEIBO]: 'Weibo'
+    [MEDIA_TYPES.WEIBO]: 'Weibo',
+    [MEDIA_TYPES.THREADS]: 'Threads',
+    [MEDIA_TYPES.KRSITE]: 'KRSite',
+    [MEDIA_TYPES.FACEBOOK]: 'Facebook',
+    [MEDIA_TYPES.PINTEREST]: 'Pinterest',
+    [MEDIA_TYPES.REDDIT]: 'Reddit'
 };
+
+/**
+ * 從 KRSITE_DOMAINS 動態建構 URL 正規表達式
+ */
+function _buildKrsiteRegex() {
+    // 轉義域名中的點號，用 | 連接
+    const domainPatterns = KRSITE_DOMAINS.map(d => d.replace(/\./g, '\\.'));
+    // 加入 tistory.com 子域名模式（username.tistory.com）
+    domainPatterns.push('[\\w-]+\\.tistory\\.com');
+    return new RegExp(`https:\\/\\/(?:${domainPatterns.join('|')})\\/\\S*`, 'g');
+}
 
 /**
  * URL 匹配模式
@@ -49,7 +110,12 @@ const URL_PATTERNS = {
     [MEDIA_TYPES.TIKTOK_LIVE]: /https:\/\/(?:www\.)?tiktok\.com\/@[\w.-]+\/live\/?/g,
     [MEDIA_TYPES.TWITCH_LIVE]: /https:\/\/(?:www\.)?twitch\.tv\/([\w-]+)/g,
     [MEDIA_TYPES.TIKTOK_OTHER]: /https:\/\/(?:www\.)?tiktok\.com\/(?!@[\w.-]+\/video\/\d+)(?!@[\w.-]+\/live).+/g,
-    [MEDIA_TYPES.WEIBO]: /https:\/\/(?:m\.weibo\.cn\/detail\/\d+|weibo\.com\/\d+\/\d+|video\.weibo\.com\/show\?fid=[\w:]+)/g
+    [MEDIA_TYPES.WEIBO]: /https:\/\/(?:m\.weibo\.cn\/detail\/\d+|weibo\.com\/\d+\/\d+|video\.weibo\.com\/show\?fid=[\w:]+)/g,
+    [MEDIA_TYPES.THREADS]: /https:\/\/(?:www\.)?threads\.(?:net|com)\/@[\w.-]+\/post\/[\w-]+\/?/g,
+    [MEDIA_TYPES.KRSITE]: _buildKrsiteRegex(),
+    [MEDIA_TYPES.FACEBOOK]: /https:\/\/(?:www\.)?facebook\.com\/\S+/g,
+    [MEDIA_TYPES.PINTEREST]: /https:\/\/(?:www\.)?pinterest\.(?:com|co\.uk|ca|fr|de|jp|co\.kr)\/\S+/g,
+    [MEDIA_TYPES.REDDIT]: /https:\/\/(?:www\.)?reddit\.com\/\S+/g
 };
 
 /**
@@ -72,6 +138,7 @@ module.exports = {
     MEDIA_TYPES,
     MEDIA_TYPE_LABELS,
     URL_PATTERNS,
+    KRSITE_DOMAINS,
     PROGRESS_EMOJI,
     DOWNLOAD_LIMITS
 };

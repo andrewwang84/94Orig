@@ -5,7 +5,7 @@ const kill = require('kill-with-style');
 const { checkCanUse, getUserLogName, getProgressEmoji } = require('./utils');
 const UrlParser = require('./urlParser');
 const { ImageDownloader } = require('./downloader');
-const { DOWNLOAD_LIMITS } = require('./constants');
+const { DOWNLOAD_LIMITS, MEDIA_TYPES } = require('./constants');
 
 /**
  * Bot 命令處理器
@@ -70,18 +70,71 @@ class CommandHandler {
                 // 解析選項
                 const uploadToTg = /-u/i.test(chatMsg); // myId 專用：上傳到 TG
 
+                // 從 imgTargets 中拆分出 Threads URL（Threads 一律走快取下載流程）
+                // 以及拆分出「直接下載類」（KRSITE/FACEBOOK/PINTEREST/REDDIT），不走列表機制
+                const threadsTargets = {};
+                const directDownloadTargets = {};
+                const otherImgTargets = {};
+                for (const url in imgTargets) {
+                    const type = imgTargets[url].type;
+                    if (type === MEDIA_TYPES.THREADS) {
+                        threadsTargets[url] = imgTargets[url];
+                    } else if (type === MEDIA_TYPES.KRSITE || type === MEDIA_TYPES.FACEBOOK ||
+                               type === MEDIA_TYPES.PINTEREST || type === MEDIA_TYPES.REDDIT) {
+                        directDownloadTargets[url] = imgTargets[url];
+                    } else {
+                        otherImgTargets[url] = imgTargets[url];
+                    }
+                }
+
+                // Threads URL 走快取 → 下載流程
+                if (Object.keys(threadsTargets).length > 0) {
+                    const threadsResults = await this.imageDownloader.download(threadsTargets);
+                    if (threadsResults.length > 0) {
+                        // myId 且沒有 -u：只下載不上傳，回報完成即可
+                        if (chatId === this.config.myId && !uploadToTg) {
+                            const totalFiles = threadsResults.reduce((sum, r) => sum + (r.localFiles ? r.localFiles.length : 0), 0);
+                            await this.bot.sendMessage(chatId, `✅ Threads 下載完成: ${totalFiles} 個檔案`, {
+                                reply_to_message_id: msgId,
+                                allow_sending_without_reply: true
+                            });
+                        } else {
+                            await this.messageHandler.sendMessages(msg, threadsResults);
+                        }
+                    }
+                }
+
+                // 直接下載類（KRSITE/FACEBOOK/PINTEREST/REDDIT）：不走列表機制，即時下載
+                if (Object.keys(directDownloadTargets).length > 0) {
+                    const directResults = await this.imageDownloader.download(directDownloadTargets);
+                    if (directResults.length > 0) {
+                        if (chatId === this.config.myId && !uploadToTg) {
+                            // myId：只下載不上傳，回報完成
+                            const totalFiles = directResults.reduce((sum, r) => sum + (r.localFiles ? r.localFiles.length : 0), 0);
+                            const typeLabels = [...new Set(directResults.map(r => r.typeTxt))].join('/');
+                            await this.bot.sendMessage(chatId, `✅ ${typeLabels} 下載完成: ${totalFiles} 個檔案`, {
+                                reply_to_message_id: msgId,
+                                allow_sending_without_reply: true
+                            });
+                        } else {
+                            // 非 myId：下載並上傳到 TG
+                            await this.messageHandler.sendMessages(msg, directResults);
+                        }
+                    }
+                }
+
                 // 如果是 myId 且沒有 -u 選項，則加入列表而不是下載
                 if (chatId === this.config.myId && !uploadToTg) {
-                    await this._addUrlsToLists(msg, chatId, msgId, imgTargets, vidTargets, streamTargets);
+                    await this._addUrlsToLists(msg, chatId, msgId, otherImgTargets, vidTargets, streamTargets);
                     return;
                 }
 
                 // 一般使用者和 myId 使用 -u 時，都下載並上傳到 TG
                 const downloadRemote = false; // 統一都上傳到 TG
 
-                // 處理圖片下載
-                if (Object.keys(imgTargets).length > 0) {
-                    const results = await this.imageDownloader.download(imgTargets, downloadRemote);
+                // 處理圖片下載（已排除 Threads）
+                if (Object.keys(otherImgTargets).length > 0) {
+                    const results = await this.imageDownloader.download(otherImgTargets, downloadRemote);
 
                     if (results.length > 0) {
                         await this.messageHandler.sendMessages(msg, results, downloadRemote);
@@ -218,7 +271,6 @@ class CommandHandler {
      * @private
      */
     async _addUrlsToLists(msg, chatId, msgId, imgTargets, vidTargets, streamTargets) {
-        const { MEDIA_TYPES } = require('./constants');
         let galCount = 0;
         let ytdCount = 0;
         let streamlinkCommands = [];

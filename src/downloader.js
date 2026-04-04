@@ -1,6 +1,10 @@
 const { spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 const { MEDIA_TYPES } = require('./constants');
 const { sleep, getProgressEmoji, getRandomDelay } = require('./utils');
+const ThreadsDownloader = require('./threadsDownloader');
 
 /**
  * 下載隊列管理
@@ -25,6 +29,7 @@ class DownloadQueue {
 class ImageDownloader {
     constructor(downloadCache = null) {
         this.downloadCache = downloadCache;
+        this.threadsDownloader = new ThreadsDownloader();
     }
 
     /**
@@ -57,6 +62,47 @@ class ImageDownloader {
                         results.push(urlData);
                         continue;
                     }
+                }
+
+                // Threads 使用自訂下載器
+                if (urlData.type === MEDIA_TYPES.THREADS) {
+                    console.info(`[LOG][${urlData.typeTxt}][${url}] 使用 ThreadsDownloader`);
+                    const threadResult = await this.threadsDownloader.downloadPost(url);
+
+                    if (threadResult.success && threadResult.filePaths.length > 0) {
+                        urlData.isDone = true;
+                        urlData.data = threadResult.filePaths;
+                        urlData.localFiles = threadResult.filePaths;
+                        urlData.originalUrls = threadResult.filePaths.map(() => url);
+                    } else {
+                        urlData.isDone = false;
+                        urlData.data = [];
+                        console.error(`[ERROR][Threads] ${url}: ${threadResult.error || '未知錯誤'}`);
+                    }
+
+                    results.push(urlData);
+
+                    // 儲存到快取
+                    if (this.downloadCache && urlData.isDone && urlData.localFiles && urlData.localFiles.length > 0) {
+                        this.downloadCache.setBatch(url, urlData.localFiles);
+                    }
+
+                    await sleep(getRandomDelay());
+                    continue;
+                }
+
+                // KRSite 使用 krsite-dl
+                if (urlData.type === MEDIA_TYPES.KRSITE) {
+                    console.info(`[LOG][${urlData.typeTxt}][${url}] 使用 krsite-dl`);
+                    const result = await this._executeKrsiteDownload(url, urlData);
+
+                    if (result.localFiles && result.localFiles.length > 0) {
+                        result.originalUrls = result.localFiles.map(() => url);
+                    }
+
+                    results.push(result);
+                    await sleep(getRandomDelay());
+                    continue;
                 }
 
                 // 全部改為下載到本地
@@ -173,6 +219,93 @@ class ImageDownloader {
                 reject(err);
             });
         });
+    }
+
+    /**
+     * 執行 krsite-dl 下載（下載到暫存目錄並掃描檔案）
+     * @private
+     */
+    _executeKrsiteDownload(url, urlData) {
+        return new Promise((resolve, reject) => {
+            // 建立暫存目錄
+            const tmpDir = path.join(os.tmpdir(), `krsite-${Date.now()}`);
+            fs.mkdirSync(tmpDir, { recursive: true });
+
+            const cmd = 'krsite-dl';
+            const args = [url, '-d', tmpDir];
+
+            console.info(`[LOG][${urlData.typeTxt}][${url}] krsite-dl ${url} -d ${tmpDir}`);
+
+            const proc = spawn(cmd, args);
+
+            proc.stdout.on('data', (data) => {
+                const dataStr = data.toString();
+                for (const line of dataStr.split(/\r?\n/)) {
+                    if (line.trim()) {
+                        console.log(`[krsite-dl] ${line}`);
+                    }
+                }
+            });
+
+            proc.stderr.on('data', (data) => {
+                const dataStr = data.toString();
+                for (const line of dataStr.split(/\r?\n/)) {
+                    if (line.trim()) {
+                        console.error(`[krsite-dl][stderr] ${line}`);
+                    }
+                }
+            });
+
+            proc.on('close', (code) => {
+                console.log(`[LOG][krsite-dl] ${url} Done, code:${code}`);
+
+                // 遞迴掃描暫存目錄取得所有媒體檔案
+                const localFiles = this._scanDirectory(tmpDir);
+
+                if (code === 0 && localFiles.length > 0) {
+                    urlData.isDone = true;
+                    urlData.localFiles = localFiles;
+                    console.log(`[LOG][krsite-dl] 下載了 ${localFiles.length} 個檔案`);
+                } else {
+                    urlData.isDone = false;
+                    urlData.localFiles = [];
+                    urlData.errorCode = code;
+                    console.log(`[ERROR][krsite-dl] 下載失敗，exit code: ${code}, 檔案數: ${localFiles.length}`);
+                }
+
+                resolve(urlData);
+            });
+
+            proc.on('error', (err) => {
+                console.error(`[ERROR][krsite-dl] ${url} error: ${err.message}`);
+                urlData.isDone = false;
+                urlData.localFiles = [];
+                resolve(urlData);
+            });
+        });
+    }
+
+    /**
+     * 遞迴掃描目錄取得所有媒體檔案
+     * @private
+     */
+    _scanDirectory(dir) {
+        const mediaExtensions = /\.(jpg|jpeg|png|gif|webp|mp4|webm)$/i;
+        const files = [];
+
+        if (!fs.existsSync(dir)) return files;
+
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+                files.push(...this._scanDirectory(fullPath));
+            } else if (mediaExtensions.test(entry.name)) {
+                files.push(fullPath);
+            }
+        }
+
+        return files;
     }
 }
 

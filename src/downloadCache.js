@@ -67,18 +67,22 @@ class DownloadCache {
      * @returns {boolean}
      */
     shouldCache(url) {
-        // 只快取 Instagram URL
-        if (!/instagram\.com/i.test(url)) {
-            return false;
+        // 快取 Instagram URL
+        if (/instagram\.com/i.test(url)) {
+            // Instagram Stories 沒有特定貼文 ID 的不快取
+            const storiesPattern = /^https:\/\/www\.instagram\.com\/stories\/[\w.-]+\/?$/;
+            if (storiesPattern.test(url)) {
+                return false;
+            }
+            return true;
         }
 
-        // Instagram Stories 沒有特定貼文 ID 的不快取
-        const storiesPattern = /^https:\/\/www\.instagram\.com\/stories\/[\w.-]+\/?$/;
-        if (storiesPattern.test(url)) {
-            return false;
+        // 快取 Threads URL
+        if (/threads\.(?:net|com)/i.test(url)) {
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     /**
