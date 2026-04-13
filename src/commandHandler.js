@@ -138,7 +138,27 @@ class CommandHandler {
 
                 // 處理圖片下載（已排除 Threads）
                 if (Object.keys(otherImgTargets).length > 0) {
+                    // 檢查是否包含 IG URL，若有則發送等待訊息
+                    const hasIgUrl = Object.values(otherImgTargets).some(
+                        d => d.type === MEDIA_TYPES.IG_NORMAL || d.type === MEDIA_TYPES.IG_STORY
+                    );
+                    let waitingMsg = null;
+                    if (hasIgUrl) {
+                        try {
+                            waitingMsg = await this.bot.sendMessage(
+                                chatId,
+                                '⏳ Instagram 下載中，請稍候...',
+                                { reply_to_message_id: msgId, allow_sending_without_reply: true }
+                            );
+                        } catch (e) { /* 忽略發送失敗 */ }
+                    }
+
                     const results = await this.imageDownloader.download(otherImgTargets, downloadRemote);
+
+                    // 刪除等待訊息
+                    if (waitingMsg) {
+                        try { await this.bot.deleteMessage(chatId, waitingMsg.message_id); } catch (e) { /* 忽略 */ }
+                    }
 
                     if (results.length > 0) {
                         await this.messageHandler.sendMessages(msg, results, downloadRemote);

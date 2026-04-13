@@ -27,11 +27,44 @@ class DownloadQueue {
 /**
  * 圖片下載處理器
  */
+// IG 下載最小間隔（毫秒）
+const IG_MIN_INTERVAL_MS = 3000;
+
 class ImageDownloader {
     constructor(downloadCache = null) {
         this.downloadCache = downloadCache;
         this.threadsDownloader = new ThreadsDownloader();
         this.appfansDownloader = new AppFansDownloader();
+        // IG 專用 mutex：確保同一時間只有一個 gallery-dl 進程處理 IG URL
+        this._igLock = Promise.resolve();
+        this._lastIgDownloadEnd = 0;
+    }
+
+    /**
+     * 取得 IG 下載鎖（同一時間只允許一個 IG gallery-dl 進程）
+     * 並確保兩次 IG 下載之間至少間隔 IG_MIN_INTERVAL_MS
+     * @returns {Promise<Function>} release 函數
+     */
+    _acquireIgLock() {
+        let release;
+        const prev = this._igLock;
+        this._igLock = new Promise((resolve) => {
+            release = resolve;
+        });
+
+        return prev.then(async () => {
+            // 確保距離上次 IG 下載完成至少間隔 IG_MIN_INTERVAL_MS
+            const elapsed = Date.now() - this._lastIgDownloadEnd;
+            if (this._lastIgDownloadEnd > 0 && elapsed < IG_MIN_INTERVAL_MS) {
+                const waitTime = IG_MIN_INTERVAL_MS - elapsed;
+                console.log(`[LOG][IG Throttle] 等待 ${waitTime}ms 後再開始下載`);
+                await sleep(waitTime);
+            }
+            return () => {
+                this._lastIgDownloadEnd = Date.now();
+                release();
+            };
+        });
     }
 
     /**
@@ -128,6 +161,15 @@ class ImageDownloader {
                     continue;
                 }
 
+                // IG 類型：取得 IG mutex，確保不會同時多個進程存取 IG
+                const isIgType = urlData.type === MEDIA_TYPES.IG_NORMAL || urlData.type === MEDIA_TYPES.IG_STORY;
+                let releaseIgLock = null;
+                if (isIgType) {
+                    console.log(`[LOG][IG Throttle] 等待 IG 下載鎖...`);
+                    releaseIgLock = await this._acquireIgLock();
+                    console.log(`[LOG][IG Throttle] 已取得 IG 下載鎖`);
+                }
+
                 // 全部改為下載到本地
                 const cmd = 'gallery-dl';
                 const args = ['--cookies-from-browser', 'firefox', url];
@@ -151,6 +193,11 @@ class ImageDownloader {
                     console.log(`[ig_debug] localFiles 內容: ${JSON.stringify(result.localFiles)}`);
                     this.downloadCache.setBatch(url, result.localFiles);
                     console.log(`[ig_debug] setBatch 呼叫完成`);
+                }
+
+                // 釋放 IG 下載鎖
+                if (releaseIgLock) {
+                    releaseIgLock();
                 }
 
                 // 隨機延遲，避免請求過於頻繁
