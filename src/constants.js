@@ -108,7 +108,7 @@ const URL_PATTERNS = {
     [MEDIA_TYPES.STREAM]: /https:\/\/(?:www\.)?(kick\.com)\/([\w-]+)/g,
     [MEDIA_TYPES.M3U8]: /https:\/\/.+\.m3u8/g,
     [MEDIA_TYPES.NAVER]: /https:\/\/blog\.naver\.com\/\S+\/\d+/g,
-    [MEDIA_TYPES.TIKTOK_VIDEO]: /https:\/\/(?:www\.)?tiktok\.com\/@[\w.-]+\/video\/\d+/g,
+    [MEDIA_TYPES.TIKTOK_VIDEO]: /https:\/\/(?:(?:www\.)?tiktok\.com\/@[\w.-]+\/video\/\d+|vt\.tiktok\.com\/[\w]+\/?)/g,
     [MEDIA_TYPES.TIKTOK_LIVE]: /https:\/\/(?:www\.)?tiktok\.com\/@[\w.-]+\/live\/?/g,
     [MEDIA_TYPES.TWITCH_LIVE]: /https:\/\/(?:www\.)?twitch\.tv\/([\w-]+)/g,
     [MEDIA_TYPES.TIKTOK_OTHER]: /https:\/\/(?:www\.)?tiktok\.com\/(?!@[\w.-]+\/video\/\d+)(?!@[\w.-]+\/live).+/g,
