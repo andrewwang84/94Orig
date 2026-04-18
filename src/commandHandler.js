@@ -1096,6 +1096,11 @@ class CommandHandler {
     _registerStopHandler() {
         this.bot.onText(/\/stop/, async (msg) => {
             const chatId = msg.chat.id;
+            const logName = getUserLogName(msg);
+
+            if (!await checkCanUse(this.bot, chatId, msg.message_id, logName, '', this.config.adminId)) {
+                return;
+            }
 
             if (!msg.reply_to_message) {
                 await this.bot.sendMessage(
@@ -1158,17 +1163,33 @@ class CommandHandler {
             const chatId = msg.chat.id;
             const isMyId = chatId === this.config.myId;
 
-            let helpText = `
-- Instagram 照片、影片：
-    - https://www.instagram.com/p/[貼文ID]/
-    - https://www.instagram.com/reel/[貼文ID]/
+            let helpText = `<strong>🔗 支援的連結格式：</strong>
 
-- Instagram 限動：
-    - https://www.instagram.com/stories/[用戶名稱]/
-    - https://www.instagram.com/stories/[用戶名稱]/[貼文ID]/
+📷 <strong>圖片 / 影片下載：</strong>
+- Instagram：https://www.instagram.com/p/[ID]/ 或 /reel/[ID]/
+- Instagram 限動：https://www.instagram.com/stories/[用戶]/[ID]/
+- X(Twitter)：https://x.com/[用戶]/status/[ID]/
+- Threads：https://www.threads.net/@[用戶]/post/[ID]/
+- Naver Blog：https://blog.naver.com/[用戶]/[文章ID]
+- Facebook：https://www.facebook.com/...
+- Pinterest：https://www.pinterest.com/...
+- Reddit：https://www.reddit.com/...
+- Weibo：https://weibo.com/[UID]/[MID] 或 m.weibo.cn/detail/[ID]
+- TikTok（圖片貼文）：https://www.tiktok.com/...
+- app.fans：https://app.fans/community/[社群]/media/[ID]/
+- 韓國媒體網站（KRSite）：Elle、Vogue、Dispatch、Melon 等
 
-- X(Twitter) 圖片、影片：
-    - https://x.com/[用戶名稱]/status/[貼文ID]/
+🎬 <strong>影片下載：</strong>
+- YouTube：https://www.youtube.com/watch?v=[ID] 或 /shorts/[ID]
+- YouTube 短網址：https://youtu.be/[ID]
+- TikTok 影片：https://www.tiktok.com/@[用戶]/video/[ID]/
+- TikTok 短網址：https://vt.tiktok.com/[ID]/
+
+📡 <strong>直播串流錄製：</strong>
+- Kick：https://kick.com/[頻道名稱]
+- TikTok 直播：https://www.tiktok.com/@[用戶]/live/
+- Twitch：https://www.twitch.tv/[頻道名稱]
+- M3U8 串流：https://...xxx.m3u8
 `;
 
             if (isMyId) {
@@ -1176,6 +1197,10 @@ class CommandHandler {
 <strong>📋 管理員模式：</strong>
 - 預設行為：直接發送網址會<strong>加入 /gal 下載列表</strong>
 - 立即下載並上傳：訊息帶「-u」參數
+
+<strong>🗾 ONCE JAPAN 命令（管理員限定）：</strong>
+- /oj：自動爬取並下載 ONCE JAPAN 全站圖片
+- /oj_test：ONCE JAPAN 測試下載（不寫入快取）
 `;
             } else {
                 helpText += `
@@ -1186,9 +1211,21 @@ class CommandHandler {
             helpText += `
 - 一次傳入多個連結請用「<strong>換行</strong>」分開
 
-<strong>📝 列表管理命令：</strong>
-- /gal [連結]：將連結寫入 gallery-dl 下載列表
-- /ytd [連結]：將連結寫入 yt-dlp 下載列表`;
+<strong>📝 gallery-dl 列表命令：</strong>
+- /gal [連結]：將連結加入 gallery-dl 下載列表
+- /gal_get：查看目前 gallery-dl 下載列表內容
+- /gal_run：執行 gallery-dl 下載列表
+
+<strong>🎬 yt-dlp 列表命令：</strong>
+- /ytd [連結]：將連結加入 yt-dlp 下載列表
+- /ytd_get：查看目前 yt-dlp 下載列表內容
+- /ytd_run：執行 yt-dlp 下載列表
+- /ytd_purge：清空 yt-dlp 下載列表
+
+<strong>⚙️ 其他命令：</strong>
+- /stop：停止串流/直播下載（回覆對應的下載訊息使用）
+- /get_my_id：查看目前聊天室的 ID
+- /help：顯示此說明`;
 
             this.bot.sendMessage(chatId, helpText, { parse_mode: 'HTML' });
         });
