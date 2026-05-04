@@ -72,6 +72,6 @@ tmp.log
 test-modules.js
 
 # Database files
-data/*
+data/
 *.db
 *.db-journal

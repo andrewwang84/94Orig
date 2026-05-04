@@ -3,7 +3,7 @@ module.exports = {
         name: "94Orig",
         script: "./app.js",
         log_file: "E:\\User\\Documents\\pm2.log",
-        watch: true,
+        watch: false,
         ignore_watch: [
             '^(?!app\.js$).+',
             'data/**',

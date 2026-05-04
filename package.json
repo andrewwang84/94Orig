@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "node app.js",
-    "test": "export NODE_ENV=development && npm start"
+    "test": "export NODE_ENV=development && npm start",
+    "ojv": "node ojv.js"
   },
   "dependencies": {
     "better-sqlite3": "^12.4.1",

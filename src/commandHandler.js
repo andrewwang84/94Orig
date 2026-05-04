@@ -7,6 +7,7 @@ const UrlParser = require('./urlParser');
 const { ImageDownloader } = require('./downloader');
 const { DOWNLOAD_LIMITS, MEDIA_TYPES } = require('./constants');
 const OnceJapanDownloader = require('./onceJapanDownloader');
+const OjVideoDownloader = require('./ojVideoDownloader');
 
 /**
  * Bot 命令處理器
@@ -36,6 +37,7 @@ class CommandHandler {
         this._registerGetMyIdHandler();
         this._registerOjHandler();
         this._registerOjTestHandler();
+        this._registerOjvHandler();
     }
 
     /**
@@ -1299,6 +1301,63 @@ class CommandHandler {
             } catch (error) {
                 console.error(`[ERROR][OJ_TEST] /oj_test 執行失敗:`, error);
                 const errText = `❌ ONCE JAPAN 測試失敗: ${error.message}`;
+                if (statusMsg) {
+                    try {
+                        await this.bot.editMessageText(errText, {
+                            chat_id: chatId,
+                            message_id: statusMsg.message_id,
+                        });
+                    } catch (e) {
+                        await this.bot.sendMessage(chatId, errText);
+                    }
+                } else {
+                    await this.bot.sendMessage(chatId, errText);
+                }
+            }
+        });
+    }
+
+    _registerOjvHandler() {
+        this.bot.onText(/^(ojv|\/ojv)$/i, async (msg) => {
+            const chatId = msg.chat.id;
+            const msgId = msg.message_id;
+
+            if (chatId !== this.config.myId) {
+                return;
+            }
+
+            console.log(`[LOG][Telegram][ojv] 開始 OJ 影片下載`);
+
+            let statusMsg;
+            try {
+                statusMsg = await this.bot.sendMessage(
+                    chatId,
+                    '⏳ OJ 影片下載開始...',
+                    { reply_to_message_id: msgId, allow_sending_without_reply: true }
+                );
+
+                const downloadDir = this.config.ojDownloadPath || 'E:/User/Downloads';
+                const downloader = new OjVideoDownloader(this.downloadCache, downloadDir);
+
+                const progressCallback = async (title) => {
+                    try {
+                        await this.bot.editMessageText(
+                            `⏳ OJ 影片下載中...\n正在處理: ${title}`,
+                            { chat_id: chatId, message_id: statusMsg.message_id }
+                        );
+                    } catch (e) { /* ignore edit errors */ }
+                };
+
+                const allResults = await downloader.run(progressCallback);
+                const resultMsg = downloader.formatResults(allResults);
+
+                await this.bot.editMessageText(
+                    resultMsg,
+                    { chat_id: chatId, message_id: statusMsg.message_id }
+                );
+            } catch (error) {
+                console.error(`[ERROR][OJV] /ojv 執行失敗:`, error);
+                const errText = `❌ OJ 影片下載失敗: ${error.message}`;
                 if (statusMsg) {
                     try {
                         await this.bot.editMessageText(errText, {
