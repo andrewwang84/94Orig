@@ -71,7 +71,7 @@ class CommandHandler {
                 }
 
                 // 解析選項
-                const uploadToTg = /-u/i.test(chatMsg); // myId 專用：上傳到 TG
+                const uploadToTg = /(?:^|\s)-u(?:\s|$)/i.test(chatMsg); // myId 專用：上傳到 TG
 
                 // 從 imgTargets 中拆分出 Threads URL（Threads 一律走快取下載流程）
                 // 以及拆分出「直接下載類」（KRSITE/FACEBOOK/PINTEREST/REDDIT），不走列表機制
