@@ -10,8 +10,8 @@ class ThreadsDownloader {
     constructor() {
         this.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
         this.appId = '238260118697367';
-        // 跟 gallery-dl instagram 相同的儲存路徑
-        this.baseDirectory = 'E:\\AndrewWang\\00\\Celeb\\tmp\\IG & Offical';
+        // Threads 媒體下載根目錄
+        this.baseDirectory = 'E:\\User\\Downloads\\Threads';
         // 暫存 HTML 供 LSD token 提取使用，避免重複 fetch
         this._cachedHtml = null;
     }

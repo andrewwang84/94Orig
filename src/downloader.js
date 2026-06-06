@@ -219,6 +219,12 @@ class ImageDownloader {
             const process = spawn(cmd, args);
             const localFiles = [];
             let stdoutBuffer = ''; // 用於累積未完成的行
+            let stderrBuffer = '';
+
+            // gallery-dl 已知的非致命 bug，檔案仍會下載成功
+            const IGNORABLE_ERRORS = [
+                /AttributeError.*NoneType.*has no attribute.*find/,
+            ];
 
             process.stdout.on('data', (data) => {
                 const dataStr = data.toString();
@@ -249,6 +255,10 @@ class ImageDownloader {
                 }
             });
 
+            process.stderr.on('data', (data) => {
+                stderrBuffer += data.toString();
+            });
+
             process.on('close', (code) => {
                 // 處理緩衝區中剩餘的資料
                 if (stdoutBuffer.trim()) {
@@ -272,6 +282,11 @@ class ImageDownloader {
                     urlData.isDone = true;
                     urlData.localFiles = localFiles;
                     console.log(`[LOG] 下載了 ${localFiles.length} 個檔案`);
+                } else if (code !== 0 && localFiles.length > 0 && IGNORABLE_ERRORS.some(p => p.test(stderrBuffer))) {
+                    // gallery-dl 已知非致命 bug 導致非零 exit code，但檔案已下載成功
+                    urlData.isDone = true;
+                    urlData.localFiles = localFiles;
+                    console.log(`[LOG] 下載了 ${localFiles.length} 個檔案（忽略已知 gallery-dl 非致命錯誤，exit code: ${code}）`);
                 } else {
                     urlData.isDone = false;
                     urlData.localFiles = [];
