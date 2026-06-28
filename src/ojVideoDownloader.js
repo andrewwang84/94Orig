@@ -284,8 +284,9 @@ class OjVideoDownloader {
 
     async _processVideo(item, siteConf, cookie) {
         // 1. Fetch detail page
+        let detailRes;
         try {
-            await this._retry(() => this._fetch(item.detailUrl, {
+            detailRes = await this._retry(() => this._fetch(item.detailUrl, {
                 userAgent: siteConf.ua,
                 cookie,
                 referer: item.listUrl,
@@ -293,6 +294,15 @@ class OjVideoDownloader {
         } catch (err) {
             console.error(`[ERROR][OJV][${siteConf.key}] detail 頁失敗 ${item.detailUrl}: ${err.message}`);
             return false;
+        }
+
+        // 單一網址模式：列表頁沒給 title/date，從 detail 頁解析
+        if (!item.title) {
+            const $ = cheerio.load(detailRes.text);
+            item.title = ($('.section--detail .tit').first().text() || '').trim();
+            if (!item.date) {
+                item.date = ($('.section--detail .date').first().text() || '').trim();
+            }
         }
 
         // Extract video ID from URL
@@ -329,11 +339,62 @@ class OjVideoDownloader {
             return false;
         }
 
-        // 4. Download
-        const filename = this._buildFilename(item.date, item.title);
+        // 4. Download（OJM 來源在檔名結尾加上 _m 標示出處）
+        const baseName = item.title
+            ? this._buildFilename(item.date, item.title)
+            : videoId;
+        const filename = siteConf.key === OJM_SITE.key ? `${baseName}_m` : baseName;
         const dlReferer = siteConf.dlReferer(item.detailUrl);
 
         return await this._runN_m3u8DL_RE(bestUrl, filename, siteConf.ua, dlReferer);
+    }
+
+    /**
+     * 依網址 hostname 判斷對應站點設定
+     * @returns {Object|null} OJ_SITE / OJM_SITE 或 null
+     */
+    _siteForUrl(url) {
+        let host;
+        try {
+            host = new URL(url).hostname;
+        } catch (e) {
+            return null;
+        }
+        if (host.includes('sp.twicejapan.com')) return OJM_SITE;
+        if (host.includes('oncejapan.com')) return OJ_SITE;
+        return null;
+    }
+
+    /**
+     * 單一網址下載：只下載指定的 detail 網址，不寫入 DB
+     * title/date 由 detail 頁解析，解析不到時以影片 ID 當檔名
+     * @param {string} detailUrl
+     * @param {Function} progressCallback
+     */
+    async runSingle(detailUrl, progressCallback) {
+        this._ensureCookies();
+
+        const siteConf = this._siteForUrl(detailUrl);
+        if (!siteConf) {
+            throw new Error(`無法判斷站點（僅支援 oncejapan.com / sp.twicejapan.com）: ${detailUrl}`);
+        }
+
+        console.log(`[LOG][OJV] === 單一影片下載（不寫入 DB）: ${detailUrl} ===`);
+
+        const cookie = this.cookies[siteConf.cookieKey];
+        const item = {
+            detailUrl,
+            date: '',
+            title: '',
+            listUrl: `${siteConf.baseUrl}${siteConf.listPath}`,
+        };
+
+        if (progressCallback) progressCallback(detailUrl);
+        const ok = await this._processVideo(item, siteConf, cookie);
+        if (progressCallback && item.title) progressCallback(item.title);
+
+        const siteLabel = siteConf.key === OJM_SITE.key ? 'OJM' : 'OJ';
+        return [{ site: siteLabel, results: [{ title: item.title || detailUrl, date: item.date, success: ok }] }];
     }
 
     async run(progressCallback) {

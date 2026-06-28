@@ -36,7 +36,6 @@ class CommandHandler {
         this._registerHelpHandler();
         this._registerGetMyIdHandler();
         this._registerOjHandler();
-        this._registerOjTestHandler();
         this._registerOjvHandler();
     }
 
@@ -52,8 +51,8 @@ class CommandHandler {
             const chatMsg = match.input;
 
             try {
-                // 忽略 /gal 和 /ytd 命令
-                if (/\/gal/.test(chatMsg) || /\/ytd/.test(chatMsg)) {
+                // 忽略 /gal、/ytd、/ojv 命令（由各自的 handler 處理）
+                if (/\/gal/.test(chatMsg) || /\/ytd/.test(chatMsg) || /^\/?ojv\b/i.test(chatMsg)) {
                     return;
                 }
 
@@ -1202,7 +1201,8 @@ class CommandHandler {
 
 <strong>🗾 ONCE JAPAN 命令（管理員限定）：</strong>
 - /oj：自動爬取並下載 ONCE JAPAN 全站圖片
-- /oj_test：ONCE JAPAN 測試下載（不寫入快取）
+- /ojv：自動爬取並下載 OJ/OJM 影片
+- /ojv [網址]：只下載指定 detail 網址（不寫入快取）
 `;
             } else {
                 helpText += `
@@ -1255,70 +1255,8 @@ class CommandHandler {
         });
     }
 
-    /**
-     * 註冊 /oj 命令處理器（ONCE JAPAN 自動下載）
-     * @private
-     */
-    _registerOjTestHandler() {
-        this.bot.onText(/^\/oj_test$/, async (msg) => {
-            const chatId = msg.chat.id;
-            const msgId = msg.message_id;
-
-            if (chatId !== this.config.myId) return;
-
-            console.log(`[LOG][Telegram][oj_test] 開始 ONCE JAPAN 測試下載`);
-
-            let statusMsg;
-            try {
-                statusMsg = await this.bot.sendMessage(
-                    chatId,
-                    '⏳ ONCE JAPAN 測試下載（每站一篇，不寫入 DB）...',
-                    { reply_to_message_id: msgId, allow_sending_without_reply: true }
-                );
-
-                const ojDownloader = new OnceJapanDownloader(
-                    this.downloadCache,
-                    this.config.ojDownloadPath || undefined
-                );
-
-                const progressCallback = async (siteKey, title, count) => {
-                    try {
-                        await this.bot.editMessageText(
-                            `⏳ 測試中...
-正在處理: ${title} (${count} 張)`,
-                            { chat_id: chatId, message_id: statusMsg.message_id }
-                        );
-                    } catch (e) { /* ignore */ }
-                };
-
-                const allResults = await ojDownloader.crawlTest(progressCallback);
-                const resultMsg = '[TEST] ' + ojDownloader.formatResults(allResults);
-
-                await this.bot.editMessageText(
-                    resultMsg,
-                    { chat_id: chatId, message_id: statusMsg.message_id }
-                );
-            } catch (error) {
-                console.error(`[ERROR][OJ_TEST] /oj_test 執行失敗:`, error);
-                const errText = `❌ ONCE JAPAN 測試失敗: ${error.message}`;
-                if (statusMsg) {
-                    try {
-                        await this.bot.editMessageText(errText, {
-                            chat_id: chatId,
-                            message_id: statusMsg.message_id,
-                        });
-                    } catch (e) {
-                        await this.bot.sendMessage(chatId, errText);
-                    }
-                } else {
-                    await this.bot.sendMessage(chatId, errText);
-                }
-            }
-        });
-    }
-
     _registerOjvHandler() {
-        this.bot.onText(/^(ojv|\/ojv)$/i, async (msg) => {
+        this.bot.onText(/^(?:ojv|\/ojv)(?:\s+(\S+))?$/i, async (msg, match) => {
             const chatId = msg.chat.id;
             const msgId = msg.message_id;
 
@@ -1326,13 +1264,14 @@ class CommandHandler {
                 return;
             }
 
-            console.log(`[LOG][Telegram][ojv] 開始 OJ 影片下載`);
+            const singleUrl = (match && match[1]) ? match[1].trim() : null;
+            console.log(`[LOG][Telegram][ojv] 開始 OJ 影片下載${singleUrl ? `（單一網址: ${singleUrl}）` : ''}`);
 
             let statusMsg;
             try {
                 statusMsg = await this.bot.sendMessage(
                     chatId,
-                    '⏳ OJ 影片下載開始...',
+                    singleUrl ? '⏳ OJ 單一影片下載開始...' : '⏳ OJ 影片下載開始...',
                     { reply_to_message_id: msgId, allow_sending_without_reply: true }
                 );
 
@@ -1348,7 +1287,9 @@ class CommandHandler {
                     } catch (e) { /* ignore edit errors */ }
                 };
 
-                const allResults = await downloader.run(progressCallback);
+                const allResults = singleUrl
+                    ? await downloader.runSingle(singleUrl, progressCallback)
+                    : await downloader.run(progressCallback);
                 const resultMsg = downloader.formatResults(allResults);
 
                 await this.bot.editMessageText(

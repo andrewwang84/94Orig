@@ -232,9 +232,15 @@ async function main() {
     const urlFileMap = new Map();
     let currentUrl = null;
 
+    // gallery-dl 已知的非致命 bug，檔案仍會下載成功
+    const IGNORABLE_ERRORS = [
+        /AttributeError.*NoneType.*has no attribute.*find/,
+    ];
+
     const childProcess = spawn('gallery-dl', ['--cookies-from-browser', 'firefox', '-I', inputFile]);
     let stdoutBuffer = '';
     let stderrBuffer = '';
+    let stderrFull = ''; // 完整累積 stderr，供錯誤判斷使用（stderrBuffer 會被行分割消費）
 
     childProcess.stdout.on('data', (data) => {
         const dataStr = data.toString();
@@ -266,6 +272,7 @@ async function main() {
     childProcess.stderr.on('data', (data) => {
         const dataStr = data.toString();
         stderrBuffer += dataStr;
+        stderrFull += dataStr;
 
         const lines = stderrBuffer.split(/\r?\n/);
         stderrBuffer = lines.pop() || '';
@@ -305,12 +312,16 @@ async function main() {
 
         console.log('');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        const isIgnorableError = code !== 0 && downloadedFiles.length > 0 && IGNORABLE_ERRORS.some(p => p.test(stderrFull));
         console.log(`✅ gallery-dl 執行完成 (exit code: ${code})`);
+        if (isIgnorableError) {
+            console.log(`   （忽略已知 gallery-dl 非致命錯誤，繼續處理快取）`);
+        }
         console.log(`下載檔案數: ${downloadedFiles.length}`);
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
         // 儲存 Instagram URL 到快取
-        if (code === 0 && downloadedFiles.length > 0 && activeUrls.length > 0) {
+        if ((code === 0 || isIgnorableError) && downloadedFiles.length > 0 && activeUrls.length > 0) {
             console.log('');
             console.log('儲存 Instagram URL 到快取...');
 
