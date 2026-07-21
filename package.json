@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node app.js",
     "test": "export NODE_ENV=development && npm start",
-    "ojv": "node ojv.js"
+    "ojv": "node ojv.js",
+    "ttlive": "node ttlive.js"
   },
   "dependencies": {
     "better-sqlite3": "^12.4.1",

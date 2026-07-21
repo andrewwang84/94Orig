@@ -1,10 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const { Readable } = require('stream');
+const FirefoxCookies = require('./firefoxCookies');
 
 /**
  * Threads 媒體下載器
- * 透過 Threads GraphQL API 取得最高畫質圖片/影片
+ * 優先從貼文頁的嵌入 JSON 匿名取得最高畫質圖片/影片，
+ * 受限貼文才改用帶登入 cookie 的私有 API
  */
 class ThreadsDownloader {
     constructor() {
@@ -12,8 +14,24 @@ class ThreadsDownloader {
         this.appId = '238260118697367';
         // Threads 媒體下載根目錄
         this.baseDirectory = 'E:\\User\\Downloads\\Threads';
-        // 暫存 HTML 供 LSD token 提取使用，避免重複 fetch
-        this._cachedHtml = null;
+        // 暫存 Firefox cookie，避免重複讀取 sqlite
+        this._cachedCookie = null;
+    }
+
+    /**
+     * 取得 Threads 登入 cookie（來自 Firefox）
+     * 未登入時 Threads 會把貼文頁導向登入頁，必須帶 cookie 才拿得到內容
+     * @private
+     */
+    _getCookies() {
+        if (this._cachedCookie !== null) return this._cachedCookie;
+        try {
+            this._cachedCookie = new FirefoxCookies().getCookiesForDomain('www.threads.com') || '';
+        } catch (error) {
+            console.error('[ERROR][Threads] 讀取 Firefox cookie 失敗:', error.message);
+            this._cachedCookie = '';
+        }
+        return this._cachedCookie;
     }
 
     /**
@@ -30,12 +48,13 @@ class ThreadsDownloader {
 
             console.log(`[LOG][Threads] 開始下載: ${postUrl} (shortcode: ${shortcode})`);
 
-            // 取得貼文資料（先嘗試 HTML 嵌入資料，再 fallback 到 GraphQL）
+            // 取得貼文資料：先走匿名的 HTML 嵌入資料（多數公開貼文即可取得），
+            // 取不到目標貼文時才改用帶登入 cookie 的私有 API，降低觸發風控的機會
             let mediaItems = await this._fetchMediaFromHtml(postUrl, shortcode);
 
             if (!mediaItems || mediaItems.length === 0) {
-                console.log('[LOG][Threads] HTML 解析無結果，嘗試 GraphQL API...');
-                mediaItems = await this._fetchMediaFromGraphQL(postUrl, shortcode);
+                console.log('[LOG][Threads] 匿名 HTML 取不到目標貼文，改用登入 API...');
+                mediaItems = await this._fetchMediaFromApi(shortcode);
             }
 
             if (!mediaItems || mediaItems.length === 0) {
@@ -121,6 +140,79 @@ class ThreadsDownloader {
     }
 
     /**
+     * 透過私有 API 取得貼文媒體，僅在匿名管道取不到目標貼文時才呼叫
+     *
+     * /api/v1/media/{pk}/info/ 以 pk 直接定址，回傳的必定是指定貼文；
+     * 但此端點不接受匿名存取（會被導向 /login），因此一定要帶 cookie
+     * @private
+     */
+    async _fetchMediaFromApi(shortcode) {
+        try {
+            const cookie = this._getCookies();
+            if (!cookie) {
+                console.log('[LOG][Threads] 沒有 Threads cookie，略過 API 管道');
+                return null;
+            }
+
+            const postId = this._shortcodeToPostId(shortcode);
+            const csrfToken = (cookie.match(/csrftoken=([^;]+)/) || [])[1] || '';
+
+            const response = await fetch(`https://www.threads.com/api/v1/media/${postId}/info/`, {
+                headers: {
+                    'User-Agent': this.userAgent,
+                    'Cookie': cookie,
+                    'X-IG-App-ID': this.appId,
+                    'X-CSRFToken': csrfToken,
+                    'Accept': '*/*',
+                    'Sec-Fetch-Dest': 'empty',
+                    'Sec-Fetch-Mode': 'cors',
+                    'Sec-Fetch-Site': 'same-origin',
+                    'Referer': 'https://www.threads.com/',
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            const post = data?.items?.[0];
+            if (!post) {
+                throw new Error('回應中沒有 items');
+            }
+
+            // 確認拿到的是指定貼文，避免下載到其他貼文的媒體
+            if (post.code && post.code !== shortcode) {
+                throw new Error(`回傳貼文不符 (期望 ${shortcode}，實際 ${post.code})`);
+            }
+
+            console.log(`[LOG][Threads] API 取得貼文 ${post.code || shortcode}`);
+            return this._extractMediaFromPost(post, shortcode);
+        } catch (error) {
+            console.error('[ERROR][Threads] API 取得失敗:', error.message);
+            return null;
+        }
+    }
+
+    /**
+     * 從貼文物件提取媒體（處理輪播與單一媒體）
+     * @private
+     */
+    _extractMediaFromPost(post, shortcode) {
+        if (post.carousel_media && Array.isArray(post.carousel_media)) {
+            const parentTakenAt = post.taken_at || post.taken_at_timestamp;
+            const items = [];
+            post.carousel_media.forEach((item, index) => {
+                const extracted = this._extractMediaFromItem(item, shortcode, index + 1, parentTakenAt);
+                if (extracted) items.push(...extracted);
+            });
+            if (items.length > 0) return items;
+        }
+
+        return this._extractMediaFromItem(post, shortcode, 1);
+    }
+
+    /**
      * 從 HTML 頁面提取媒體資料
      * Threads 頁面包含 JSON 嵌入資料 (Server-Side Rendered)
      * @private
@@ -143,9 +235,6 @@ class ThreadsDownloader {
             }
 
             const html = await response.text();
-
-            // 暫存 HTML 供後續 LSD token 提取使用
-            this._cachedHtml = html;
 
             // 方法 1: 從 <script type="application/json"> 提取嵌入 JSON
             const mediaItems = this._parseMediaFromHtml(html, shortcode);
@@ -208,68 +297,41 @@ class ThreadsDownloader {
     }
 
     /**
-     * 遞迴搜尋 JSON tree 中的媒體資料
-     * 尋找 Instagram/Threads 風格的 image_versions2 和 video_versions
+     * 從 JSON tree 中取出「指定貼文」的媒體
+     *
+     * 貼文頁的嵌入 JSON 除了目標貼文外，還夾帶大量推薦／同作者的其他貼文；
+     * 且未登入時 Threads 會回傳登入頁，裡面根本沒有目標貼文。
+     * 因此必須先用 code/pk 定位到目標貼文，找不到就回傳 null，
+     * 絕不能退而取用第一個找到的媒體，否則會下載到別篇貼文的內容。
      * @private
      */
     _extractMediaFromJsonTree(obj, shortcode, depth = 0) {
-        if (depth > 20 || !obj || typeof obj !== 'object') return null;
+        const post = this._findPostNode(obj, shortcode, this._shortcodeToPostId(shortcode), depth);
+        if (!post) return null;
 
-        // 優先檢查 carousel_media（輪播），因為輪播貼文的 parent 也會有 image_versions2（封面）
-        if (obj.carousel_media && Array.isArray(obj.carousel_media)) {
-            const parentTakenAt = obj.taken_at || obj.taken_at_timestamp;
-            const items = [];
-            obj.carousel_media.forEach((item, index) => {
-                const extracted = this._extractMediaFromItem(item, shortcode, index + 1, parentTakenAt);
-                if (extracted) items.push(...extracted);
-            });
-            if (items.length > 0) return items;
+        return this._extractMediaFromPost(post, shortcode);
+    }
+
+    /**
+     * 遞迴搜尋 JSON tree，找出 code 或 pk 與目標相符且含媒體的貼文物件
+     * @private
+     */
+    _findPostNode(obj, shortcode, expectedPk, depth = 0) {
+        if (depth > 25 || !obj || typeof obj !== 'object') return null;
+
+        if (!Array.isArray(obj)) {
+            const isTarget = obj.code === shortcode
+                || obj.shortcode === shortcode
+                || (obj.pk != null && String(obj.pk) === expectedPk)
+                || (obj.id != null && String(obj.id) === expectedPk);
+            const hasMedia = obj.carousel_media || obj.image_versions2 || obj.video_versions;
+            if (isTarget && hasMedia) return obj;
         }
 
-        // 檢查是否為包含媒體的 post 物件（單張/單影片）
-        if (obj.image_versions2 || obj.video_versions) {
-            return this._extractMediaFromItem(obj, shortcode, 1);
-        }
-
-        // 檢查 post 包裝結構
-        if (obj.post && typeof obj.post === 'object') {
-            const result = this._extractMediaFromJsonTree(obj.post, shortcode, depth + 1);
+        const children = Array.isArray(obj) ? obj : Object.keys(obj).map(k => obj[k]);
+        for (const child of children) {
+            const result = this._findPostNode(child, shortcode, expectedPk, depth + 1);
             if (result) return result;
-        }
-
-        // 檢查 media 包裝結構
-        if (obj.media && typeof obj.media === 'object' && !Array.isArray(obj.media)) {
-            const result = this._extractMediaFromJsonTree(obj.media, shortcode, depth + 1);
-            if (result) return result;
-        }
-
-        // 檢查 thread_items 結構 (Threads 特有)
-        if (obj.thread_items && Array.isArray(obj.thread_items)) {
-            for (const threadItem of obj.thread_items) {
-                if (threadItem.post) {
-                    const result = this._extractMediaFromJsonTree(threadItem.post, shortcode, depth + 1);
-                    if (result) return result;
-                }
-            }
-        }
-
-        // 檢查 containing_thread 結構
-        if (obj.containing_thread && typeof obj.containing_thread === 'object') {
-            const result = this._extractMediaFromJsonTree(obj.containing_thread, shortcode, depth + 1);
-            if (result) return result;
-        }
-
-        // 遞迴搜尋所有子項
-        if (Array.isArray(obj)) {
-            for (const item of obj) {
-                const result = this._extractMediaFromJsonTree(item, shortcode, depth + 1);
-                if (result) return result;
-            }
-        } else {
-            for (const key of Object.keys(obj)) {
-                const result = this._extractMediaFromJsonTree(obj[key], shortcode, depth + 1);
-                if (result) return result;
-            }
         }
 
         return null;
@@ -327,6 +389,14 @@ class ThreadsDownloader {
     _parseMediaFromMetaTags(html, shortcode) {
         const items = [];
 
+        // 確認頁面確實是目標貼文：未登入時 Threads 會導向登入頁，
+        // 其 og:image 是 Threads logo，og:url 則指向站台首頁
+        const ogUrl = (html.match(/<meta\s+property="og:url"\s+content="([^"]+)"/) || [])[1];
+        if (!ogUrl || !ogUrl.includes(shortcode)) {
+            console.log('[LOG][Threads] meta 標籤非目標貼文（可能是登入頁），略過');
+            return null;
+        }
+
         // og:video
         const videoMatch = html.match(/<meta\s+property="og:video"\s+content="([^"]+)"/);
         if (videoMatch) {
@@ -354,183 +424,6 @@ class ThreadsDownloader {
         }
 
         return items.length > 0 ? items : null;
-    }
-
-    /**
-     * 透過 GraphQL API 取得貼文媒體
-     * @private
-     */
-    async _fetchMediaFromGraphQL(postUrl, shortcode) {
-        try {
-            // 從已快取的 HTML 提取 LSD token，避免重複 fetch 頁面
-            const lsdToken = this._extractLsdFromHtml(this._cachedHtml) || await this._fetchLsdToken(postUrl);
-            if (!lsdToken) {
-                throw new Error('無法取得 LSD token');
-            }
-
-            const postId = this._shortcodeToPostId(shortcode);
-            console.log(`[LOG][Threads] GraphQL 查詢 postId: ${postId}`);
-
-            // 嘗試多個已知的 doc_id
-            const docIds = [
-                '25531498899829322',   // BarcelonaPostPageQuery (2024+)
-                '7803498756374880',    // another known variant
-                '5587632691339264',    // threads-api (2023)
-            ];
-
-            for (const docId of docIds) {
-                try {
-                    const result = await this._graphqlRequest(lsdToken, postId, docId);
-                    if (result) return result;
-                } catch (e) {
-                    console.log(`[LOG][Threads] doc_id ${docId} 失敗: ${e.message}`);
-                }
-                // doc_id 之間加延遲，避免觸發 rate limit
-                await new Promise(resolve => setTimeout(resolve, 500));
-            }
-
-            return null;
-        } catch (error) {
-            console.error('[ERROR][Threads] GraphQL 查詢失敗:', error.message);
-            return null;
-        }
-    }
-
-    /**
-     * 執行 GraphQL 請求
-     * @private
-     */
-    async _graphqlRequest(lsdToken, postId, docId) {
-        const variables = JSON.stringify({ postID: postId });
-
-        const body = new URLSearchParams({
-            lsd: lsdToken,
-            variables,
-            doc_id: docId,
-        });
-
-        const response = await fetch('https://www.threads.net/api/graphql', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'User-Agent': this.userAgent,
-                'X-FB-LSD': lsdToken,
-                'X-IG-App-ID': this.appId,
-                'Sec-Fetch-Dest': 'empty',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Site': 'same-origin',
-                'Origin': 'https://www.threads.net',
-                'Referer': 'https://www.threads.net/',
-            },
-            body: body.toString(),
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        // 嘗試從各種回應結構中提取媒體
-        const postData =
-            data?.data?.data?.containing_thread?.thread_items?.[0]?.post ||
-            data?.data?.data?.containing_thread?.thread_items?.[0]?.media ||
-            data?.data?.containing_thread?.thread_items?.[0]?.post ||
-            data?.data?.mediaData?.threads?.[0]?.thread_items?.[0]?.post ||
-            null;
-
-        if (!postData) {
-            return null;
-        }
-
-        // 取得 shortcode（用於檔案命名）
-        const shortcode = postData.code || postData.shortcode || 'unknown';
-
-        // 檢查輪播
-        if (postData.carousel_media && Array.isArray(postData.carousel_media)) {
-            const parentTakenAt = postData.taken_at || postData.taken_at_timestamp;
-            const items = [];
-            postData.carousel_media.forEach((item, index) => {
-                const extracted = this._extractMediaFromItem(item, shortcode, index + 1, parentTakenAt);
-                if (extracted) items.push(...extracted);
-            });
-            if (items.length > 0) return items;
-        }
-
-        // 單一媒體
-        return this._extractMediaFromItem(postData, shortcode, 1);
-    }
-
-    /**
-     * 從已快取的 HTML 提取 LSD token（不發請求）
-     * @private
-     */
-    _extractLsdFromHtml(html) {
-        if (!html) return null;
-
-        const patterns = [
-            /"LSD",\[\],\{"token":"(\w+)"\}/,
-            /"lsd_token":"(\w+)"/,
-            /name="lsd"\s+value="(\w+)"/,
-            /"LSD"[^}]*"token":"(\w+)"/,
-        ];
-
-        for (const pattern of patterns) {
-            const match = html.match(pattern);
-            if (match) {
-                console.log(`[LOG][Threads] 從快取 HTML 取得 LSD token: ${match[1].substring(0, 8)}...`);
-                return match[1];
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * 從頁面取得 LSD token（fallback，重新 fetch）
-     * @private
-     */
-    async _fetchLsdToken(postUrl) {
-        try {
-            const response = await fetch(postUrl, {
-                headers: {
-                    'User-Agent': this.userAgent,
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                    'Sec-Fetch-Dest': 'document',
-                    'Sec-Fetch-Mode': 'navigate',
-                    'Sec-Fetch-Site': 'none',
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-
-            const html = await response.text();
-
-            // 嘗試多種 LSD token 提取模式
-            const patterns = [
-                /"LSD",\[\],\{"token":"(\w+)"\}/,
-                /"lsd_token":"(\w+)"/,
-                /name="lsd"\s+value="(\w+)"/,
-                /"LSD"[^}]*"token":"(\w+)"/,
-            ];
-
-            for (const pattern of patterns) {
-                const match = html.match(pattern);
-                if (match) {
-                    console.log(`[LOG][Threads] 取得 LSD token: ${match[1].substring(0, 8)}...`);
-                    return match[1];
-                }
-            }
-
-            // 如果找不到 LSD token，生成隨機 token 嘗試
-            console.log('[LOG][Threads] 未找到 LSD token，使用隨機 token');
-            return '';
-        } catch (error) {
-            console.error('[ERROR][Threads] 取得 LSD token 失敗:', error.message);
-            return null;
-        }
     }
 
     /**
