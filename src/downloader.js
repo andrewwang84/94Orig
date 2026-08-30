@@ -2,7 +2,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { MEDIA_TYPES, MEDIA_EXT_RE } = require('./constants');
+const { MEDIA_TYPES, MEDIA_TYPE_LABELS, MEDIA_EXT_RE } = require('./constants');
 const { sleep, getProgressEmoji, getRandomDelay } = require('./utils');
 const ThreadsDownloader = require('./threadsDownloader');
 const AppFansDownloader = require('./appfansDownloader');
@@ -105,6 +105,48 @@ class ImageDownloader {
                 if (urlData.type === MEDIA_TYPES.THREADS) {
                     console.info(`[LOG][${urlData.typeTxt}][${url}] 使用 ThreadsDownloader`);
                     const threadResult = await this.threadsDownloader.downloadPost(url);
+
+                    // 純轉貼 IG 的 Threads 貼文本身沒有媒體，改用 IG 路線下載內嵌的那篇。
+                    // 遞迴呼叫自己，順便沿用 IG 的快取、mutex 與節流，不必在這裡重寫一份。
+                    if (!threadResult.success && threadResult.instagramUrl) {
+                        const igUrl = threadResult.instagramUrl;
+                        const igType = /instagram\.com\/stories\//.test(igUrl)
+                            ? MEDIA_TYPES.IG_STORY
+                            : MEDIA_TYPES.IG_NORMAL;
+
+                        console.info(`[LOG][Threads][${url}] 內嵌 IG 貼文，改走 IG 路線: ${igUrl}`);
+
+                        const [igResult] = await this.download({
+                            [igUrl]: {
+                                type: igType,
+                                typeTxt: MEDIA_TYPE_LABELS[igType],
+                                target: igUrl,
+                                isDone: false,
+                                data: [],
+                            },
+                        }, downloadRemote);
+
+                        if (igResult && igResult.isDone) {
+                            urlData.isDone = true;
+                            urlData.data = igResult.data;
+                            urlData.localFiles = igResult.localFiles;
+                            // originalUrls 仍記原始 Threads 網址，讓快取與訊息回報對得起來
+                            urlData.originalUrls = (igResult.localFiles || []).map(() => url);
+                        } else {
+                            urlData.isDone = false;
+                            urlData.data = [];
+                            console.error(`[ERROR][Threads] ${url}: 內嵌 IG 貼文下載失敗 (${igUrl})`);
+                        }
+
+                        results.push(urlData);
+
+                        if (this.downloadCache && urlData.isDone && urlData.localFiles && urlData.localFiles.length > 0) {
+                            this.downloadCache.setBatch(url, urlData.localFiles);
+                        }
+
+                        await sleep(getRandomDelay());
+                        continue;
+                    }
 
                     if (threadResult.success && threadResult.filePaths.length > 0) {
                         urlData.isDone = true;

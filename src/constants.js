@@ -115,7 +115,8 @@ const URL_PATTERNS = {
     [MEDIA_TYPES.TWITCH_LIVE]: /https:\/\/(?:www\.)?twitch\.tv\/([\w-]+)/g,
     [MEDIA_TYPES.TIKTOK_OTHER]: /https:\/\/(?:www\.)?tiktok\.com\/(?!@[\w.-]+\/video\/\d+)(?!@[\w.-]+\/live).+/g,
     [MEDIA_TYPES.WEIBO]: /https:\/\/(?:m\.weibo\.cn\/detail\/\d+|weibo\.com\/\d+\/\d+|video\.weibo\.com\/show\?fid=[\w:]+)/g,
-    [MEDIA_TYPES.THREADS]: /https:\/\/(?:www\.)?threads\.(?:net|com)\/@[\w.-]+\/post\/[\w-]+\/?/g,
+    // 支援兩種形式：正式貼文 /@user/post/code，以及分享短網址 /share/token
+    [MEDIA_TYPES.THREADS]: /https:\/\/(?:www\.)?threads\.(?:net|com)\/(?:@[\w.-]+\/post\/[\w-]+|share\/[\w-]+)\/?/g,
     [MEDIA_TYPES.KRSITE]: _buildKrsiteRegex(),
     [MEDIA_TYPES.FACEBOOK]: /https:\/\/(?:www\.)?facebook\.com\/\S+/g,
     [MEDIA_TYPES.PINTEREST]: /https:\/\/(?:www\.)?pinterest\.(?:com|co\.uk|ca|fr|de|jp|co\.kr)\/\S+/g,

@@ -40,8 +40,11 @@ class ThreadsDownloader {
      * @param {string} postUrl - Threads 貼文 URL
      * @returns {Promise<Object>} - { success, filePaths[], error? }
      */
-    async downloadPost(postUrl) {
+    async downloadPost(inputUrl) {
         try {
+            // 分享短網址（/share/<token>）先換成正式貼文網址，後面流程完全共用
+            const postUrl = await this._resolveShareUrl(inputUrl);
+
             const shortcode = this._extractShortcodeFromUrl(postUrl);
             if (!shortcode) {
                 throw new Error('無法從 URL 提取 shortcode');
@@ -52,13 +55,26 @@ class ThreadsDownloader {
             // 取得貼文資料：先走匿名的 HTML 嵌入資料（多數公開貼文即可取得），
             // 取不到目標貼文時才改用帶登入 cookie 的私有 API，降低觸發風控的機會
             let mediaItems = await this._fetchMediaFromHtml(postUrl, shortcode);
+            let instagramUrl = null;
 
             if (!mediaItems || mediaItems.length === 0) {
                 console.log('[LOG][Threads] 匿名 HTML 取不到目標貼文，改用登入 API...');
-                mediaItems = await this._fetchMediaFromApi(shortcode);
+                const post = await this._fetchPostFromApi(shortcode);
+                if (post) {
+                    mediaItems = this._extractMediaFromPost(post, shortcode);
+                    // 本身沒有媒體時，看看是不是純轉貼 IG 的貼文
+                    if (!mediaItems || mediaItems.length === 0) {
+                        instagramUrl = this._extractInstagramLink(post);
+                    }
+                }
             }
 
             if (!mediaItems || mediaItems.length === 0) {
+                if (instagramUrl) {
+                    // 交給呼叫端改走 IG 下載路線，這裡不自行處理
+                    console.log(`[LOG][Threads] 貼文內嵌 IG 貼文: ${instagramUrl}`);
+                    return { success: false, instagramUrl, error: '貼文內嵌 IG 貼文', filePaths: [] };
+                }
                 throw new Error('無法取得媒體資料');
             }
 
@@ -91,6 +107,63 @@ class ThreadsDownloader {
             console.error('[ERROR][Threads] 下載失敗:', error.message);
             return { success: false, error: error.message, filePaths: [] };
         }
+    }
+
+    /**
+     * 模擬瀏覽器導覽的請求標頭
+     * Threads 對「不像瀏覽器」的請求會改回空殼頁而不是正常回應，
+     * 因此 Sec-Fetch-* 與 Upgrade-Insecure-Requests 不能省略
+     * @private
+     */
+    _browserHeaders() {
+        return {
+            'User-Agent': this.userAgent,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+        };
+    }
+
+    /**
+     * 把 Threads 分享短網址解析成正式貼文網址
+     *
+     * /share/<token> 只有在請求帶完整瀏覽器標頭時才會回 302；
+     * 標頭精簡的話會拿到 200 的空殼頁、完全找不到貼文資訊。
+     * 用 redirect: 'manual' 直接讀 Location，不必下載整頁 HTML。
+     *
+     * @private
+     * @param {string} url - 可能是 /share/<token> 或已經是正式貼文網址
+     * @returns {Promise<string>} 正式貼文網址（非 share 網址時原樣回傳）
+     */
+    async _resolveShareUrl(url) {
+        if (!/threads\.(?:net|com)\/share\//.test(url)) {
+            return url;
+        }
+
+        let response;
+        try {
+            response = await fetch(url, { headers: this._browserHeaders(), redirect: 'manual' });
+        } catch (error) {
+            throw new Error(`分享網址解析失敗: ${error.message}`);
+        }
+
+        const location = response.headers.get('location');
+        if (!location) {
+            throw new Error(`分享網址無法解析（HTTP ${response.status}），可能已失效或需要登入`);
+        }
+
+        // 去掉 ?xmt=... &slof=1 這類追蹤參數，只留正式路徑
+        const resolved = new URL(location, url).href.split('?')[0];
+        if (!/\/@[\w.-]+\/post\/[\w-]+/.test(resolved)) {
+            throw new Error(`分享網址導向非貼文頁面: ${resolved}`);
+        }
+
+        console.log(`[LOG][Threads] 分享網址解析: ${url} → ${resolved}`);
+        return resolved;
     }
 
     /**
@@ -147,7 +220,7 @@ class ThreadsDownloader {
      * 但此端點不接受匿名存取（會被導向 /login），因此一定要帶 cookie
      * @private
      */
-    async _fetchMediaFromApi(shortcode) {
+    async _fetchPostFromApi(shortcode) {
         try {
             const cookie = this._getCookies();
             if (!cookie) {
@@ -188,11 +261,42 @@ class ThreadsDownloader {
             }
 
             console.log(`[LOG][Threads] API 取得貼文 ${post.code || shortcode}`);
-            return this._extractMediaFromPost(post, shortcode);
+            return post;
         } catch (error) {
             console.error('[ERROR][Threads] API 取得失敗:', error.message);
             return null;
         }
+    }
+
+    /**
+     * 找出貼文所內嵌／引用的 Instagram 貼文網址
+     *
+     * 純轉貼 IG 的 Threads 貼文（media_type 19）本身沒有媒體，
+     * 真正的內容掛在連結預覽或內嵌媒體上，兩處都指向同一個 IG permalink。
+     *
+     * @private
+     * @param {Object} post - API 回傳的貼文物件
+     * @returns {string|null} IG 貼文網址，找不到時回 null
+     */
+    _extractInstagramLink(post) {
+        const info = post?.text_post_app_info;
+        if (!info) return null;
+
+        const candidates = [
+            info.link_preview_attachment?.raw_url,
+            info.link_preview_attachment?.url,
+            info.linked_inline_media?.permalink,
+        ];
+
+        for (const raw of candidates) {
+            if (typeof raw !== 'string') continue;
+            // 只接受單篇貼文網址（p / reel / reels / stories），排除個人頁等
+            const match = raw.match(
+                /https:\/\/(?:www\.)?instagram\.com\/(?:[\w-]+\/)?(?:p|reels?|stories)\/[\w.-]+(?:\/[\w-]+)?\/?/
+            );
+            if (match) return match[0];
+        }
+        return null;
     }
 
     /**
@@ -220,16 +324,7 @@ class ThreadsDownloader {
      */
     async _fetchMediaFromHtml(postUrl, shortcode) {
         try {
-            const response = await fetch(postUrl, {
-                headers: {
-                    'User-Agent': this.userAgent,
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-                    'Accept-Language': 'en-US,en;q=0.5',
-                    'Sec-Fetch-Dest': 'document',
-                    'Sec-Fetch-Mode': 'navigate',
-                    'Sec-Fetch-Site': 'none',
-                }
-            });
+            const response = await fetch(postUrl, { headers: this._browserHeaders() });
 
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
