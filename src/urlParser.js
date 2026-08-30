@@ -73,7 +73,8 @@ class UrlParser {
                type === MEDIA_TYPES.FACEBOOK ||
                type === MEDIA_TYPES.PINTEREST ||
                type === MEDIA_TYPES.REDDIT ||
-               type === MEDIA_TYPES.APPFANS;
+               type === MEDIA_TYPES.APPFANS ||
+               type === MEDIA_TYPES.WEVERSE;
     }
 
     /**

@@ -5,14 +5,15 @@
   "scripts": {
     "start": "node app.js",
     "test": "export NODE_ENV=development && npm start",
-    "ojv": "node ojv.js",
-    "ttlive": "node ttlive.js"
+    "test:telegram": "node test/fakeTelegram.test.js",
+    "ojv": "node ojv.js"
   },
   "dependencies": {
     "better-sqlite3": "^12.4.1",
     "cheerio": "^1.2.0",
     "kill-with-style": "^1.1.0",
-    "node-telegram-bot-api": "^0.66.0"
+    "node-telegram-bot-api": "^2.1.0",
+    "puppeteer": "^25.9.0"
   },
   "description": "service to return original instagram and twitter image to user",
   "keywords": [

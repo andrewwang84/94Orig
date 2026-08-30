@@ -6,7 +6,9 @@ var config = {
         galleryDlListPath: null,
         ytDlListPath: null,
         ytDl2ListPath: null,
-        ojDownloadPath: null
+        ojDownloadPath: null,
+        ojLoginId: null,
+        ojLoginPassword: null
     },
     production: {
         telegramToken: process.env.telegramToken,
@@ -15,7 +17,9 @@ var config = {
         galleryDlListPath: process.env.downloadListPath,
         ytDlListPath: process.env.downloadListPath,
         ytD2ListPath: process.env.downloadListPath,
-        ojDownloadPath: process.env.ojDownloadPath
+        ojDownloadPath: process.env.ojDownloadPath,
+        ojLoginId: process.env.ojLoginId,
+        ojLoginPassword: process.env.ojLoginPassword
     }
 }
 
@@ -27,6 +31,8 @@ if (process.env.NODE_ENV != 'production') {
     config.development['ytDlListPath'] = require('./cred.js').ytDlListPath;
     config.development['ytDl2ListPath'] = require('./cred.js').ytDl2ListPath;
     config.development['ojDownloadPath'] = require('./cred.js').ojDownloadPath;
+    config.development['ojLoginId'] = require('./cred.js').ojLoginId;
+    config.development['ojLoginPassword'] = require('./cred.js').ojLoginPassword;
 }
 
 module.exports = config;

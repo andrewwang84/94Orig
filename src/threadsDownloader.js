@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { Readable } = require('stream');
 const FirefoxCookies = require('./firefoxCookies');
+const { MEDIA_EXT_DOTTED } = require('./constants');
 
 /**
  * Threads 媒體下載器
@@ -463,7 +464,7 @@ class ThreadsDownloader {
         if (match) {
             const ext = `.${match[1].toLowerCase()}`;
             // 確保是合法的媒體副檔名
-            if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.mp4', '.webm', '.mov'].includes(ext)) {
+            if (MEDIA_EXT_DOTTED.includes(ext)) {
                 return ext;
             }
         }

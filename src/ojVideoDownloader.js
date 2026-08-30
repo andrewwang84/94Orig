@@ -4,11 +4,11 @@ const https = require('https');
 const http = require('http');
 const { spawn } = require('child_process');
 const cheerio = require('cheerio');
-const FirefoxCookies = require('./firefoxCookies');
+const OjLogin = require('./ojLogin');
 const { sleep } = require('./utils');
 
-const UA_DESKTOP = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0';
-const UA_MOBILE = 'Mozilla/5.0 (Linux; Android 11; SAMSUNG SM-G973U) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/14.2 Chrome/146.0.0.0 Mobile Safari/537.36';
+// UA 與 ojLogin 共用，確保登入取得的 session 與後續請求的 UA 一致
+const { UA_DESKTOP, UA_MOBILE } = OjLogin;
 
 const OJ_SITE = {
     key: 'oj_movie',
@@ -35,10 +35,10 @@ const OJM_SITE = {
 };
 
 class OjVideoDownloader {
-    constructor(downloadCache, downloadDir) {
+    constructor(downloadCache, downloadDir, credentials = null) {
         this.downloadCache = downloadCache;
         this.downloadDir = downloadDir;
-        this.firefoxCookies = new FirefoxCookies();
+        this.ojLogin = new OjLogin(credentials);
         this.cookies = null;
     }
 
@@ -136,10 +136,16 @@ class OjVideoDownloader {
         });
     }
 
-    _ensureCookies() {
-        if (!this.cookies) {
-            this.cookies = this.firefoxCookies.getAllOjCookies();
-        }
+    /**
+     * 以 puppeteer 自動登入取得指定站台的 cookie（已取得過的不重登）
+     * 登入失敗會直接拋出錯誤
+     * @param {Array<string>} siteKeys - OjLogin 的站台 key（與 siteConf.cookieKey 相同）
+     */
+    async _ensureCookies(siteKeys) {
+        if (!this.cookies) this.cookies = {};
+        const missing = siteKeys.filter(key => !this.cookies[key]);
+        if (missing.length === 0) return;
+        Object.assign(this.cookies, await this.ojLogin.getAllOjCookies(missing));
     }
 
     /**
@@ -204,7 +210,7 @@ class OjVideoDownloader {
     }
 
     async _crawlSite(siteConf, progressCallback) {
-        this._ensureCookies();
+        await this._ensureCookies([siteConf.cookieKey]);
         const cookie = this.cookies[siteConf.cookieKey];
         const results = [];
         let page = 1;
@@ -372,14 +378,15 @@ class OjVideoDownloader {
      * @param {Function} progressCallback
      */
     async runSingle(detailUrl, progressCallback) {
-        this._ensureCookies();
-
         const siteConf = this._siteForUrl(detailUrl);
         if (!siteConf) {
             throw new Error(`無法判斷站點（僅支援 oncejapan.com / sp.twicejapan.com）: ${detailUrl}`);
         }
 
         console.log(`[LOG][OJV] === 單一影片下載（不寫入 DB）: ${detailUrl} ===`);
+
+        // 只登入這個網址所屬的站台，不必為了一支影片把兩站都登一遍
+        await this._ensureCookies([siteConf.cookieKey]);
 
         const cookie = this.cookies[siteConf.cookieKey];
         const item = {

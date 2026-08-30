@@ -4,15 +4,24 @@
  * 主程式入口
  */
 
-const TelegramBot = require('node-telegram-bot-api');
+const { Bot } = require('node-telegram-bot-api');
 const path = require('path');
 const dns = require('dns').promises;
+
+// v2 走 fetch，沒有 v1 的 request.agentOptions.family: 4 可設定。
+// 開機時 Windows 的 IPv6 常常還沒就緒，這裡改用 DNS 解析順序達到同樣效果。
+require('dns').setDefaultResultOrder('ipv4first');
 const config = require('./config.js')[process.env.NODE_ENV === 'production' ? 'production' : 'development'];
 const { initializeFiles } = require('./src/fileInit');
 const { DownloadQueue, VideoDownloader } = require('./src/downloader');
 const MessageHandler = require('./src/messageHandler');
 const CommandHandler = require('./src/commandHandler');
 const DownloadCache = require('./src/downloadCache');
+
+// 測試時可用 TELEGRAM_API_ROOT 指向本機假 Bot API server，避免連到真的 Telegram
+const botOptions = process.env.TELEGRAM_API_ROOT
+    ? { apiRoot: process.env.TELEGRAM_API_ROOT }
+    : {};
 
 // 全局變數以便在關閉時使用
 let downloadCache = null;
@@ -61,14 +70,16 @@ async function initializeApp() {
     // 初始化下載快取資料庫
     downloadCache = new DownloadCache(path.join(__dirname, 'data', 'download_cache.db'));
 
-    // 初始化 Telegram Bot，增加重試和超時設定
-    bot = new TelegramBot(config.telegramToken, {
-        polling: true, request: {
-            agentOptions: {
-                keepAlive: true,
-                family: 4
-            }
+    // 初始化 Telegram Bot（v2：Bot 只負責路由與 API，polling 由 startPolling 啟動）
+    bot = new Bot(config.telegramToken, botOptions);
+
+    // 成功收到更新時重置 polling 錯誤計數。
+    // v2 是 middleware chain，必須回傳 next() 才會繼續往下跑到各個命令 handler。
+    bot.use((ctx, next) => {
+        if (pollingErrorCount > 0) {
+            pollingErrorCount = 0;
         }
+        return next();
     });
 
     // 初始化下載隊列
@@ -94,19 +105,25 @@ async function initializeApp() {
     // 註冊所有命令處理器
     commandHandler.registerHandlers();
 
-    // 錯誤處理
-    bot.on('polling_error', (error) => {
-        pollingErrorCount++;
-        console.error(`[ERROR] Polling error (${pollingErrorCount}/${MAX_POLLING_ERRORS}):`, error.message || error);
+    // handler 內未捕捉的例外：記錄後繼續，不讓單一則訊息打斷 polling
+    bot.catch((error, ctx) => {
+        const updateId = ctx?.update?.update_id;
+        console.error(`[ERROR] Bot handler error${updateId ? ` (update ${updateId})` : ''}:`, error.message || error);
+    });
 
-        // 如果是網路相關錯誤，嘗試重啟 polling
-        if (error.code === 'EFATAL' || error.message?.includes('AggregateError')) {
-            console.log('[LOG] Network error detected, will retry polling...');
+    // 啟動 long polling。startPolling 的 promise 要等到 stop() 才 resolve，
+    // 所以這裡不能 await，否則 initializeApp 永遠不會回來。
+    bot.startPolling(undefined, {
+        // longPoll 只在可重試的錯誤（網路 / timeout / 5xx / 429）時呼叫 onError，
+        // 對應 v1 的 polling_error，且它自己會重試，這裡只負責計數與熔斷。
+        onError: (error) => {
+            pollingErrorCount++;
+            console.error(`[ERROR] Polling error (${pollingErrorCount}/${MAX_POLLING_ERRORS}):`, error.message || error);
 
             if (pollingErrorCount >= MAX_POLLING_ERRORS) {
                 console.error('[ERROR] Too many polling errors, stopping bot...');
                 try {
-                    bot.stopPolling();
+                    bot.stop();
                     if (downloadCache) {
                         downloadCache.close();
                     }
@@ -115,24 +132,10 @@ async function initializeApp() {
                 }
                 process.exit(1);
             }
-
-            // 短暫延遲後繼續（polling 會自動重試）
-            setTimeout(() => {
-                console.log('[LOG] Continuing polling...');
-                pollingErrorCount = Math.max(0, pollingErrorCount - 1); // 逐漸減少錯誤計數
-            }, 5000);
-        }
-    });
-
-    bot.on('error', (error) => {
-        console.error('[ERROR] Bot error:', error.message || error);
-    });
-
-    // 成功接收訊息時重置錯誤計數
-    bot.on('message', () => {
-        if (pollingErrorCount > 0) {
-            pollingErrorCount = 0;
-        }
+        },
+    }).catch((error) => {
+        console.error('[ERROR] Polling loop stopped unexpectedly:', error);
+        process.exit(1);
     });
 
     console.log('[LOG] 94Orig Bot is running!');
@@ -162,6 +165,12 @@ async function initializeApp() {
 async function gracefulShutdown(signal) {
     console.log(`\n[LOG] Received ${signal}, shutting down gracefully...`);
     try {
+        // 先停掉 polling 迴圈，再收資料庫
+        if (bot && bot.isRunning()) {
+            console.log('[LOG] Stopping polling...');
+            bot.stop();
+        }
+
         // 關閉資料庫連接
         if (downloadCache) {
             console.log('[LOG] Closing database connection...');

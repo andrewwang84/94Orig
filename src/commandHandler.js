@@ -5,9 +5,17 @@ const kill = require('kill-with-style');
 const { checkCanUse, getUserLogName, getProgressEmoji } = require('./utils');
 const UrlParser = require('./urlParser');
 const { ImageDownloader } = require('./downloader');
-const { DOWNLOAD_LIMITS, MEDIA_TYPES } = require('./constants');
+const { DOWNLOAD_LIMITS, MEDIA_TYPES, MEDIA_EXT_RE } = require('./constants');
 const OnceJapanDownloader = require('./onceJapanDownloader');
 const OjVideoDownloader = require('./ojVideoDownloader');
+
+/**
+ * 回覆原訊息用的 reply_parameters
+ * （v2 移除了 reply_to_message_id / allow_sending_without_reply 這組舊欄位）
+ */
+function replyTo(msgId) {
+    return { message_id: msgId, allow_sending_without_reply: true };
+}
 
 /**
  * Bot 命令處理器
@@ -27,9 +35,12 @@ class CommandHandler {
 
     /**
      * 註冊所有命令處理器
+     *
+     * v2 是 koa 風格的 middleware chain：handler 沒呼叫 next() 就會中斷後續，
+     * 因此註冊順序等同優先順序。命令一律先註冊，通用的 URL handler 放最後，
+     * 這樣 `/gal https://...` 只會進 /gal，不會再落到 URL handler。
      */
     registerHandlers() {
-        this._registerUrlHandler();
         this._registerGalleryDlHandlers();
         this._registerYtDlpHandlers();
         this._registerStopHandler();
@@ -37,25 +48,23 @@ class CommandHandler {
         this._registerGetMyIdHandler();
         this._registerOjHandler();
         this._registerOjvHandler();
+        this._registerUrlHandler();
     }
 
     /**
      * 註冊 URL 處理器（處理包含 https:// 的消息）
+     * 必須最後註冊：前面的命令 handler 都不呼叫 next()，所以命令訊息不會走到這裡
      * @private
      */
     _registerUrlHandler() {
-        this.bot.onText(/https:\/\//, async (msg, match) => {
+        this.bot.hears(/https:\/\//, async (ctx) => {
+            const msg = ctx.message;
             const chatId = msg.chat.id;
             const msgId = msg.message_id;
             const logName = getUserLogName(msg);
-            const chatMsg = match.input;
+            const chatMsg = ctx.match.input;
 
             try {
-                // 忽略 /gal、/ytd、/ojv 命令（由各自的 handler 處理）
-                if (/\/gal/.test(chatMsg) || /\/ytd/.test(chatMsg) || /^\/?ojv\b/i.test(chatMsg)) {
-                    return;
-                }
-
                 // 權限檢查
                 if (!await checkCanUse(this.bot, chatId, msgId, logName, chatMsg, this.config.adminId)) {
                     return;
@@ -75,7 +84,7 @@ class CommandHandler {
                 const uploadToTg = /(?:^|\s)-u(?:\s|$)/i.test(chatMsg); // myId 專用：上傳到 TG
 
                 // 從 imgTargets 中拆分出 Threads URL（Threads 一律走快取下載流程）
-                // 以及拆分出「直接下載類」（KRSITE/FACEBOOK/PINTEREST/REDDIT），不走列表機制
+                // 以及拆分出「直接下載類」（KRSITE/FACEBOOK/PINTEREST/REDDIT/APPFANS/WEVERSE），不走列表機制
                 const threadsTargets = {};
                 const directDownloadTargets = {};
                 const otherImgTargets = {};
@@ -85,7 +94,7 @@ class CommandHandler {
                         threadsTargets[url] = imgTargets[url];
                     } else if (type === MEDIA_TYPES.KRSITE || type === MEDIA_TYPES.FACEBOOK ||
                                type === MEDIA_TYPES.PINTEREST || type === MEDIA_TYPES.REDDIT ||
-                               type === MEDIA_TYPES.APPFANS) {
+                               type === MEDIA_TYPES.APPFANS || type === MEDIA_TYPES.WEVERSE) {
                         directDownloadTargets[url] = imgTargets[url];
                     } else {
                         otherImgTargets[url] = imgTargets[url];
@@ -99,9 +108,10 @@ class CommandHandler {
                         // myId 且沒有 -u：只下載不上傳，回報完成即可
                         if (chatId === this.config.myId && !uploadToTg) {
                             const totalFiles = threadsResults.reduce((sum, r) => sum + (r.localFiles ? r.localFiles.length : 0), 0);
-                            await this.bot.sendMessage(chatId, `✅ Threads 下載完成: ${totalFiles} 個檔案`, {
-                                reply_to_message_id: msgId,
-                                allow_sending_without_reply: true
+                            await this.bot.api.sendMessage({
+                                chat_id: chatId,
+                                text: `✅ Threads 下載完成: ${totalFiles} 個檔案`,
+                                reply_parameters: replyTo(msgId)
                             });
                         } else {
                             await this.messageHandler.sendMessages(msg, threadsResults);
@@ -109,7 +119,7 @@ class CommandHandler {
                     }
                 }
 
-                // 直接下載類（KRSITE/FACEBOOK/PINTEREST/REDDIT）：不走列表機制，即時下載
+                // 直接下載類（KRSITE/FACEBOOK/PINTEREST/REDDIT/APPFANS/WEVERSE）：不走列表機制，即時下載
                 if (Object.keys(directDownloadTargets).length > 0) {
                     const directResults = await this.imageDownloader.download(directDownloadTargets);
                     if (directResults.length > 0) {
@@ -117,9 +127,10 @@ class CommandHandler {
                             // myId：只下載不上傳，回報完成
                             const totalFiles = directResults.reduce((sum, r) => sum + (r.localFiles ? r.localFiles.length : 0), 0);
                             const typeLabels = [...new Set(directResults.map(r => r.typeTxt))].join('/');
-                            await this.bot.sendMessage(chatId, `✅ ${typeLabels} 下載完成: ${totalFiles} 個檔案`, {
-                                reply_to_message_id: msgId,
-                                allow_sending_without_reply: true
+                            await this.bot.api.sendMessage({
+                                chat_id: chatId,
+                                text: `✅ ${typeLabels} 下載完成: ${totalFiles} 個檔案`,
+                                reply_parameters: replyTo(msgId)
                             });
                         } else {
                             // 非 myId：下載並上傳到 TG
@@ -146,11 +157,11 @@ class CommandHandler {
                     let waitingMsg = null;
                     if (hasIgUrl) {
                         try {
-                            waitingMsg = await this.bot.sendMessage(
-                                chatId,
-                                '⏳ Instagram 下載中，請稍候...',
-                                { reply_to_message_id: msgId, allow_sending_without_reply: true }
-                            );
+                            waitingMsg = await this.bot.api.sendMessage({
+                                chat_id: chatId,
+                                text: '⏳ Instagram 下載中，請稍候...',
+                                reply_parameters: replyTo(msgId)
+                            });
                         } catch (e) { /* 忽略發送失敗 */ }
                     }
 
@@ -158,21 +169,20 @@ class CommandHandler {
 
                     // 刪除等待訊息
                     if (waitingMsg) {
-                        try { await this.bot.deleteMessage(chatId, waitingMsg.message_id); } catch (e) { /* 忽略 */ }
+                        try {
+                            await this.bot.api.deleteMessage({ chat_id: chatId, message_id: waitingMsg.message_id });
+                        } catch (e) { /* 忽略 */ }
                     }
 
                     if (results.length > 0) {
                         await this.messageHandler.sendMessages(msg, results, downloadRemote);
                     } else {
-                        await this.bot.sendMessage(
-                            chatId,
-                            '沒東西啦 !!',
-                            {
-                                is_disabled: true,
-                                reply_to_message_id: msgId,
-                                allow_sending_without_reply: true
-                            }
-                        );
+                        await this.bot.api.sendMessage({
+                            chat_id: chatId,
+                            text: '沒東西啦 !!',
+                            link_preview_options: { is_disabled: true },
+                            reply_parameters: replyTo(msgId)
+                        });
                     }
                 }
 
@@ -211,14 +221,11 @@ class CommandHandler {
                 // 只對白名單用戶發送錯誤訊息
                 if (this.config.adminId.includes(chatId)) {
                     try {
-                        await this.bot.sendMessage(
-                            chatId,
-                            `出錯了: ${error}`,
-                            {
-                                reply_to_message_id: msgId,
-                                allow_sending_without_reply: true
-                            }
-                        );
+                        await this.bot.api.sendMessage({
+                            chat_id: chatId,
+                            text: `出錯了: ${error}`,
+                            reply_parameters: replyTo(msgId)
+                        });
                     } catch (sendError) {
                         console.error(`[ERROR][Telegram] Failed to send error message: ${sendError.message}`);
                     }
@@ -234,15 +241,12 @@ class CommandHandler {
     async _handleVideoDownloads(chatId, msgId, vidTargets) {
         for (const target in vidTargets) {
             const data = vidTargets[target];
-            const replyMsg = await this.bot.sendMessage(
-                chatId,
-                `${target}\n\n即將開始下載...`,
-                {
-                    is_disabled: true,
-                    reply_to_message_id: msgId,
-                    allow_sending_without_reply: true
-                }
-            );
+            const replyMsg = await this.bot.api.sendMessage({
+                chat_id: chatId,
+                text: `${target}\n\n即將開始下載...`,
+                link_preview_options: { is_disabled: true },
+                reply_parameters: replyTo(msgId)
+            });
 
             data.chatId = chatId;
             data.replyMsgId = replyMsg.message_id;
@@ -266,15 +270,12 @@ class CommandHandler {
     async _handleStreamDownloads(chatId, msgId, streamTargets) {
         for (const target in streamTargets) {
             const data = streamTargets[target];
-            const replyMsg = await this.bot.sendMessage(
-                chatId,
-                `${target}\n\n即將開始下載...`,
-                {
-                    is_disabled: true,
-                    reply_to_message_id: msgId,
-                    allow_sending_without_reply: true
-                }
-            );
+            const replyMsg = await this.bot.api.sendMessage({
+                chat_id: chatId,
+                text: `${target}\n\n即將開始下載...`,
+                link_preview_options: { is_disabled: true },
+                reply_parameters: replyTo(msgId)
+            });
 
             data.chatId = chatId;
             data.replyMsgId = replyMsg.message_id;
@@ -390,15 +391,12 @@ class CommandHandler {
         }
 
         if (confirmMsg.trim() !== '') {
-            await this.bot.sendMessage(
-                chatId,
-                confirmMsg,
-                {
-                    parse_mode: 'Markdown',
-                    reply_to_message_id: msgId,
-                    allow_sending_without_reply: true
-                }
-            );
+            await this.bot.api.sendMessage({
+                chat_id: chatId,
+                text: confirmMsg,
+                parse_mode: 'Markdown',
+                reply_parameters: replyTo(msgId)
+            });
         }
     }
 
@@ -408,10 +406,10 @@ class CommandHandler {
      */
     _registerGalleryDlHandlers() {
         // /gal 命令：添加 URL 到列表
-        this.bot.onText(/^\/gal\s/, async (msg, match) => {
+        this.bot.command('gal', async (ctx) => {
             await this._handleListCommand(
-                msg,
-                match,
+                ctx.message,
+                ctx.message.text,
                 'gal',
                 this.filePaths.absoluteGalleryDlListPath,
                 'gallery-dl'
@@ -419,9 +417,9 @@ class CommandHandler {
         });
 
         // /gal_get 命令：獲取列表內容
-        this.bot.onText(/^\/gal_get$/, async (msg) => {
+        this.bot.command('gal_get', async (ctx) => {
             await this._handleGetListCommand(
-                msg,
+                ctx.message,
                 'gal_get',
                 this.filePaths.absoluteGalleryDlListPath,
                 'gallery-dl'
@@ -429,8 +427,8 @@ class CommandHandler {
         });
 
         // /gal_run 命令：執行下載
-        this.bot.onText(/^\/gal_run$/, async (msg) => {
-            await this._handleGalleryDlRun(msg);
+        this.bot.command('gal_run', async (ctx) => {
+            await this._handleGalleryDlRun(ctx.message);
         });
     }
 
@@ -440,11 +438,12 @@ class CommandHandler {
      */
     _registerYtDlpHandlers() {
         // /ytd 命令：添加 URL 到列表
-        this.bot.onText(/^\/ytd\s/, async (msg, match) => {
+        this.bot.command('ytd', async (ctx) => {
+            const msg = ctx.message;
             const chatId = msg.chat.id;
             const msgId = msg.message_id;
             const logName = getUserLogName(msg);
-            const chatMsg = match.input;
+            const chatMsg = msg.text;
 
             try {
                 if (!await checkCanUse(this.bot, chatId, msgId, logName, chatMsg, this.config.adminId)) {
@@ -473,26 +472,20 @@ class CommandHandler {
                     urlCount++;
                 }
 
-                await this.bot.sendMessage(
-                    chatId,
-                    `✅ 網址已加入 yt-dlp 下載列表: ${urlCount} 個網址\n💡 使用 /ytd_run 執行下載`,
-                    {
-                        reply_to_message_id: msgId,
-                        allow_sending_without_reply: true
-                    }
-                );
+                await this.bot.api.sendMessage({
+                    chat_id: chatId,
+                    text: `✅ 網址已加入 yt-dlp 下載列表: ${urlCount} 個網址\n💡 使用 /ytd_run 執行下載`,
+                    reply_parameters: replyTo(msgId)
+                });
             } catch (error) {
                 console.error(error);
                 if (this.config.adminId.includes(chatId)) {
                     try {
-                        await this.bot.sendMessage(
-                            chatId,
-                            error.toString(),
-                            {
-                                reply_to_message_id: msgId,
-                                allow_sending_without_reply: true
-                            }
-                        );
+                        await this.bot.api.sendMessage({
+                            chat_id: chatId,
+                            text: error.toString(),
+                            reply_parameters: replyTo(msgId)
+                        });
                     } catch (sendError) {
                         console.error(`[ERROR] Failed to send error message: ${sendError.message}`);
                     }
@@ -501,9 +494,9 @@ class CommandHandler {
         });
 
         // /ytd_get 命令：獲取列表內容
-        this.bot.onText(/^\/ytd_get$/, async (msg) => {
+        this.bot.command('ytd_get', async (ctx) => {
             await this._handleGetListCommand(
-                msg,
+                ctx.message,
                 'ytd_get',
                 this.filePaths.absoluteYtDlListPath,
                 'yt-dlp'
@@ -511,14 +504,14 @@ class CommandHandler {
         });
 
         // /ytd_run 命令：執行下載
-        this.bot.onText(/^\/ytd_run$/, async (msg) => {
-            await this._handleYtDlpRun(msg);
+        this.bot.command('ytd_run', async (ctx) => {
+            await this._handleYtDlpRun(ctx.message);
         });
 
         // /ytd_purge 命令：清空列表
-        this.bot.onText(/^\/ytd_purge$/, async (msg) => {
+        this.bot.command('ytd_purge', async (ctx) => {
             await this._handlePurgeListCommand(
-                msg,
+                ctx.message,
                 'ytd_purge',
                 this.filePaths.absoluteYtDlListPath,
                 'yt-dlp'
@@ -528,13 +521,13 @@ class CommandHandler {
 
     /**
      * 通用的列表命令處理器
+     * @param {string} chatMsg - 完整訊息文字（v2 的 ctx.match 只有引數，沒有 .input）
      * @private
      */
-    async _handleListCommand(msg, match, commandName, listPath, toolName) {
+    async _handleListCommand(msg, chatMsg, commandName, listPath, toolName) {
         const chatId = msg.chat.id;
         const msgId = msg.message_id;
         const logName = getUserLogName(msg);
-        const chatMsg = match.input;
 
         try {
             if (!await checkCanUse(this.bot, chatId, msgId, logName, chatMsg, this.config.adminId)) {
@@ -558,26 +551,20 @@ class CommandHandler {
                 urlCount++;
             }
 
-            await this.bot.sendMessage(
-                chatId,
-                `✅ 網址已加入 ${toolName} 下載列表: ${urlCount} 個網址\n💡 使用 /gal_run 或 /ytd_run 執行下載`,
-                {
-                    reply_to_message_id: msgId,
-                    allow_sending_without_reply: true
-                }
-            );
+            await this.bot.api.sendMessage({
+                chat_id: chatId,
+                text: `✅ 網址已加入 ${toolName} 下載列表: ${urlCount} 個網址\n💡 使用 /gal_run 或 /ytd_run 執行下載`,
+                reply_parameters: replyTo(msgId)
+            });
         } catch (error) {
             console.error(error);
             if (this.config.adminId.includes(chatId)) {
                 try {
-                    await this.bot.sendMessage(
-                        chatId,
-                        error.toString(),
-                        {
-                            reply_to_message_id: msgId,
-                            allow_sending_without_reply: true
-                        }
-                    );
+                    await this.bot.api.sendMessage({
+                        chat_id: chatId,
+                        text: error.toString(),
+                        reply_parameters: replyTo(msgId)
+                    });
                 } catch (sendError) {
                     console.error(`[ERROR] Failed to send error message: ${sendError.message}`);
                 }
@@ -613,37 +600,28 @@ class CommandHandler {
                 .join('\n');
 
             if (filteredLines.length === 0) {
-                await this.bot.sendMessage(
-                    chatId,
-                    '目前沒有任何網址！',
-                    {
-                        reply_to_message_id: msgId,
-                        allow_sending_without_reply: true
-                    }
-                );
+                await this.bot.api.sendMessage({
+                    chat_id: chatId,
+                    text: '目前沒有任何網址！',
+                    reply_parameters: replyTo(msgId)
+                });
                 return;
             }
 
-            await this.bot.sendMessage(
-                chatId,
-                filteredLines,
-                {
-                    reply_to_message_id: msgId,
-                    allow_sending_without_reply: true
-                }
-            );
+            await this.bot.api.sendMessage({
+                chat_id: chatId,
+                text: filteredLines,
+                reply_parameters: replyTo(msgId)
+            });
         } catch (error) {
             console.error(error);
             if (this.config.adminId.includes(chatId)) {
                 try {
-                    await this.bot.sendMessage(
-                        chatId,
-                        error.toString(),
-                        {
-                            reply_to_message_id: msgId,
-                            allow_sending_without_reply: true
-                        }
-                    );
+                    await this.bot.api.sendMessage({
+                        chat_id: chatId,
+                        text: error.toString(),
+                        reply_parameters: replyTo(msgId)
+                    });
                 } catch (sendError) {
                     console.error(`[ERROR] Failed to send error message: ${sendError.message}`);
                 }
@@ -669,26 +647,20 @@ class CommandHandler {
 
             fs.writeFileSync(listPath, '');
 
-            await this.bot.sendMessage(
-                chatId,
-                `✅ ${toolName} 下載列表已清空！`,
-                {
-                    reply_to_message_id: msgId,
-                    allow_sending_without_reply: true
-                }
-            );
+            await this.bot.api.sendMessage({
+                chat_id: chatId,
+                text: `✅ ${toolName} 下載列表已清空！`,
+                reply_parameters: replyTo(msgId)
+            });
         } catch (error) {
             console.error(error);
             if (this.config.adminId.includes(chatId)) {
                 try {
-                    await this.bot.sendMessage(
-                        chatId,
-                        error.toString(),
-                        {
-                            reply_to_message_id: msgId,
-                            allow_sending_without_reply: true
-                        }
-                    );
+                    await this.bot.api.sendMessage({
+                        chat_id: chatId,
+                        text: error.toString(),
+                        reply_parameters: replyTo(msgId)
+                    });
                 } catch (sendError) {
                     console.error(`[ERROR] Failed to send error message: ${sendError.message}`);
                 }
@@ -759,7 +731,10 @@ class CommandHandler {
             const args = ['--cookies-from-browser', 'firefox', '-I', this.filePaths.absoluteGalleryDlListPath];
 
             const cacheInfo = cachedCount > 0 ? `\n⏭️  跳過 ${cachedCount} 個已下載的 URL` : '';
-            const startMsg = await this.bot.sendMessage(chatId, '⏳ gallery-dl 開始批次下載...' + cacheInfo);
+            const startMsg = await this.bot.api.sendMessage({
+                chat_id: chatId,
+                text: '⏳ gallery-dl 開始批次下載...' + cacheInfo
+            });
             const startMsgId = startMsg.message_id;
 
             // 用於記錄每個 URL 下載的檔案路徑
@@ -807,7 +782,7 @@ class CommandHandler {
 
                     // 檢查是否為檔案路徑(包含檔案副檔名)
                     // 放寬條件：只要是支援的副檔名結尾，且不包含 pipe
-                    if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(filePath) && !filePath.includes('|')) {
+                    if (MEDIA_EXT_RE.test(filePath) && !filePath.includes('|')) {
                         // 同步收集檔案,不更新 Telegram 訊息
                         downloadedFiles.push(filePath);
                         // 歸入當前 URL
@@ -840,10 +815,11 @@ class CommandHandler {
                     console.error(sline);
                     if (/^ERROR:/.test(sline)) {
                         try {
-                            await this.bot.editMessageText(
-                                `❌ gallery-dl 下載發生錯誤：\n${sline}`,
-                                { chat_id: chatId, message_id: startMsgId }
-                            );
+                            await this.bot.api.editMessageText({
+                                text: `❌ gallery-dl 下載發生錯誤：\n${sline}`,
+                                chat_id: chatId,
+                                message_id: startMsgId
+                            });
                         } catch (e) {
                             console.error('[ERROR] 無法更新錯誤訊息:', e.message);
                         }
@@ -859,7 +835,7 @@ class CommandHandler {
                     const cleanLine = line.replace(/\x1B\[\d+m/g, '').trim();
                     let filePath = cleanLine.replace(/^#\s*/, '');
 
-                    if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(filePath) && !filePath.includes('|')) {
+                    if (MEDIA_EXT_RE.test(filePath) && !filePath.includes('|')) {
                         downloadedFiles.push(filePath);
                         if (currentUrl && urlFileMap.has(currentUrl)) {
                             urlFileMap.get(currentUrl).push(filePath);
@@ -916,30 +892,34 @@ class CommandHandler {
                         }
                     }
 
-                    await this.bot.editMessageText(finalMsg, {
+                    await this.bot.api.editMessageText({
+                        text: finalMsg,
                         chat_id: chatId,
                         message_id: startMsgId
                     });
                 } else if (code === 0) {
-                    await this.bot.editMessageText(
-                        '✅ 列表下載完成！(沒有新下載)',
-                        { chat_id: chatId, message_id: startMsgId }
-                    );
+                    await this.bot.api.editMessageText({
+                        text: '✅ 列表下載完成！(沒有新下載)',
+                        chat_id: chatId,
+                        message_id: startMsgId
+                    });
                 } else {
                     // 非 0 的 exit code
                     console.error(`[ERROR] gallery-dl exit code: ${code}`);
-                    await this.bot.editMessageText(
-                        `❌ gallery-dl 執行失敗 (exit code: ${code})`,
-                        { chat_id: chatId, message_id: startMsgId }
-                    );
+                    await this.bot.api.editMessageText({
+                        text: `❌ gallery-dl 執行失敗 (exit code: ${code})`,
+                        chat_id: chatId,
+                        message_id: startMsgId
+                    });
                 }
             });            process.on('error', async (err) => {
                 console.error(`[ERROR] gallery-dl process error: ${err.message}`);
                 try {
-                    await this.bot.editMessageText(
-                        `❌ gallery-dl 執行錯誤：${err.message}`,
-                        { chat_id: chatId, message_id: startMsgId }
-                    );
+                    await this.bot.api.editMessageText({
+                        text: `❌ gallery-dl 執行錯誤：${err.message}`,
+                        chat_id: chatId,
+                        message_id: startMsgId
+                    });
                 } catch (e) {
                     console.error('[ERROR] 無法更新錯誤訊息:', e.message);
                 }
@@ -949,14 +929,11 @@ class CommandHandler {
             console.error(error);
             if (this.config.adminId.includes(chatId)) {
                 try {
-                    await this.bot.sendMessage(
-                        chatId,
-                        error.toString(),
-                        {
-                            reply_to_message_id: msgId,
-                            allow_sending_without_reply: true
-                        }
-                    );
+                    await this.bot.api.sendMessage({
+                        chat_id: chatId,
+                        text: error.toString(),
+                        reply_parameters: replyTo(msgId)
+                    });
                 } catch (sendError) {
                     console.error(`[ERROR] Failed to send error message: ${sendError.message}`);
                 }
@@ -983,7 +960,7 @@ class CommandHandler {
             const cmd = 'yt-dlp';
             const args = ['-a', this.filePaths.absoluteYtDlListPath, '--mark-watched'];
 
-            const startMsg = await this.bot.sendMessage(chatId, 'yt-dlp 開始下載...');
+            const startMsg = await this.bot.api.sendMessage({ chat_id: chatId, text: 'yt-dlp 開始下載...' });
             const startMsgId = startMsg.message_id;
 
             let progressTxt = '下載進度:';
@@ -1000,7 +977,7 @@ class CommandHandler {
                     const videoId = dataStr.match(/\[info\] (\S+): Downloading/)[1];
                     currentVid = videoId;
                     progressTxt += `\n${videoId}: ${await getProgressEmoji(0)}`;
-                    await this.bot.editMessageText(progressTxt, { chat_id: chatId, message_id: startMsgId });
+                    await this.bot.api.editMessageText({ text: progressTxt, chat_id: chatId, message_id: startMsgId });
                 }
                 // 下載進度
                 else if (/\[download\]\s+\d+\.\d+% of/.test(dataStr) && currentProgress < 100) {
@@ -1017,7 +994,7 @@ class CommandHandler {
                                 progressTxt += ' 下載即將完成，影片合併中...';
                             }
 
-                            await this.bot.editMessageText(progressTxt, { chat_id: chatId, message_id: startMsgId });
+                            await this.bot.api.editMessageText({ text: progressTxt, chat_id: chatId, message_id: startMsgId });
                         }
                     }
                 }
@@ -1029,7 +1006,7 @@ class CommandHandler {
                     currentVid = '';
                     currentProgress = 0;
 
-                    await this.bot.editMessageText(progressTxt, { chat_id: chatId, message_id: startMsgId });
+                    await this.bot.api.editMessageText({ text: progressTxt, chat_id: chatId, message_id: startMsgId });
                 }
                 // 檔案已存在
                 else if (new RegExp(`[download] .*_(${currentVid})_.* has already been downloaded`).test(dataStr)) {
@@ -1037,7 +1014,7 @@ class CommandHandler {
                     progressTxt = progressTxt.replace(tmpRegex, `\n❌ ${currentVid}: 檔案已存在`);
                     currentVid = '';
                     currentProgress = 0;
-                    await this.bot.editMessageText(progressTxt, { chat_id: chatId, message_id: startMsgId });
+                    await this.bot.api.editMessageText({ text: progressTxt, chat_id: chatId, message_id: startMsgId });
                 }
             });
 
@@ -1045,19 +1022,23 @@ class CommandHandler {
                 const dataStr = data.toString();
                 if (/^ERROR:/.test(dataStr)) {
                     console.log(dataStr);
-                    await this.bot.editMessageText(
-                        progressTxt + `\nyt-dlp 下載發生錯誤：${dataStr}`,
-                        { is_disabled: true, chat_id: chatId, message_id: startMsgId }
-                    );
+                    await this.bot.api.editMessageText({
+                        text: progressTxt + `\nyt-dlp 下載發生錯誤：${dataStr}`,
+                        link_preview_options: { is_disabled: true },
+                        chat_id: chatId,
+                        message_id: startMsgId
+                    });
                 }
             });
 
             process.on('close', async (code) => {
                 if (code === 0) {
-                    await this.bot.editMessageText(
-                        progressTxt + '\n\n列表下載完成！',
-                        { is_disabled: true, chat_id: chatId, message_id: startMsgId }
-                    );
+                    await this.bot.api.editMessageText({
+                        text: progressTxt + '\n\n列表下載完成！',
+                        link_preview_options: { is_disabled: true },
+                        chat_id: chatId,
+                        message_id: startMsgId
+                    });
                     progressTxt = '下載進度:';
                     currentVid = '';
                     currentProgress = 0;
@@ -1066,23 +1047,22 @@ class CommandHandler {
 
             process.on('error', async (err) => {
                 console.error(`${err.message}`);
-                await this.bot.editMessageText(
-                    progressTxt + `\nyt-dlp 下載發生錯誤：${err}`,
-                    { is_disabled: true, chat_id: chatId, message_id: startMsgId }
-                );
+                await this.bot.api.editMessageText({
+                    text: progressTxt + `\nyt-dlp 下載發生錯誤：${err}`,
+                    link_preview_options: { is_disabled: true },
+                    chat_id: chatId,
+                    message_id: startMsgId
+                });
             });
         } catch (error) {
             console.error(error);
             if (this.config.adminId.includes(chatId)) {
                 try {
-                    await this.bot.sendMessage(
-                        chatId,
-                        error.toString(),
-                        {
-                            reply_to_message_id: msgId,
-                            allow_sending_without_reply: true
-                        }
-                    );
+                    await this.bot.api.sendMessage({
+                        chat_id: chatId,
+                        text: error.toString(),
+                        reply_parameters: replyTo(msgId)
+                    });
                 } catch (sendError) {
                     console.error(`[ERROR] Failed to send error message: ${sendError.message}`);
                 }
@@ -1095,7 +1075,8 @@ class CommandHandler {
      * @private
      */
     _registerStopHandler() {
-        this.bot.onText(/\/stop/, async (msg) => {
+        this.bot.command('stop', async (ctx) => {
+            const msg = ctx.message;
             const chatId = msg.chat.id;
             const logName = getUserLogName(msg);
 
@@ -1104,15 +1085,12 @@ class CommandHandler {
             }
 
             if (!msg.reply_to_message) {
-                await this.bot.sendMessage(
-                    chatId,
-                    '找不到對應的下載！',
-                    {
-                        is_disabled: true,
-                        reply_to_message_id: msg.message_id,
-                        allow_sending_without_reply: true
-                    }
-                );
+                await this.bot.api.sendMessage({
+                    chat_id: chatId,
+                    text: '找不到對應的下載！',
+                    link_preview_options: { is_disabled: true },
+                    reply_parameters: replyTo(msg.message_id)
+                });
                 return;
             }
 
@@ -1128,25 +1106,19 @@ class CommandHandler {
                         timeout: 300000
                     }, async (err) => {
                         if (err) {
-                            await this.bot.sendMessage(
-                                chatId,
-                                `停止 ${data.target} 下載失敗！`,
-                                {
-                                    is_disabled: true,
-                                    reply_to_message_id: data.replyMsgId,
-                                    allow_sending_without_reply: true
-                                }
-                            );
+                            await this.bot.api.sendMessage({
+                                chat_id: chatId,
+                                text: `停止 ${data.target} 下載失敗！`,
+                                link_preview_options: { is_disabled: true },
+                                reply_parameters: replyTo(data.replyMsgId)
+                            });
                         } else {
-                            await this.bot.sendMessage(
-                                chatId,
-                                `已停止 ${data.target} 下載作業！`,
-                                {
-                                    is_disabled: true,
-                                    reply_to_message_id: data.replyMsgId,
-                                    allow_sending_without_reply: true
-                                }
-                            );
+                            await this.bot.api.sendMessage({
+                                chat_id: chatId,
+                                text: `已停止 ${data.target} 下載作業！`,
+                                link_preview_options: { is_disabled: true },
+                                reply_parameters: replyTo(data.replyMsgId)
+                            });
                         }
                     });
                     return;
@@ -1160,8 +1132,8 @@ class CommandHandler {
      * @private
      */
     _registerHelpHandler() {
-        this.bot.onText(/\/help/, (msg) => {
-            const chatId = msg.chat.id;
+        this.bot.command('help', (ctx) => {
+            const chatId = ctx.message.chat.id;
             const isMyId = chatId === this.config.myId;
 
             let helpText = `<strong>🔗 支援的連結格式：</strong>
@@ -1178,6 +1150,7 @@ class CommandHandler {
 - Weibo：https://weibo.com/[UID]/[MID] 或 m.weibo.cn/detail/[ID]
 - TikTok（圖片貼文）：https://www.tiktok.com/...
 - app.fans：https://app.fans/community/[社群]/media/[ID]/
+- Weverse：https://weverse.io/[社群]/artist/[貼文ID]
 - 韓國媒體網站（KRSite）：Elle、Vogue、Dispatch、Melon 等
 
 🎬 <strong>影片下載：</strong>
@@ -1229,7 +1202,7 @@ class CommandHandler {
 - /get_my_id：查看目前聊天室的 ID
 - /help：顯示此說明`;
 
-            this.bot.sendMessage(chatId, helpText, { parse_mode: 'HTML' });
+            this.bot.api.sendMessage({ chat_id: chatId, text: helpText, parse_mode: 'HTML' });
         });
     }
 
@@ -1238,25 +1211,26 @@ class CommandHandler {
      * @private
      */
     _registerGetMyIdHandler() {
-        this.bot.onText(/\/get_my_id/, async (msg) => {
+        this.bot.command('get_my_id', async (ctx) => {
+            const msg = ctx.message;
             const chatId = msg.chat.id;
             console.log('msg', msg);
 
-            const replyMsg = await this.bot.sendMessage(
-                chatId,
-                chatId.toString(),
-                {
-                    reply_to_message_id: msg.message_id,
-                    allow_sending_without_reply: true
-                }
-            );
+            const replyMsg = await this.bot.api.sendMessage({
+                chat_id: chatId,
+                text: chatId.toString(),
+                reply_parameters: replyTo(msg.message_id)
+            });
 
             console.log('replyMsg', replyMsg);
         });
     }
 
     _registerOjvHandler() {
-        this.bot.onText(/^(?:ojv|\/ojv)(?:\s+(\S+))?$/i, async (msg, match) => {
+        // 用 hears 而不是 command：要保留不加斜線的 `ojv` 寫法
+        this.bot.hears(/^(?:ojv|\/ojv)(?:\s+(\S+))?$/i, async (ctx) => {
+            const msg = ctx.message;
+            const match = ctx.match;
             const chatId = msg.chat.id;
             const msgId = msg.message_id;
 
@@ -1269,21 +1243,22 @@ class CommandHandler {
 
             let statusMsg;
             try {
-                statusMsg = await this.bot.sendMessage(
-                    chatId,
-                    singleUrl ? '⏳ OJ 單一影片下載開始...' : '⏳ OJ 影片下載開始...',
-                    { reply_to_message_id: msgId, allow_sending_without_reply: true }
-                );
+                statusMsg = await this.bot.api.sendMessage({
+                    chat_id: chatId,
+                    text: singleUrl ? '⏳ OJ 單一影片下載開始...' : '⏳ OJ 影片下載開始...',
+                    reply_parameters: replyTo(msgId)
+                });
 
                 const downloadDir = this.config.ojDownloadPath || 'E:/User/Downloads';
                 const downloader = new OjVideoDownloader(this.downloadCache, downloadDir);
 
                 const progressCallback = async (title) => {
                     try {
-                        await this.bot.editMessageText(
-                            `⏳ OJ 影片下載中...\n正在處理: ${title}`,
-                            { chat_id: chatId, message_id: statusMsg.message_id }
-                        );
+                        await this.bot.api.editMessageText({
+                            text: `⏳ OJ 影片下載中...\n正在處理: ${title}`,
+                            chat_id: chatId,
+                            message_id: statusMsg.message_id
+                        });
                     } catch (e) { /* ignore edit errors */ }
                 };
 
@@ -1292,31 +1267,34 @@ class CommandHandler {
                     : await downloader.run(progressCallback);
                 const resultMsg = downloader.formatResults(allResults);
 
-                await this.bot.editMessageText(
-                    resultMsg,
-                    { chat_id: chatId, message_id: statusMsg.message_id }
-                );
+                await this.bot.api.editMessageText({
+                    text: resultMsg,
+                    chat_id: chatId,
+                    message_id: statusMsg.message_id
+                });
             } catch (error) {
                 console.error(`[ERROR][OJV] /ojv 執行失敗:`, error);
                 const errText = `❌ OJ 影片下載失敗: ${error.message}`;
                 if (statusMsg) {
                     try {
-                        await this.bot.editMessageText(errText, {
+                        await this.bot.api.editMessageText({
+                            text: errText,
                             chat_id: chatId,
                             message_id: statusMsg.message_id,
                         });
                     } catch (e) {
-                        await this.bot.sendMessage(chatId, errText);
+                        await this.bot.api.sendMessage({ chat_id: chatId, text: errText });
                     }
                 } else {
-                    await this.bot.sendMessage(chatId, errText);
+                    await this.bot.api.sendMessage({ chat_id: chatId, text: errText });
                 }
             }
         });
     }
 
     _registerOjHandler() {
-        this.bot.onText(/^\/oj$/, async (msg) => {
+        this.bot.command('oj', async (ctx) => {
+            const msg = ctx.message;
             const chatId = msg.chat.id;
             const msgId = msg.message_id;
 
@@ -1329,11 +1307,11 @@ class CommandHandler {
 
             let statusMsg;
             try {
-                statusMsg = await this.bot.sendMessage(
-                    chatId,
-                    '⏳ ONCE JAPAN 下載開始...',
-                    { reply_to_message_id: msgId, allow_sending_without_reply: true }
-                );
+                statusMsg = await this.bot.api.sendMessage({
+                    chat_id: chatId,
+                    text: '⏳ ONCE JAPAN 下載開始...',
+                    reply_parameters: replyTo(msgId)
+                });
 
                 const ojDownloader = new OnceJapanDownloader(
                     this.downloadCache,
@@ -1347,34 +1325,37 @@ class CommandHandler {
                     }
                     // 每個新項目更新進度訊息
                     try {
-                        await this.bot.editMessageText(
-                            `⏳ ONCE JAPAN 下載中...\n正在處理: ${title} (${count} 張)`,
-                            { chat_id: chatId, message_id: statusMsg.message_id }
-                        );
+                        await this.bot.api.editMessageText({
+                            text: `⏳ ONCE JAPAN 下載中...\n正在處理: ${title} (${count} 張)`,
+                            chat_id: chatId,
+                            message_id: statusMsg.message_id
+                        });
                     } catch (e) { /* ignore edit errors */ }
                 };
 
                 const allResults = await ojDownloader.crawlAll(progressCallback);
                 const resultMsg = ojDownloader.formatResults(allResults);
 
-                await this.bot.editMessageText(
-                    resultMsg,
-                    { chat_id: chatId, message_id: statusMsg.message_id }
-                );
+                await this.bot.api.editMessageText({
+                    text: resultMsg,
+                    chat_id: chatId,
+                    message_id: statusMsg.message_id
+                });
             } catch (error) {
                 console.error(`[ERROR][OJ] /oj 執行失敗:`, error);
                 const errText = `❌ ONCE JAPAN 下載失敗: ${error.message}`;
                 if (statusMsg) {
                     try {
-                        await this.bot.editMessageText(errText, {
+                        await this.bot.api.editMessageText({
+                            text: errText,
                             chat_id: chatId,
                             message_id: statusMsg.message_id,
                         });
                     } catch (e) {
-                        await this.bot.sendMessage(chatId, errText);
+                        await this.bot.api.sendMessage({ chat_id: chatId, text: errText });
                     }
                 } else {
-                    await this.bot.sendMessage(chatId, errText);
+                    await this.bot.api.sendMessage({ chat_id: chatId, text: errText });
                 }
             }
         });

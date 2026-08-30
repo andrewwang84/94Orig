@@ -19,7 +19,8 @@ const MEDIA_TYPES = {
     FACEBOOK: 15,  // Facebook，使用 gallery-dl
     PINTEREST: 16,  // Pinterest，使用 gallery-dl
     REDDIT: 17,  // Reddit，使用 gallery-dl
-    APPFANS: 18  // app.fans，使用自訂下載器
+    APPFANS: 18,  // app.fans，使用自訂下載器
+    WEVERSE: 19  // Weverse，使用自訂下載器
 };
 
 /**
@@ -83,7 +84,8 @@ const MEDIA_TYPE_LABELS = {
     [MEDIA_TYPES.FACEBOOK]: 'Facebook',
     [MEDIA_TYPES.PINTEREST]: 'Pinterest',
     [MEDIA_TYPES.REDDIT]: 'Reddit',
-    [MEDIA_TYPES.APPFANS]: 'AppFans'
+    [MEDIA_TYPES.APPFANS]: 'AppFans',
+    [MEDIA_TYPES.WEVERSE]: 'Weverse'
 };
 
 /**
@@ -118,7 +120,8 @@ const URL_PATTERNS = {
     [MEDIA_TYPES.FACEBOOK]: /https:\/\/(?:www\.)?facebook\.com\/\S+/g,
     [MEDIA_TYPES.PINTEREST]: /https:\/\/(?:www\.)?pinterest\.(?:com|co\.uk|ca|fr|de|jp|co\.kr)\/\S+/g,
     [MEDIA_TYPES.REDDIT]: /https:\/\/(?:www\.)?reddit\.com\/\S+/g,
-    [MEDIA_TYPES.APPFANS]: /https:\/\/(?:www\.)?app\.fans\/community\/[\w-]+\/media\/[\w-]+\/?/g
+    [MEDIA_TYPES.APPFANS]: /https:\/\/(?:www\.)?app\.fans\/community\/[\w-]+\/media\/[\w-]+\/?/g,
+    [MEDIA_TYPES.WEVERSE]: /https:\/\/(?:www\.)?weverse\.io\/[\w.-]+\/(?:artist|fanpost)\/[\d-]+\/?/g
 };
 
 /**
@@ -137,11 +140,66 @@ const DOWNLOAD_LIMITS = {
     STREAM: 1
 };
 
+/**
+ * 支援的媒體副檔名（不含點號）
+ * 新增支援格式時只需修改這裡，所有下載器與上傳流程共用
+ * 注意：mkv 是 gallery-dl / yt-dlp 合併 DASH 串流時的預設容器
+ */
+const MEDIA_EXTENSIONS = [
+    'jpg', 'jpeg', 'png', 'gif', 'webp',
+    'mp4', 'webm', 'mkv', 'mov', 'm4v'
+];
+
+/**
+ * 比對檔案路徑或檔名是否為支援的媒體檔
+ * 未加 g flag，可安全重複呼叫 test()
+ */
+const MEDIA_EXT_RE = new RegExp(`\\.(${MEDIA_EXTENSIONS.join('|')})$`, 'i');
+
+/**
+ * 帶點號的副檔名清單，供 path.extname() 結果比對
+ */
+const MEDIA_EXT_DOTTED = MEDIA_EXTENSIONS.map(e => `.${e}`);
+
+/**
+ * 副檔名對應的 content type
+ */
+const MEDIA_CONTENT_TYPES = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm',
+    '.mkv': 'video/x-matroska',
+    '.mov': 'video/quicktime',
+    '.m4v': 'video/x-m4v'
+};
+
+/**
+ * 取得檔案路徑或 URL 對應的 content type
+ * @param {string} pathOrUrl - 本地路徑或遠端 URL（會自動去除 query string）
+ * @returns {string}
+ */
+function getContentType(pathOrUrl) {
+    if (!pathOrUrl) return 'application/octet-stream';
+    const clean = pathOrUrl.split('?')[0];
+    const dotIndex = clean.lastIndexOf('.');
+    const ext = dotIndex !== -1 ? clean.slice(dotIndex).toLowerCase() : '';
+    return MEDIA_CONTENT_TYPES[ext] || 'application/octet-stream';
+}
+
 module.exports = {
     MEDIA_TYPES,
     MEDIA_TYPE_LABELS,
     URL_PATTERNS,
     KRSITE_DOMAINS,
     PROGRESS_EMOJI,
-    DOWNLOAD_LIMITS
+    DOWNLOAD_LIMITS,
+    MEDIA_EXTENSIONS,
+    MEDIA_EXT_RE,
+    MEDIA_EXT_DOTTED,
+    MEDIA_CONTENT_TYPES,
+    getContentType
 };

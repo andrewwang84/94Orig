@@ -2,10 +2,11 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { MEDIA_TYPES } = require('./constants');
+const { MEDIA_TYPES, MEDIA_EXT_RE } = require('./constants');
 const { sleep, getProgressEmoji, getRandomDelay } = require('./utils');
 const ThreadsDownloader = require('./threadsDownloader');
 const AppFansDownloader = require('./appfansDownloader');
+const WeverseDownloader = require('./weverseDownloader');
 
 /**
  * 下載隊列管理
@@ -35,6 +36,7 @@ class ImageDownloader {
         this.downloadCache = downloadCache;
         this.threadsDownloader = new ThreadsDownloader();
         this.appfansDownloader = new AppFansDownloader();
+        this.weverseDownloader = new WeverseDownloader();
         // IG 專用 mutex：確保同一時間只有一個 gallery-dl 進程處理 IG URL
         this._igLock = Promise.resolve();
         this._lastIgDownloadEnd = 0;
@@ -147,6 +149,27 @@ class ImageDownloader {
                     continue;
                 }
 
+                // Weverse 使用自訂下載器
+                if (urlData.type === MEDIA_TYPES.WEVERSE) {
+                    console.info(`[LOG][${urlData.typeTxt}][${url}] 使用 WeverseDownloader`);
+                    const weverseResult = await this.weverseDownloader.downloadPost(url);
+
+                    if (weverseResult.success && weverseResult.filePaths.length > 0) {
+                        urlData.isDone = true;
+                        urlData.data = weverseResult.filePaths;
+                        urlData.localFiles = weverseResult.filePaths;
+                        urlData.originalUrls = weverseResult.filePaths.map(() => url);
+                    } else {
+                        urlData.isDone = false;
+                        urlData.data = [];
+                        console.error(`[ERROR][Weverse] ${url}: ${weverseResult.error || '未知錯誤'}`);
+                    }
+
+                    results.push(urlData);
+                    await sleep(getRandomDelay());
+                    continue;
+                }
+
                 // KRSite 使用 krsite-dl
                 if (urlData.type === MEDIA_TYPES.KRSITE) {
                     console.info(`[LOG][${urlData.typeTxt}][${url}] 使用 krsite-dl`);
@@ -245,7 +268,7 @@ class ImageDownloader {
                         let trimmedLine = line.trim().replace(/^#\s*/, '');
 
                         // 檢查是否為檔案路徑（包含檔案副檔名）
-                        if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(trimmedLine)) {
+                        if (MEDIA_EXT_RE.test(trimmedLine)) {
                             localFiles.push(trimmedLine);
                             console.log(`[ig_debug] _executeDownload 捕獲檔案 #${localFiles.length}: ${trimmedLine}`);
                         }
@@ -265,7 +288,7 @@ class ImageDownloader {
                     const line = stdoutBuffer.trim();
                     if ((line.includes('/') || line.includes('\\')) && !line.includes('|')) {
                         let trimmedLine = line.replace(/^#\s*/, '');
-                        if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(trimmedLine)) {
+                        if (MEDIA_EXT_RE.test(trimmedLine)) {
                             localFiles.push(trimmedLine);
                             console.log(`[ig_debug] _executeDownload 緩衝區捕獲檔案: ${trimmedLine}`);
                         }
@@ -375,7 +398,7 @@ class ImageDownloader {
      * @private
      */
     _scanDirectory(dir) {
-        const mediaExtensions = /\.(jpg|jpeg|png|gif|webp|mp4|webm)$/i;
+        const mediaExtensions = MEDIA_EXT_RE;
         const files = [];
 
         if (!fs.existsSync(dir)) return files;
@@ -413,14 +436,12 @@ class VideoDownloader {
 
             console.info(`[LOG][${urlData.typeTxt}][${url}] ${this._getCmdPreview(urlData)}`);
 
-            await this.bot.editMessageText(
-                `${url}\n\n開始下載...`,
-                {
-                    is_disabled: true,
-                    chat_id: urlData.chatId,
-                    message_id: urlData.replyMsgId
-                }
-            );
+            await this.bot.api.editMessageText({
+                text: `${url}\n\n開始下載...`,
+                link_preview_options: { is_disabled: true },
+                chat_id: urlData.chatId,
+                message_id: urlData.replyMsgId
+            });
 
             const process = spawn(cmd, args);
             urlData.process = process;
@@ -476,27 +497,23 @@ class VideoDownloader {
 
             if (/^ERROR:/.test(dataStr)) {
                 console.log(`${url} Error: ${dataStr}`);
-                await this.bot.editMessageText(
-                    `${url}\n\n下載發生錯誤：${dataStr}`,
-                    {
-                        is_disabled: true,
-                        chat_id: urlData.chatId,
-                        message_id: urlData.replyMsgId
-                    }
-                );
+                await this.bot.api.editMessageText({
+                    text: `${url}\n\n下載發生錯誤：${dataStr}`,
+                    link_preview_options: { is_disabled: true },
+                    chat_id: urlData.chatId,
+                    message_id: urlData.replyMsgId
+                });
             }
 
             if (urlData.type === MEDIA_TYPES.STREAM || urlData.type === MEDIA_TYPES.M3U8) {
                 if (!streamStart && /frame= /.test(dataStr)) {
                     streamStart = true;
-                    await this.bot.editMessageText(
-                        `${url}\n\n直播下載中...`,
-                        {
-                            is_disabled: true,
-                            chat_id: urlData.chatId,
-                            message_id: urlData.replyMsgId
-                        }
-                    );
+                    await this.bot.api.editMessageText({
+                        text: `${url}\n\n直播下載中...`,
+                        link_preview_options: { is_disabled: true },
+                        chat_id: urlData.chatId,
+                        message_id: urlData.replyMsgId
+                    });
                 }
             }
         });
@@ -553,14 +570,12 @@ class VideoDownloader {
                         message += '\n\n下載即將完成，請稍候...';
                     }
 
-                    await this.bot.editMessageText(
-                        message,
-                        {
-                            is_disabled: true,
-                            chat_id: urlData.chatId,
-                            message_id: urlData.replyMsgId
-                        }
-                    );
+                    await this.bot.api.editMessageText({
+                        text: message,
+                        link_preview_options: { is_disabled: true },
+                        chat_id: urlData.chatId,
+                        message_id: urlData.replyMsgId
+                    });
                 }
             }
         }
@@ -575,14 +590,12 @@ class VideoDownloader {
             const isStream = urlData.type === MEDIA_TYPES.STREAM || urlData.type === MEDIA_TYPES.M3U8;
             const progress = isStream ? '' : `下載進度：[${await getProgressEmoji(100)}]\n\n`;
 
-            await this.bot.editMessageText(
-                `${url}\n\n${progress}下載完成！`,
-                {
-                    is_disabled: true,
-                    chat_id: urlData.chatId,
-                    message_id: urlData.replyMsgId
-                }
-            );
+            await this.bot.api.editMessageText({
+                text: `${url}\n\n${progress}下載完成！`,
+                link_preview_options: { is_disabled: true },
+                chat_id: urlData.chatId,
+                message_id: urlData.replyMsgId
+            });
         }
 
         this._processNextInQueue(urlData, url);
@@ -593,14 +606,12 @@ class VideoDownloader {
      * @private
      */
     async _handleDownloadError(err, urlData, url) {
-        await this.bot.editMessageText(
-            `${url}\n\n下載發生錯誤：${err}`,
-            {
-                is_disabled: true,
-                chat_id: urlData.chatId,
-                message_id: urlData.replyMsgId
-            }
-        );
+        await this.bot.api.editMessageText({
+            text: `${url}\n\n下載發生錯誤：${err}`,
+            link_preview_options: { is_disabled: true },
+            chat_id: urlData.chatId,
+            message_id: urlData.replyMsgId
+        });
 
         this._processNextInQueue(urlData, url);
     }

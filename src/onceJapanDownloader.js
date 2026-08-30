@@ -3,7 +3,7 @@ const path = require('path');
 const https = require('https');
 const http = require('http');
 const cheerio = require('cheerio');
-const FirefoxCookies = require('./firefoxCookies');
+const OjLogin = require('./ojLogin');
 const { sleep } = require('./utils');
 
 const BASE_DIR = 'E:\\AndrewWang\\00\\Celeb\\tmp\\IG & Offical\\__ONCE JAPAN';
@@ -22,17 +22,17 @@ const SITE_LABELS = {
     [SITES.OJ_MOBILE]: 'ONCE JAPAN MOBILE',
 };
 
-const UA_DESKTOP = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:149.0) Gecko/20100101 Firefox/149.0';
-const UA_MOBILE = 'Mozilla/5.0 (Linux; Android 11; SAMSUNG SM-G973U) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/14.2 Chrome/146.0.0.0 Mobile Safari/537.36';
+// UA 與 ojLogin 共用，確保登入取得的 session 與後續請求的 UA 一致
+const { UA_DESKTOP, UA_MOBILE } = OjLogin;
 
 /**
  * ONCE JAPAN 全站圖片自動下載器
  */
 class OnceJapanDownloader {
-    constructor(downloadCache, baseDir = BASE_DIR) {
+    constructor(downloadCache, baseDir = BASE_DIR, credentials = null) {
         this.downloadCache = downloadCache;
         this.baseDir = baseDir;
-        this.firefoxCookies = new FirefoxCookies();
+        this.ojLogin = new OjLogin(credentials);
         this.cookies = null;
     }
 
@@ -164,11 +164,12 @@ class OnceJapanDownloader {
     }
 
     /**
-     * 確保 cookies 已載入
+     * 確保 cookies 已載入（以 puppeteer 自動登入三站取得）
+     * 登入失敗會直接拋出錯誤
      */
-    _ensureCookies() {
+    async _ensureCookies() {
         if (!this.cookies) {
-            this.cookies = this.firefoxCookies.getAllOjCookies();
+            this.cookies = await this.ojLogin.getAllOjCookies();
         }
     }
 
@@ -177,7 +178,7 @@ class OnceJapanDownloader {
     // ========================================
 
     async _crawlWMember(progressCallback) {
-        this._ensureCookies();
+        await this._ensureCookies();
         const siteKey = SITES.W_MEMBER;
         const cookie = this.cookies.wMember;
         const baseUrl = 'https://www.w.oncejapan.com';
@@ -320,7 +321,7 @@ class OnceJapanDownloader {
     // ========================================
 
     async _crawlOjGallery(progressCallback) {
-        this._ensureCookies();
+        await this._ensureCookies();
         const siteKey = SITES.OJ_GALLERY;
         const cookie = this.cookies.onceJapan;
         const baseUrl = 'https://oncejapan.com';
@@ -437,7 +438,7 @@ class OnceJapanDownloader {
     // ========================================
 
     async _crawlOjBlog(progressCallback) {
-        this._ensureCookies();
+        await this._ensureCookies();
         const siteKey = SITES.OJ_BLOG;
         const cookie = this.cookies.onceJapan;
         const baseUrl = 'https://oncejapan.com';
@@ -554,7 +555,7 @@ class OnceJapanDownloader {
     // ========================================
 
     async _crawlOjMobile(progressCallback) {
-        this._ensureCookies();
+        await this._ensureCookies();
         const siteKey = SITES.OJ_MOBILE;
         const cookie = this.cookies.spTwice;
         const baseUrl = 'https://sp.twicejapan.com';
@@ -712,9 +713,9 @@ class OnceJapanDownloader {
      * @returns {Promise<Object>} 各站結果
      */
     async crawlAll(progressCallback) {
-        // 重新取得 cookies（每次執行都重新抓）
+        // 重新登入取得 cookies（每次執行都重新抓）
         this.cookies = null;
-        this._ensureCookies();
+        await this._ensureCookies();
 
         const allResults = {};
 

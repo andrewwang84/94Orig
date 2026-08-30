@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { Readable } = require('stream');
+const { MEDIA_EXT_DOTTED } = require('./constants');
 
 /**
  * app.fans 媒體下載器
@@ -340,7 +341,7 @@ class AppFansDownloader {
         const match = cleanUrl.match(/\.([a-zA-Z0-9]+)$/);
         if (match) {
             const ext = `.${match[1].toLowerCase()}`;
-            if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
+            if (MEDIA_EXT_DOTTED.includes(ext)) {
                 return ext;
             }
         }

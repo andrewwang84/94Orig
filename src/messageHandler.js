@@ -1,5 +1,14 @@
-const { MEDIA_TYPES } = require('./constants');
+const { fromPath } = require('node-telegram-bot-api/node');
+const { MEDIA_TYPES, getContentType } = require('./constants');
 const TikTokDownloader = require('./tiktokDownloader');
+
+/**
+ * 回覆原訊息用的 reply_parameters
+ * （v2 移除了 reply_to_message_id / allow_sending_without_reply 這組舊欄位）
+ */
+function replyTo(msgId) {
+    return { message_id: msgId, allow_sending_without_reply: true };
+}
 
 /**
  * 消息處理器
@@ -26,7 +35,7 @@ class MessageHandler {
 
         // 向非管理員用戶發送確認消息
         if (chatId !== this.myId) {
-            await this.bot.sendMessage(chatId, '🐵:嗚吱！');
+            await this.bot.api.sendMessage({ chat_id: chatId, text: '🐵:嗚吱！' });
         }
 
         if (downloadRemote) {
@@ -63,15 +72,12 @@ class MessageHandler {
         }
 
         if (resultText.trim() !== '') {
-            await this.bot.sendMessage(
-                chatId,
-                resultText,
-                {
-                    is_disabled: true,
-                    reply_to_message_id: msgId,
-                    allow_sending_without_reply: true
-                }
-            );
+            await this.bot.api.sendMessage({
+                chat_id: chatId,
+                text: resultText,
+                link_preview_options: { is_disabled: true },
+                reply_parameters: replyTo(msgId)
+            });
         } else {
             console.log('[WARNING] resultText 為空，不發送訊息');
         }
@@ -107,15 +113,12 @@ class MessageHandler {
                     await this._sendMediaFiles(chatId, data);
                 } else {
                     // 沒有檔案可發送
-                    await this.bot.sendMessage(
-                        chatId,
-                        `⚠️ ${data.target} 沒有找到可下載的內容`,
-                        {
-                            is_disabled: true,
-                            reply_to_message_id: msgId,
-                            allow_sending_without_reply: true
-                        }
-                    );
+                    await this.bot.api.sendMessage({
+                        chat_id: chatId,
+                        text: `⚠️ ${data.target} 沒有找到可下載的內容`,
+                        link_preview_options: { is_disabled: true },
+                        reply_parameters: replyTo(msgId)
+                    });
                 }
             } else {
                 // 下載失敗
@@ -123,15 +126,12 @@ class MessageHandler {
                     ? `❌ ${data.target} 下載失敗 (exit code: ${data.errorCode})`
                     : `❌ ${data.target} 下載失敗`;
 
-                await this.bot.sendMessage(
-                    chatId,
-                    errorMsg,
-                    {
-                        is_disabled: true,
-                        reply_to_message_id: msgId,
-                        allow_sending_without_reply: true
-                    }
-                );
+                await this.bot.api.sendMessage({
+                    chat_id: chatId,
+                    text: errorMsg,
+                    link_preview_options: { is_disabled: true },
+                    reply_parameters: replyTo(msgId)
+                });
             }
         }
     }
@@ -159,7 +159,11 @@ class MessageHandler {
             if (hasFileIds && data.cachedFileIds[i]) {
                 try {
                     console.log(`[LOG][Cache] 使用 fileId[${i}]: ${data.cachedFileIds[i]}`);
-                    await this.bot.sendDocument(chatId, data.cachedFileIds[i]);
+                    // file_id 是字串，直接上線傳送，不需要包成 InputFile
+                    await this.bot.api.sendDocument({
+                        chat_id: chatId,
+                        document: data.cachedFileIds[i]
+                    });
                     sent = true;
                 } catch (error) {
                     console.log(`[ERROR] fileId 發送失敗 ${data.cachedFileIds[i]}: ${error}`);
@@ -177,16 +181,13 @@ class MessageHandler {
 
                     console.log(`[LOG] 上傳檔案: ${filePath}`);
 
-                    const ext = path.extname(filePath).toLowerCase();
-                    let contentType = 'application/octet-stream';
-                    if (['.jpg', '.jpeg'].includes(ext)) contentType = 'image/jpeg';
-                    else if (ext === '.png') contentType = 'image/png';
-                    else if (ext === '.gif') contentType = 'image/gif';
-                    else if (ext === '.webp') contentType = 'image/webp';
-                    else if (ext === '.mp4') contentType = 'video/mp4';
-                    else if (ext === '.webm') contentType = 'video/webm';
+                    const contentType = getContentType(filePath);
 
-                    const sentMessage = await this.bot.sendDocument(chatId, filePath, {}, { contentType });
+                    // 本地檔案：v2 不做路徑猜測，要用 fromPath 包成 InputFile 才會上傳
+                    const sentMessage = await this.bot.api.sendDocument({
+                        chat_id: chatId,
+                        document: await fromPath(filePath, { contentType })
+                    });
                     sent = true;
 
                     if (sentMessage && sentMessage.document && sentMessage.document.file_id) {
@@ -204,11 +205,11 @@ class MessageHandler {
                 const label = (hasFileIds && data.cachedFileIds[i])
                     ? data.cachedFileIds[i]
                     : (hasLocalFiles && data.localFiles[i] ? path.basename(data.localFiles[i]) : 'unknown');
-                await this.bot.sendMessage(
-                    chatId,
-                    `❌ 發送失敗: ${label}`,
-                    { reply_to_message_id: msgId, allow_sending_without_reply: true }
-                );
+                await this.bot.api.sendMessage({
+                    chat_id: chatId,
+                    text: `❌ 發送失敗: ${label}`,
+                    reply_parameters: replyTo(msgId)
+                });
             }
         }
 
@@ -251,21 +252,15 @@ class MessageHandler {
             }
 
             try {
-                // 根據 URL 判斷 content type
-                const urlLower = link.toLowerCase();
-                let contentType = 'application/octet-stream';
-
-                if (urlLower.match(/\.(jpg|jpeg)(\?|$)/)) contentType = 'image/jpeg';
-                else if (urlLower.match(/\.png(\?|$)/)) contentType = 'image/png';
-                else if (urlLower.match(/\.gif(\?|$)/)) contentType = 'image/gif';
-                else if (urlLower.match(/\.webp(\?|$)/)) contentType = 'image/webp';
-                else if (urlLower.match(/\.mp4(\?|$)/)) contentType = 'video/mp4';
-                else if (urlLower.match(/\.webm(\?|$)/)) contentType = 'video/webm';
-
-                await this.bot.sendDocument(chatId, link, {}, { contentType });
+                // link 是遠端網址，字串直傳讓 Telegram 自己去抓。
+                // v1 的第 4 參數 contentType 只在 multipart 上傳時有用，走 URL 時用不到。
+                await this.bot.api.sendDocument({
+                    chat_id: chatId,
+                    document: link
+                });
             } catch (error) {
                 console.log(`[ERROR] sendDocument error: ${error}`);
-                await this.bot.sendMessage(chatId, link);
+                await this.bot.api.sendMessage({ chat_id: chatId, text: link });
             }
         }
     }
@@ -276,48 +271,36 @@ class MessageHandler {
      */
     async _handleTikTokVideoUpload(chatId, msgId, data) {
         try {
-            await this.bot.sendMessage(
-                chatId,
-                `${data.target}\n\n開始下載 TikTok 影片...`,
-                {
-                    reply_to_message_id: msgId,
-                    allow_sending_without_reply: true
-                }
-            );
+            await this.bot.api.sendMessage({
+                chat_id: chatId,
+                text: `${data.target}\n\n開始下載 TikTok 影片...`,
+                reply_parameters: replyTo(msgId)
+            });
 
             const result = await this.tiktokDownloader.downloadVideo(data.target);
 
             if (result.success && result.filePath) {
                 const caption = result.videoInfo && result.videoInfo.title ? result.videoInfo.title : data.target;
-                await this.bot.sendVideo(
-                    chatId,
-                    result.filePath,
-                    {
-                        caption: caption,
-                        reply_to_message_id: msgId,
-                        allow_sending_without_reply: true
-                    }
-                );
+                await this.bot.api.sendVideo({
+                    chat_id: chatId,
+                    video: await fromPath(result.filePath),
+                    caption: caption,
+                    reply_parameters: replyTo(msgId)
+                });
             } else {
-                await this.bot.sendMessage(
-                    chatId,
-                    `${data.target}\n\n下載失敗: ${result.error || '未知錯誤'}`,
-                    {
-                        reply_to_message_id: msgId,
-                        allow_sending_without_reply: true
-                    }
-                );
+                await this.bot.api.sendMessage({
+                    chat_id: chatId,
+                    text: `${data.target}\n\n下載失敗: ${result.error || '未知錯誤'}`,
+                    reply_parameters: replyTo(msgId)
+                });
             }
         } catch (error) {
             console.error('[ERROR] TikTok 影片處理失敗:', error);
-            await this.bot.sendMessage(
-                chatId,
-                `${data.target}\n\n下載失敗: ${error.message}`,
-                {
-                    reply_to_message_id: msgId,
-                    allow_sending_without_reply: true
-                }
-            );
+            await this.bot.api.sendMessage({
+                chat_id: chatId,
+                text: `${data.target}\n\n下載失敗: ${error.message}`,
+                reply_parameters: replyTo(msgId)
+            });
         }
     }
 
@@ -333,34 +316,25 @@ class MessageHandler {
             console.log(`[LOG] TikTok 影片下載結果: ${JSON.stringify(result)}`);
 
             if (result.success && result.filePath) {
-                await this.bot.sendMessage(
-                    chatId,
-                    `${data.target}\n\n✅ 下載完成！\n檔案: ${require('path').basename(result.filePath)}`,
-                    {
-                        reply_to_message_id: msgId,
-                        allow_sending_without_reply: true
-                    }
-                );
+                await this.bot.api.sendMessage({
+                    chat_id: chatId,
+                    text: `${data.target}\n\n✅ 下載完成！\n檔案: ${require('path').basename(result.filePath)}`,
+                    reply_parameters: replyTo(msgId)
+                });
             } else {
-                await this.bot.sendMessage(
-                    chatId,
-                    `${data.target}\n\n❌ 下載失敗: ${result.error || '未知錯誤'}`,
-                    {
-                        reply_to_message_id: msgId,
-                        allow_sending_without_reply: true
-                    }
-                );
+                await this.bot.api.sendMessage({
+                    chat_id: chatId,
+                    text: `${data.target}\n\n❌ 下載失敗: ${result.error || '未知錯誤'}`,
+                    reply_parameters: replyTo(msgId)
+                });
             }
         } catch (error) {
             console.error('[ERROR] TikTok 影片遠端下載失敗:', error);
-            await this.bot.sendMessage(
-                chatId,
-                `${data.target}\n\n❌ 下載失敗: ${error.message}`,
-                {
-                    reply_to_message_id: msgId,
-                    allow_sending_without_reply: true
-                }
-            );
+            await this.bot.api.sendMessage({
+                chat_id: chatId,
+                text: `${data.target}\n\n❌ 下載失敗: ${error.message}`,
+                reply_parameters: replyTo(msgId)
+            });
         }
     }
 
@@ -387,15 +361,12 @@ class MessageHandler {
         }
 
         if (command) {
-            await this.bot.sendMessage(
-                chatId,
-                `\`${command}\``,
-                {
-                    parse_mode: 'Markdown',
-                    reply_to_message_id: msgId,
-                    allow_sending_without_reply: true
-                }
-            );
+            await this.bot.api.sendMessage({
+                chat_id: chatId,
+                text: `\`${command}\``,
+                parse_mode: 'Markdown',
+                reply_parameters: replyTo(msgId)
+            });
         }
     }
 }

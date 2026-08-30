@@ -6,5 +6,7 @@ var cred = {
     ytDlListPath: '',
     ytDl2ListPath: '',
     ojDownloadPath: '',
+    ojLoginId: '',
+    ojLoginPassword: '',
 }
 module.exports = cred;

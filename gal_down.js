@@ -16,6 +16,7 @@ const fs = require('fs');
 const path = require('path');
 const config = require('./config.js')[process.env.NODE_ENV === 'production' ? 'production' : 'development'];
 const DownloadCache = require('./src/downloadCache.js');
+const { MEDIA_EXT_RE } = require('./src/constants.js');
 
 /**
  * 檢查 URL 是否為 Instagram
@@ -258,7 +259,7 @@ async function main() {
             // 捕獲檔案路徑
             if ((line.includes('/') || line.includes('\\')) && !line.includes('|')) {
                 let filePath = line.trim().replace(/^#\s*/, '');
-                if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(filePath)) {
+                if (MEDIA_EXT_RE.test(filePath)) {
                     downloadedFiles.push(filePath);
                     // 歸入當前 URL
                     if (currentUrl && urlFileMap.has(currentUrl)) {
@@ -301,7 +302,7 @@ async function main() {
             const line = stdoutBuffer.trim();
             if ((line.includes('/') || line.includes('\\')) && !line.includes('|')) {
                 let filePath = line.replace(/^#\s*/, '');
-                if (/\.(jpg|jpeg|png|gif|mp4|webm|webp)$/i.test(filePath)) {
+                if (MEDIA_EXT_RE.test(filePath)) {
                     downloadedFiles.push(filePath);
                     if (currentUrl && urlFileMap.has(currentUrl)) {
                         urlFileMap.get(currentUrl).push(filePath);
