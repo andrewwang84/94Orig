@@ -44,6 +44,28 @@ class AppFansDownloader {
     __typename
   }
 }`;
+
+        // notice 要用 group 的數字 id 過濾，需先以 group code 查出 id
+        this.groupIdQuery = `query GroupInfo($filter: GroupFilterInput) {
+  group(filter: $filter) {
+    id
+    __typename
+  }
+}`;
+
+        // CommunityNotice GraphQL query（圖片以 markdown ![](url) 嵌在 body 內）
+        this.communityNoticeQuery = `query CommunityNotice($filter: NoticeFilterInput) {
+  notice(filter: $filter) {
+    id
+    title
+    body
+    firstActivatedAt
+    __typename
+  }
+}`;
+
+        // groupCode → group id，避免每次下載 notice 都多打一次 GroupInfo
+        this.groupIdCache = new Map();
     }
 
     /**
@@ -53,17 +75,19 @@ class AppFansDownloader {
      */
     async downloadMedia(mediaUrl) {
         try {
-            const { groupCode, mediaSlug } = this._extractFromUrl(mediaUrl);
+            const { groupCode, kind, mediaSlug } = this._extractFromUrl(mediaUrl);
             if (!groupCode || !mediaSlug) {
                 throw new Error('無法從 URL 提取 groupCode 或 mediaSlug');
             }
 
-            console.log(`[LOG][AppFans] 開始下載: ${mediaUrl} (group: ${groupCode}, slug: ${mediaSlug})`);
+            console.log(`[LOG][AppFans] 開始下載: ${mediaUrl} (group: ${groupCode}, ${kind}: ${mediaSlug})`);
 
-            // 取得 clip 資料
-            const clipData = await this._fetchClipDetails(mediaSlug);
+            // 取得 clip 資料（notice 會轉成與 clip 相同的結構）
+            const clipData = kind === 'notice'
+                ? await this._fetchNotice(groupCode, mediaSlug)
+                : await this._fetchClipDetails(mediaSlug);
             if (!clipData) {
-                throw new Error('無法取得 clip 資料');
+                throw new Error(`無法取得 ${kind} 資料`);
             }
 
             // 檢查是否為 premium 限定
@@ -103,13 +127,13 @@ class AppFansDownloader {
     }
 
     /**
-     * 從 URL 提取 groupCode 和 mediaSlug
+     * 從 URL 提取 groupCode、頁面種類（media / notice）和 mediaSlug
      * @private
      */
     _extractFromUrl(url) {
-        const match = url.match(/app\.fans\/community\/([\w-]+)\/media\/([\w-]+)/);
-        if (!match) return { groupCode: null, mediaSlug: null };
-        return { groupCode: match[1], mediaSlug: match[2] };
+        const match = url.match(/app\.fans\/community\/([\w-]+)\/(media|notice)\/([\w-]+)/);
+        if (!match) return { groupCode: null, kind: null, mediaSlug: null };
+        return { groupCode: match[1], kind: match[2], mediaSlug: match[3] };
     }
 
     /**
@@ -118,43 +142,7 @@ class AppFansDownloader {
      */
     async _fetchClipDetails(mediaSlug) {
         try {
-            const body = JSON.stringify({
-                operationName: 'ClipDetails',
-                variables: { mediaSlug },
-                query: this.clipDetailsQuery
-            });
-
-            const response = await fetch(this.apiUrl, {
-                method: 'POST',
-                headers: {
-                    'User-Agent': this.userAgent,
-                    'Accept': '*/*',
-                    'Accept-Language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
-                    'Accept-Encoding': 'gzip, deflate, br, zstd',
-                    'Referer': 'https://app.fans/',
-                    'Content-Type': 'application/json',
-                    'j-language': 'zh',
-                    'j-guid': crypto.randomUUID(),
-                    'j-timezone': 'Asia/Taipei',
-                    'j-context': 'web',
-                    'j-client-version': '2.2614.2',
-                    'j-country-code': 'TW',
-                    'j-operation-type': 'query',
-                    'Origin': 'https://app.fans',
-                    'DNT': '1',
-                    'Connection': 'keep-alive',
-                    'Sec-Fetch-Dest': 'empty',
-                    'Sec-Fetch-Mode': 'cors',
-                    'Sec-Fetch-Site': 'same-site',
-                },
-                body
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-
-            const data = await response.json();
+            const data = await this._graphql('ClipDetails', this.clipDetailsQuery, { mediaSlug });
             const clip = data?.data?.clip;
 
             if (!clip) {
@@ -167,6 +155,116 @@ class AppFansDownloader {
             console.error('[ERROR][AppFans] API 請求失敗:', error.message);
             return null;
         }
+    }
+
+    /**
+     * 呼叫 CommunityNotice GraphQL API，並轉成與 clip 相同的結構供後續流程共用
+     * @private
+     */
+    async _fetchNotice(groupCode, noticeSlug) {
+        try {
+            const groupId = await this._fetchGroupId(groupCode);
+            if (!groupId) {
+                console.error(`[ERROR][AppFans] 找不到社群 ${groupCode} 的 group id`);
+                return null;
+            }
+
+            const data = await this._graphql('CommunityNotice', this.communityNoticeQuery, {
+                filter: { group_Overlap: [groupId], slug_Exact: noticeSlug }
+            });
+            const notice = data?.data?.notice;
+
+            if (!notice) {
+                console.error('[ERROR][AppFans] API 回應中沒有 notice 資料');
+                return null;
+            }
+
+            return {
+                id: notice.id,
+                title: notice.title,
+                firstActivatedAt: notice.firstActivatedAt,
+                isPremiumOnly: false,
+                images: this._extractBodyImageUrls(notice.body).map(url => ({ url })),
+            };
+        } catch (error) {
+            console.error('[ERROR][AppFans] API 請求失敗:', error.message);
+            return null;
+        }
+    }
+
+    /**
+     * 以 group code 查 group 數字 id（有快取）
+     * @private
+     */
+    async _fetchGroupId(groupCode) {
+        if (this.groupIdCache.has(groupCode)) {
+            return this.groupIdCache.get(groupCode);
+        }
+
+        const data = await this._graphql('GroupInfo', this.groupIdQuery, {
+            filter: { normalizedCode_LookUp: groupCode }
+        });
+        const groupId = data?.data?.group?.id;
+        if (groupId) {
+            this.groupIdCache.set(groupCode, groupId);
+        }
+        return groupId || null;
+    }
+
+    /**
+     * 從 notice body（markdown）取出所有圖片網址，保留順序並去重
+     * 例: ![](https://img.app.fans/ad/gAAAAA.../4378...f5.jpg)
+     * @private
+     */
+    _extractBodyImageUrls(body) {
+        if (!body) return [];
+        const urls = [];
+        for (const match of body.matchAll(/!\[[^\]]*\]\((https?:\/\/[^\s)]+)/g)) {
+            if (!urls.includes(match[1])) {
+                urls.push(match[1]);
+            }
+        }
+        return urls;
+    }
+
+    /**
+     * 發送 GraphQL 請求，回傳解析後的 JSON
+     * @private
+     */
+    async _graphql(operationName, query, variables) {
+        const body = JSON.stringify({ operationName, variables, query });
+
+        const response = await fetch(this.apiUrl, {
+            method: 'POST',
+            headers: {
+                'User-Agent': this.userAgent,
+                'Accept': '*/*',
+                'Accept-Language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+                'Accept-Encoding': 'gzip, deflate, br, zstd',
+                'Referer': 'https://app.fans/',
+                'Content-Type': 'application/json',
+                'j-language': 'zh',
+                'j-guid': crypto.randomUUID(),
+                'j-timezone': 'Asia/Taipei',
+                'j-context': 'web',
+                'j-client-version': '2.2614.2',
+                'j-country-code': 'TW',
+                'j-operation-type': 'query',
+                'Origin': 'https://app.fans',
+                'DNT': '1',
+                'Connection': 'keep-alive',
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'same-site',
+            },
+            body
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        return response.json();
     }
 
     /**

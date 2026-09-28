@@ -121,7 +121,8 @@ const URL_PATTERNS = {
     [MEDIA_TYPES.FACEBOOK]: /https:\/\/(?:www\.)?facebook\.com\/\S+/g,
     [MEDIA_TYPES.PINTEREST]: /https:\/\/(?:www\.)?pinterest\.(?:com|co\.uk|ca|fr|de|jp|co\.kr)\/\S+/g,
     [MEDIA_TYPES.REDDIT]: /https:\/\/(?:www\.)?reddit\.com\/\S+/g,
-    [MEDIA_TYPES.APPFANS]: /https:\/\/(?:www\.)?app\.fans\/community\/[\w-]+\/media\/[\w-]+\/?/g,
+    // 支援 media（ClipDetails）與 notice（CommunityNotice）兩種頁面
+    [MEDIA_TYPES.APPFANS]: /https:\/\/(?:www\.)?app\.fans\/community\/[\w-]+\/(?:media|notice)\/[\w-]+\/?/g,
     [MEDIA_TYPES.WEVERSE]: /https:\/\/(?:www\.)?weverse\.io\/[\w.-]+\/(?:artist|fanpost)\/[\d-]+\/?/g
 };
 

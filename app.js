@@ -111,6 +111,14 @@ async function initializeApp() {
         console.error(`[ERROR] Bot handler error${updateId ? ` (update ${updateId})` : ''}:`, error.message || error);
     });
 
+    // webhook 存在時 getUpdates 會回 409，polling 迴圈直接結束。
+    // 啟動前先清掉 webhook（保留未處理的訊息），並記下被清掉的 URL 方便追查。
+    const webhookInfo = await bot.api.getWebhookInfo();
+    if (webhookInfo.url) {
+        console.warn(`[WARN] Webhook is set to ${webhookInfo.url}, deleting it before polling...`);
+        await bot.api.deleteWebhook({ drop_pending_updates: false });
+    }
+
     // 啟動 long polling。startPolling 的 promise 要等到 stop() 才 resolve，
     // 所以這裡不能 await，否則 initializeApp 永遠不會回來。
     bot.startPolling(undefined, {
