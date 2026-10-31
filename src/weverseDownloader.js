@@ -46,7 +46,7 @@ class WeverseDownloader {
                 throw new Error('無法取得貼文資料');
             }
 
-            const mediaItems = this._extractMedia(post, community, postId);
+            const mediaItems = await this._extractMedia(post, community, postId);
             if (mediaItems.length === 0) {
                 throw new Error('貼文中沒有可下載的媒體');
             }
@@ -75,10 +75,11 @@ class WeverseDownloader {
     /**
      * 從 URL 提取 community urlPath 與 postId
      * 例：https://weverse.io/hearts2hearts/artist/1-165385071
+     *     https://weverse.io/yujeongyeon/media/1-181270353
      * @private
      */
     _parseUrl(url) {
-        const match = url.match(/weverse\.io\/([\w.-]+)\/(?:artist|fanpost)\/([\d-]+)/);
+        const match = url.match(/weverse\.io\/([\w.-]+)\/(?:artist|fanpost|media)\/([\d-]+)/);
         if (!match) return null;
         return { community: match[1], postId: match[2] };
     }
@@ -155,10 +156,11 @@ class WeverseDownloader {
      * 從貼文物件提取媒體
      *
      * orderedAttachments 保留了貼文中媒體的原始排列順序，
-     * 舊格式的貼文只有 attachment map，因此兩者都要處理
+     * 舊格式的貼文只有 attachment map，因此兩者都要處理；
+     * 媒體頁（/media/）的貼文兩者皆空，媒體放在 extension 底下
      * @private
      */
-    _extractMedia(post, community, postId) {
+    async _extractMedia(post, community, postId) {
         const dateStr = this._formatDate(post.publishedAt);
         const attachments = [];
 
@@ -178,23 +180,55 @@ class WeverseDownloader {
             }
         }
 
+        if (attachments.length === 0 && post.extension) {
+            attachments.push(...this._collectMediaPostAttachments(post));
+        }
+
         const mediaItems = [];
-        attachments.forEach((att, i) => {
-            const url = this._pickUrl(att);
+        for (const [i, att] of attachments.entries()) {
+            const url = await this._pickUrl(att, post);
             if (!url) {
-                console.log(`[LOG][Weverse] 略過不支援的附件類型: ${att.type}`);
-                return;
+                console.log(`[LOG][Weverse] 略過無法取得網址的附件: ${att.type}`);
+                continue;
             }
             const index = String(i + 1).padStart(2, '0');
-            const ext = this._getExtFromUrl(url, att.type === 'video' ? '.mp4' : '.jpg');
+            const ext = this._getExtFromUrl(url, att.type === 'photo' ? '.jpg' : '.mp4');
             mediaItems.push({
                 url,
                 filename: `${community}_${dateStr}_${postId}_${index}${ext}`,
                 type: att.type,
             });
-        });
+        }
 
         return mediaItems;
+    }
+
+    /**
+     * 取出媒體頁貼文的附件
+     *
+     * 依 postType 放在 extension 的不同欄位（規則取自前端 bundle）：
+     *   IMAGE → extension.image.photos，空的話前端改用 extension.mediaInfo.thumbnail
+     *   VIDEO → extension.video，實際檔案要另外呼叫 playInfo API 取得
+     * @private
+     */
+    _collectMediaPostAttachments(post) {
+        const ext = post.extension;
+
+        if (post.postType === 'IMAGE') {
+            const photos = (ext.image && ext.image.photos) || [];
+            if (photos.length > 0) {
+                return photos.map(data => ({ type: 'photo', data }));
+            }
+            const thumbnail = ext.mediaInfo && ext.mediaInfo.thumbnail;
+            return thumbnail ? [{ type: 'photo', data: thumbnail }] : [];
+        }
+
+        if (post.postType === 'VIDEO' && ext.video) {
+            return [{ type: 'vod', data: ext.video }];
+        }
+
+        console.log(`[LOG][Weverse] 不支援的媒體貼文類型: ${post.postType}`);
+        return [];
     }
 
     /**
@@ -205,7 +239,7 @@ class WeverseDownloader {
      * 影片附件走 Naver VOD，沒有直接可下載的網址時只能略過。
      * @private
      */
-    _pickUrl(att) {
+    async _pickUrl(att, post) {
         const data = att.data || {};
 
         if (att.type === 'photo') {
@@ -218,7 +252,83 @@ class WeverseDownloader {
             return direct ? direct.split('?')[0] : null;
         }
 
+        if (att.type === 'vod') {
+            // DRM 影片走 inKey 授權流程，拿不到可直接下載的檔案
+            if (data.drmStatus === 'COMPLETE') {
+                console.log(`[LOG][Weverse] DRM 影片無法下載: videoId ${data.videoId}`);
+                return null;
+            }
+            return this._fetchVodUrl(data.videoId, post.community && post.community.communityId);
+        }
+
         return null;
+    }
+
+    /**
+     * 呼叫 playInfo API 取得影片最高畫質的 MP4 網址
+     *
+     * 回應的 playback 是 DASH MPD（XML 字串），其中 mimeType="video/mp4" 的
+     * AdaptationSet 是各畫質完整的 MP4（progressive download），
+     * 挑 bandwidth 最大的 BaseURL 即可，不必處理 HLS 分段。
+     * BaseURL 帶有 __gda__ 時效簽章，不能去掉 query string。
+     * 非會員限定的影片不需要登入 token 也拿得到完整 MPD。
+     * @private
+     */
+    async _fetchVodUrl(videoId, communityId) {
+        try {
+            const url = this._buildSignedUrl(`/video/v2.1/vod/${videoId}/playInfo`, {
+                communityId,
+                playerType: 'html5_pc',
+                resType: 'xml',
+                version: 'v3',
+            });
+
+            const response = await fetch(url, {
+                headers: {
+                    'User-Agent': this.userAgent,
+                    'Accept': 'application/json, text/plain, */*',
+                    'Referer': 'https://weverse.io/',
+                    'Origin': 'https://weverse.io',
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (!data || !data.playback) {
+                throw new Error('回應中沒有 playback');
+            }
+
+            const mp4Set = (data.playback.match(/<AdaptationSet\b[^>]*>[\s\S]*?<\/AdaptationSet>/g) || [])
+                .find(set => /^<AdaptationSet\b[^>]*mimeType="video\/mp4"/.test(set));
+            if (!mp4Set) {
+                throw new Error('MPD 中沒有 MP4 來源');
+            }
+
+            let best = null;
+            for (const rep of mp4Set.match(/<Representation\b[\s\S]*?<\/Representation>/g) || []) {
+                const bandwidth = Number((rep.match(/\bbandwidth="(\d+)"/) || [])[1] || 0);
+                const baseUrl = (rep.match(/<BaseURL>([^<]+)<\/BaseURL>/) || [])[1];
+                if (baseUrl && (!best || bandwidth > best.bandwidth)) {
+                    best = {
+                        bandwidth,
+                        id: (rep.match(/\bid="([^"]+)"/) || [])[1],
+                        url: baseUrl.replace(/&amp;/g, '&'),
+                    };
+                }
+            }
+            if (!best) {
+                throw new Error('MPD 中沒有可用的 BaseURL');
+            }
+
+            console.log(`[LOG][Weverse] 影片 ${videoId} 選用畫質: ${best.id}`);
+            return best.url;
+        } catch (error) {
+            console.error(`[ERROR][Weverse] 取得影片 ${videoId} 播放資訊失敗:`, error.message);
+            return null;
+        }
     }
 
     /**

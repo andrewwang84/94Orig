@@ -1150,7 +1150,7 @@ class CommandHandler {
 - Weibo：https://weibo.com/[UID]/[MID] 或 m.weibo.cn/detail/[ID]
 - TikTok（圖片貼文）：https://www.tiktok.com/...
 - app.fans：https://app.fans/community/[社群]/media/[ID]/ 或 /notice/[ID]/
-- Weverse：https://weverse.io/[社群]/artist/[貼文ID]
+- Weverse：https://weverse.io/[社群]/artist/[貼文ID] 或 /media/[貼文ID]
 - 韓國媒體網站（KRSite）：Elle、Vogue、Dispatch、Melon 等
 
 🎬 <strong>影片下載：</strong>
